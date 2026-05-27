@@ -88,7 +88,7 @@ export function SearchPanel({ open, onClose }: { open: boolean; onClose: () => v
   return (
     <div className="fixed inset-0 z-[300] flex items-start justify-center pt-[20vh]" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-outline-variant/30"
+        className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-outline-variant/30"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}

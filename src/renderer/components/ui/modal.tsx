@@ -31,7 +31,7 @@ function Modal({
   const iconColor = variant === 'danger' ? 'text-error' : 'text-primary'
   const confirmBtn =
     variant === 'danger'
-      ? 'bg-error text-white hover:brightness-110'
+      ? 'bg-error text-on-error hover:brightness-110'
       : 'bg-primary text-on-primary hover:brightness-110'
 
   return (
@@ -39,7 +39,7 @@ function Modal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-xl w-full max-w-md p-md space-y-md"
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md p-md space-y-md"
           onEscapeKeyDown={onClose}
         >
           <div className="flex flex-col items-center text-center space-y-md">

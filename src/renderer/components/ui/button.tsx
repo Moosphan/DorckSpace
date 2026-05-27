@@ -10,7 +10,7 @@ const variants = {
   outline:
     'border-2 border-primary text-primary rounded-full hover:bg-primary/5 active:scale-95 transition-all',
   ghost: 'text-on-surface-variant hover:text-primary active:scale-95 transition-all',
-  danger: 'bg-error text-white rounded-full hover:brightness-110 active:scale-95 transition-all',
+  danger: 'bg-error text-on-error rounded-full hover:brightness-110 active:scale-95 transition-all',
   cta: 'bg-secondary-container text-on-secondary-container rounded-xl shadow-sm hover:translate-y-[-2px] transition-all',
 } as const
 

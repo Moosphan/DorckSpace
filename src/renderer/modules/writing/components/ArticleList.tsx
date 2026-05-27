@@ -72,7 +72,7 @@ function ActionMenu({
       {open && (
         <div
           ref={menuRef}
-          className="fixed bg-white border border-outline-variant/30 rounded-xl shadow-lg p-1 min-w-[180px] z-[200]"
+          className="fixed bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg p-1 min-w-[180px] z-[200]"
           style={{ top: pos.top, right: pos.right }}
         >
           <div className="px-md py-sm">

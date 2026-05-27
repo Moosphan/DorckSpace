@@ -5,7 +5,7 @@ const variantStyles = {
   default:
     'bg-surface-container-lowest rounded-lg border border-outline-variant/30 shadow-ambient',
   glass: 'glass-card rounded-2xl',
-  bento: 'bg-white rounded-2xl border border-surface-container-high shadow-sm',
+  bento: 'bg-surface-container-lowest rounded-2xl border border-surface-container-high shadow-sm',
   hero: 'bg-primary text-on-primary rounded-lg',
   interactive:
     'bg-surface-container-lowest rounded-lg border border-outline-variant/30 shadow-ambient hover:-translate-y-1 hover:shadow-ambient-hover transition-all cursor-pointer',

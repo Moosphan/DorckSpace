@@ -20,7 +20,7 @@ function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          'bg-white border border-outline-variant/30 rounded-xl shadow-lg overflow-hidden p-1 min-w-[160px] z-50',
+          'bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg overflow-hidden p-1 min-w-[160px] z-50',
           className,
         )}
         {...props}

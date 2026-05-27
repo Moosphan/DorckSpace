@@ -80,7 +80,7 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
   if (selectedFeed) {
     return (
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-md space-y-md">
+        <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md p-md space-y-md">
           <div className="flex items-center gap-sm">
             <button onClick={() => setSelectedFeed(null)} className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container">
               <span className="material-symbols-outlined">arrow_back</span>
@@ -134,7 +134,7 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
   // List view
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-md space-y-md max-h-[80vh] flex flex-col">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md p-md space-y-md max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between">
           <h3 className="font-headline-sm text-headline-sm">RSS Subscriptions</h3>
           <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container">

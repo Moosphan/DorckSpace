@@ -104,7 +104,7 @@ export function CategorySelector({ value, onChange }: CategorySelectorProps) {
 
       {open && (
         <div
-          className="absolute left-0 top-full mt-1 bg-white border border-outline-variant/30 rounded-xl shadow-lg p-1 min-w-[200px] z-[200]"
+          className="absolute left-0 top-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg p-1 min-w-[200px] z-[200]"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="max-h-[200px] overflow-y-auto">

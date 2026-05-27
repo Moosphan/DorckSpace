@@ -69,7 +69,7 @@ export function ToolDirectory({ onOpenTool }: ToolDirectoryProps) {
               className={cn(
                 'px-md py-1.5 rounded-lg text-label-md transition-all',
                 activeCategory === cat
-                  ? 'bg-white text-primary font-bold shadow-sm'
+                  ? 'bg-surface-container-lowest text-primary font-bold shadow-sm'
                   : 'hover:bg-surface-container-high font-medium',
               )}
             >

@@ -114,7 +114,7 @@ export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
               className={cn(
                 'flex items-center gap-xs px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors',
                 dateRange === opt.value
-                  ? 'bg-white text-primary shadow-sm'
+                  ? 'bg-surface-container-lowest text-primary shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface',
               )}
             >
@@ -206,7 +206,7 @@ export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
               <div className="flex flex-col justify-between flex-1 min-w-0">
                 {/* Line 1: feed title label + article title */}
                 <h3 className="font-headline-sm text-headline-sm leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                  <span className="inline-block px-2 py-[2px] bg-primary text-on-primary text-[12px] font-bold rounded-full uppercase tracking-wider align-middle mr-1.5">
+                  <span className="inline-flex items-center px-2 py-[1px] bg-primary text-on-primary text-[12px] font-bold rounded-full uppercase tracking-wider align-middle relative -top-[3px] mr-1.5">
                     {article.feed_title}
                   </span>
                   {article.title}

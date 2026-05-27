@@ -130,7 +130,7 @@ export function PublishPanel({ articleId, articleTitle, content, onClose }: Publ
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-md space-y-md">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-md space-y-md">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

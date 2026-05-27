@@ -40,7 +40,7 @@ function SelectContent({
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         className={cn(
-          'bg-white border border-outline-variant/30 rounded-xl shadow-lg overflow-hidden z-50',
+          'bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg overflow-hidden z-50',
           className,
         )}
         position="popper"

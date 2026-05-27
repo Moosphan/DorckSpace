@@ -24,7 +24,7 @@ const TabsTrigger = forwardRef<
     className={cn(
       'flex-1 py-sm font-label-md rounded-lg transition-colors outline-none',
       'text-on-surface-variant hover:text-on-surface',
-      'data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary',
+      'data-[state=active]:bg-surface-container-lowest data-[state=active]:shadow-sm data-[state=active]:text-primary',
       className,
     )}
     {...props}

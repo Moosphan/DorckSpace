@@ -59,7 +59,7 @@ export function WeatherClockWidget() {
 
   return (
     <div className="bg-primary text-on-primary rounded-lg p-md relative overflow-hidden shadow-ambient">
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-container rounded-full opacity-50 blur-2xl" />
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-on-primary/20 rounded-full blur-2xl" />
 
       <div className="relative z-10 flex flex-col">
         <div className="flex justify-between items-start mb-lg">

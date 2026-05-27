@@ -255,7 +255,7 @@ export default function Settings() {
                       onClick={() => setTheme({ density: d })}
                       className={cn(
                         'px-3 py-1 rounded-md text-body-sm capitalize transition-colors',
-                        theme.density === d ? 'bg-white shadow-sm text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container-high',
+                        theme.density === d ? 'bg-surface-container-lowest shadow-sm text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container-high',
                       )}
                     >
                       {d}
