@@ -71,7 +71,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col h-screen w-[280px] shrink-0 bg-surface-container-low dark:bg-surface-dim border-r border-outline-variant/30">
         {/* Logo - pt-12 clears macOS traffic lights */}
-        <div className="p-md pt-12">
+        <div className="p-md pt-12 titlebar-drag">
           <div className="flex items-center gap-sm mb-lg">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
               <span className="material-symbols-outlined fill">dashboard</span>
@@ -86,7 +86,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </div>
           </div>
 
-          <button className="w-full bg-primary text-on-primary rounded-full py-sm px-md flex items-center justify-center gap-base mb-lg font-label-md hover:brightness-110 transition-all active:scale-95">
+          <button className="w-full bg-primary text-on-primary rounded-full py-sm px-md flex items-center justify-center gap-base mb-lg font-label-md hover:brightness-110 transition-all active:scale-95 titlebar-no-drag">
             <span className="material-symbols-outlined text-[18px]">add</span>
             New Project
           </button>
@@ -131,10 +131,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md flex justify-between items-center w-full px-md py-2 border-b border-outline-variant/30">
+        <header className="sticky top-0 z-40 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md flex justify-between items-center w-full px-md py-2 border-b border-outline-variant/30 titlebar-drag">
           <div className="flex items-center gap-md flex-1">
             <div
-              className="relative w-full max-w-sm cursor-pointer"
+              className="relative w-full max-w-sm cursor-pointer titlebar-no-drag"
               onClick={() => setSearchOpen(true)}
             >
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">
@@ -147,11 +147,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </div>
           </div>
           <div className="flex items-center gap-md">
-            <button className="relative w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
+            <button className="relative w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors titlebar-no-drag">
               <span className="material-symbols-outlined">notifications</span>
               <span className="absolute top-2 right-2 w-2 h-2 bg-secondary-container rounded-full border-2 border-surface" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs cursor-pointer">
+            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs cursor-pointer titlebar-no-drag">
               D
             </div>
           </div>

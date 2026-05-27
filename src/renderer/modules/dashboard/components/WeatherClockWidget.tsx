@@ -67,11 +67,11 @@ export function WeatherClockWidget() {
             <div className="font-headline-lg text-headline-lg tracking-tight">
               {format(now, 'HH:mm')}
             </div>
-            <div className="font-body-sm text-body-sm text-primary-fixed">
+            <div className="font-body-sm text-body-sm text-on-primary/60">
               {format(now, 'EEEE, MMM d')}
             </div>
           </div>
-          <span className="material-symbols-outlined text-[32px] text-secondary-container fill">
+          <span className="material-symbols-outlined text-[32px] text-secondary-container dark:text-on-secondary-container fill">
             {weather?.icon || 'light_mode'}
           </span>
         </div>
@@ -80,7 +80,7 @@ export function WeatherClockWidget() {
             <div className="font-headline-sm text-headline-sm">
               {weather?.location || 'Local'}
             </div>
-            <div className="font-body-sm text-body-sm text-primary-fixed">
+            <div className="font-body-sm text-body-sm text-on-primary/60">
               {weather ? `${weather.condition}, ${weather.temperature}°C` : 'Have a productive day'}
             </div>
           </div>
