@@ -61,7 +61,35 @@ export function registerRssIpcHandlers(): void {
 
   ipcMain.handle(RSS_CHANNELS.ADD_FEED, async (_event, data: { title: string; url: string; category?: string }) => {
     try {
-      const id = getFeedRepo().create(data)
+      let title = data.title.trim()
+      if (!title) {
+        // Strategy 1: Fetch XML and parse locally (more reliable than parseURL)
+        try {
+          const res = await fetch(data.url, {
+            headers: { 'User-Agent': 'DorckDashboard/1.0' },
+            signal: AbortSignal.timeout(10000),
+          })
+          const xml = await res.text()
+          const parsed = await rssParser.parseString(xml)
+          if (parsed.title?.trim()) title = parsed.title.trim()
+        } catch { /* ignore */ }
+      }
+      if (!title) {
+        // Strategy 2: Extract from HTML meta tags
+        try {
+          const res = await fetch(data.url, {
+            headers: { 'User-Agent': 'DorckDashboard/1.0', Accept: 'text/html,*/*' },
+            signal: AbortSignal.timeout(10000),
+          })
+          const text = await res.text()
+          title =
+            text.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i)?.[1]?.trim() ||
+            text.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ||
+            ''
+        } catch { /* ignore */ }
+      }
+      if (!title) title = new URL(data.url).hostname
+      const id = getFeedRepo().create({ ...data, title })
       let articleCount = 0
       if (id) {
         try {
