@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="32" viewBox="0 0 128 32" role="img" aria-label="DEVELOPING">
+  <polygon points="8,1 127,1 127,24 119,31 1,31 1,8" fill="#0f1318" stroke="#8b949e" stroke-width="1.5"/>
+  <path d="M11 6h28" stroke="#d29922" stroke-width="2.5"/>
+  <text x="64" y="21" fill="#f0f6fc" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" text-anchor="middle" letter-spacing="1.4">DEVELOPING</text>
+</svg>

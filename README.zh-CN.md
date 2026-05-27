@@ -1,114 +1,126 @@
-<div align="center">
-
 # DorckDashboard
 
-**本地优先的个人生产力工作空间 (macOS)**
+**本地优先的桌面生产力工作空间**
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Electron](https://img.shields.io/badge/Electron-33-47848F?logo=electron)](https://www.electronjs.org/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
-[![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite)](https://www.sqlite.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-9-F69220?logo=pnpm)](https://pnpm.io/)
+![Apache 2.0](./assets/badges/license.svg)
+![Electron 33](./assets/badges/electron.svg)
+![React 18](./assets/badges/react.svg)
+![TypeScript 5.7](./assets/badges/typescript.svg)
+![pnpm 9](./assets/badges/pnpm.svg)
+![Developing](./assets/badges/status.svg)
 
 [English](README.md) | [中文](README.zh-CN.md)
-
-</div>
 
 ---
 
 ## 项目简介
 
-DorckDashboard 是一款**本地优先**、注重隐私的生产力工作空间，基于 Electron + React 构建。所有数据存储在本地 -- 无需云端同步，无需注册账号，无追踪。它将项目管理、内容创作、媒体整理、RSS 阅读和 AI 工具管理整合到一个精心设计的桌面应用中。
+DorckDashboard 是一款基于 Electron 的桌面应用，试图把项目管理、写作、
+媒体素材、RSS 阅读、社交洞察和 AI 工具整合进同一个本地优先工作空间。
+当前实现以 SQLite 和本地文件存储为基础，默认不依赖云端账户和同步服务。
 
-采用 **"Vibrant Workspace"** 设计语言 -- 融合现代极简主义与柔和几何风格，配备 Material Design 3 色彩体系、紫色调环境阴影和药丸形交互元素。
+它目前仍然从作者自己的日常工作流中持续生长，因此产品方向会优先服务真实的
+个人使用场景。
 
----
+## 这个项目解决什么问题
 
-## 功能特性
+很多个人工作流会分散在多个应用里：任务管理、写作、素材整理、信息订阅、
+社交数据查看，以及 AI 工具使用彼此割裂。DorckDashboard 想做的是一个统一的
+桌面工作台，而不是一组松散的网页标签页。
 
-### 仪表盘 (Dashboard)
-- **聚焦项目** -- 置顶当前主项目，实时追踪进度
-- **优先级任务** -- 支持高/中/低优先级标签，行内创建，快速操作
-- **实时时钟与天气** -- 秒级时钟更新，可配置城市的实时天气 (wttr.in API)
-- **活跃热力图** -- 4 周活动网格，可视化活跃度
+## 核心能力
 
-### 写作工坊 (Writing Studio)
-- **富文本编辑器** -- 基于 Tiptap/ProseMirror 的所见即所得编辑器，完整工具栏（加粗、斜体、标题、列表、代码块、引用、任务列表）
-- **源码模式** -- WYSIWYG 与 HTML 源码一键切换
-- **自动保存** -- 2 秒防抖持久化
-- **多平台发布** -- 导出到博客 (HTML)、Notion、掘金 (Markdown)、微信公众号 (富文本)、Medium
-- **分类管理** -- 自定义文章分类
+### Dashboard
 
-### 视频工坊 (Video Studio)
-- **视频封面网格** -- 响应式卡片布局，支持缩略图、时长叠加、状态筛选
-- **音频素材库** -- 管理音频文件 (WAV, MP3, M4A, FLAC, OGG)
-- **演示文稿管理** -- 导入和整理 HTML 演示文稿
+- 聚焦项目、优先级任务和活跃度追踪
+- 实时时钟与天气组件
+- 全局命令面板（`Cmd+K`）快速搜索
 
-### 洞察 (Insights)
-- **RSS 阅读器** -- 订阅源管理，按日期/分类/收藏筛选，标记已读，每 30 分钟自动抓取
-- **订阅源管理器** -- 添加/编辑/删除订阅源，URL 验证与标题自动检测；内置 Hacker News、TechCrunch、GitHub Blog、DEV.to 预设
-- **社交数据分析** -- 追踪 Bilibili、YouTube、小红书的粉丝数和互动数据
+### Writing Studio
 
-### AI 实验室 (AI Lab)
-- **订阅追踪** -- 监控 AI 服务订阅 (OpenAI, Anthropic, Google, Midjourney) 及 Token 用量
-- **工具目录** -- 快速访问 8 款 AI 工具 (Claude, ChatGPT, Gemini, Copilot, DALL-E 3, Midjourney, Perplexity, ElevenLabs)
-- **内置浏览器** -- 持久化 Webview，带地址栏、导航和快捷访问栏
+- 基于 Tiptap 的富文本编辑
+- HTML 源码模式
+- 自动保存与本地草稿存储
+- 面向博客、Notion、掘金、微信公众号、Medium 的发布辅助
 
-### 全局功能
-- **命令面板** (Cmd+K) -- 跨文章、任务、笔记、草稿的全文搜索，支持键盘导航
-- **深色模式** -- 跟随系统自动切换浅色/深色主题
-- **模块化架构** -- 通过 `feature.config.ts` 启用/禁用功能模块
-- **扩展点系统** -- 4 层级 14 种扩展点类型，支持深度定制
+### Video Studio
 
----
+- 视频封面管理
+- 音频素材库
+- HTML 演示文稿素材管理
+
+### Insights
+
+- RSS 订阅与文章阅读
+- 订阅源预设与定时抓取
+- 指定社交平台的数据追踪
+
+### AI Lab
+
+- AI 订阅管理
+- AI 工具目录与快速访问
+- 内嵌浏览器式工具工作流
+
+## 当前架构
+
+DorckDashboard 当前是一个模块化 Electron 应用，内置 6 个功能模块：
+
+- `dashboard`
+- `writing`
+- `video`
+- `insights`
+- `ai-lab`
+- `settings`
+
+模块启用状态由 [feature.config.ts](./feature.config.ts) 控制。
+
+运行时结构遵循标准 Electron 分层：
+
+- **主进程**：数据库访问、后台服务、IPC 处理器与原生能力
+- **Preload 层**：类型化的 `electronAPI` 桥接
+- **渲染进程**：基于 React 的工作空间界面
+
+仓库中还包含更大范围的插件化设计说明：
+[docs/plugin-architecture.md](./docs/plugin-architecture.md)。这份文档更适合作为
+架构规划参考，而不是已经完整上线的运行时插件能力说明。
 
 ## 技术栈
 
 | 层级 | 技术 |
 |---|---|
-| **运行时** | Electron 33, Node.js |
-| **前端** | React 18, TypeScript 5.7, React Router 6 |
-| **样式** | Tailwind CSS 3.4, Radix UI, Material Symbols Outlined |
-| **状态管理** | Zustand 5 |
-| **编辑器** | Tiptap 3 (ProseMirror), lowlight |
-| **数据库** | SQLite 3 (better-sqlite3, WAL 模式) |
-| **构建** | electron-vite 2, Vite 6, pnpm |
-| **打包** | electron-builder |
+| 运行时 | Electron 33, Node.js |
+| 前端 | React 18, TypeScript 5.7, React Router 6 |
+| 样式 | Tailwind CSS 3.4, Radix UI |
+| 状态管理 | Zustand 5 |
+| 编辑器 | Tiptap 3, lowlight |
+| 数据层 | `better-sqlite3` 驱动的 SQLite |
+| 构建 | electron-vite, Vite 6, pnpm |
+| 打包 | electron-builder |
 
----
+## 本地数据存储
 
-## 系统架构
+应用数据存储在 Electron 的 `userData` 目录下。
 
-```
-DorckDashboard
-├── src/main/              # Electron 主进程
-│   ├── database/          # SQLite (22 张表, 6 次迁移, 7 个仓储)
-│   ├── ipc/               # IPC 处理器 (8 个模块, 60+ 通道)
-│   └── services/          # 天气、RSS 抓取、通知、设置、文件 I/O
-├── src/preload/           # 上下文桥接 (类型化的 electronAPI)
-├── src/renderer/          # React SPA
-│   ├── modules/           # 6 个功能模块
-│   ├── components/        # 共享 UI 原语 (13 个组件)
-│   ├── stores/            # Zustand 状态库
-│   ├── lib/               # 模块注册表、扩展注册表、模块加载器
-│   └── hooks/             # IPC 数据/变更 Hooks
-└── src/shared/            # 跨进程共享的类型和常量
-```
+- SQLite 数据库：`<userData>/database/dashboard.db`
+- 应用初始化的文件目录：
+  - `articles`
+  - `notes`
+  - `drafts`
+  - `media/covers`
+  - `media/audio`
+  - `media/presentations`
+  - `exports`
+  - `cache`
+  - `config`
 
-**数据流：** 渲染进程 -> IPC (`invoke`) -> 主进程 -> 仓储层 -> SQLite -> 响应
-
-所有 IPC 处理器返回类型化的 `{ success, data?, error? }` 响应结构。渲染进程通过 `useIpcData`（读取）和 `useIpcMutation`（写入）Hooks 实现响应式数据获取。
-
----
+SQLite 初始化时会启用 WAL 模式和外键约束。
 
 ## 快速开始
 
 ### 环境要求
 
-- **Node.js** >= 18
-- **pnpm** >= 9
+- Node.js `>= 18`
+- pnpm `>= 9`
 
 ### 安装
 
@@ -118,7 +130,7 @@ cd DorckSpace
 pnpm install
 ```
 
-### 开发
+### 开发运行
 
 ```bash
 pnpm dev
@@ -126,90 +138,56 @@ pnpm dev
 
 ### 构建
 
+生成生产构建产物：
+
 ```bash
-# macOS
-pnpm build:mac
-
-# Windows
-pnpm build:win
-
-# Linux
-pnpm build:linux
+pnpm build
 ```
 
----
+生成 Electron Builder 打包产物：
 
-## 目录结构
-
-```
-├── src/
-│   ├── main/                       # Electron 主进程
-│   │   ├── database/               # SQLite 层 (连接、迁移、仓储)
-│   │   ├── ipc/                    # IPC 处理器模块
-│   │   └── services/               # 后台服务
-│   ├── preload/                    # 预加载脚本 (上下文桥接)
-│   ├── renderer/                   # React 前端
-│   │   ├── modules/                # 功能模块
-│   │   ├── components/             # 共享 UI 组件
-│   │   ├── stores/                 # Zustand 状态库
-│   │   ├── lib/                    # 核心库
-│   │   └── hooks/                  # 自定义 Hooks
-│   └── shared/                     # 共享类型与常量
-├── feature.config.ts               # 模块启用/禁用配置
-├── tailwind.config.ts              # 设计系统 Token
-└── electron.vite.config.ts         # 构建配置
+```bash
+pnpm dist
 ```
 
----
+生成 macOS 分发包：
 
-## 设计系统
+```bash
+pnpm dist:mac
+```
 
-**Vibrant Workspace** 设计系统规范：
+当前 `electron-builder.yml` 只配置了 macOS `arm64` 的 `dmg` 和 `zip` 目标。
+之前 README 中的 `build:win` 和 `build:linux` 命令已移除，因为
+`package.json` 里并没有这些脚本。
 
-- **色彩：** Material Design 3 调色板，活力紫主色 (`#6B38D4`)，琥珀副色 (`#FEC300`)，完整的 Surface 层级体系，支持深色模式
-- **字体：** 阿里巴巴普惠体 3.0 + Plus Jakarta Sans，字号从 `headline-xl` (40px) 到 `label-sm` (12px)
-- **间距：** Base-4 网格系统 (`xs: 4px` 到 `xl: 80px`)
-- **形状：** 药丸形按钮/标签，24px 卡片圆角，8px 基础圆角
-- **阴影：** 紫色调环境阴影营造层次感
-- **图标：** 统一使用 Google Material Symbols Outlined
+由于项目基于 Electron 构建，代码层面并不天然只支持 macOS；只是当前仓库中的
+打包配置主要聚焦在 macOS 目标上。
 
----
+## 项目结构
 
-## 数据库
+```text
+src/
+├── main/        # Electron 主进程、数据库、IPC、后台服务
+├── preload/     # 类型化上下文桥接
+├── renderer/    # React 应用外壳、功能模块、共享 UI
+└── shared/      # 跨进程共享常量与类型
+```
 
-SQLite 数据库，涵盖 6 个领域共 22 张表：
+补充文件：
 
-| 领域 | 表 |
-|---|---|
-| **核心** | `user_profile`, `settings` |
-| **仪表盘** | `projects`, `tasks`, `calendar_events`, `activity_log` |
-| **写作** | `articles`, `article_publish_records`, `notes`, `drafts` |
-| **视频** | `video_assets` |
-| **洞察** | `rss_feeds`, `rss_articles`, `social_accounts`, `social_metrics` |
-| **AI 实验室** | `ai_subscriptions`, `ai_tools` |
-
-所有数据本地存储于 `<userData>/database/dashboard.db`，启用 WAL 日志模式和外键约束。
-
----
+- [feature.config.ts](./feature.config.ts)：模块开关配置
+- [electron.vite.config.ts](./electron.vite.config.ts)：应用构建配置
+- [electron-builder.yml](./electron-builder.yml)：打包配置
+- [docs/](./docs/)：设计与架构文档
 
 ## 参与贡献
 
-1. Fork 本仓库
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送分支 (`git push origin feature/amazing-feature`)
-5. 提交 Pull Request
-
----
+1. Fork 仓库
+2. 创建功能分支
+3. 提交修改
+4. 运行 `pnpm lint` 和 `pnpm typecheck`
+5. 发起 Pull Request
 
 ## 开源协议
 
-本项目基于 Apache License 2.0 开源 -- 详见 [LICENSE](LICENSE) 文件。
-
----
-
-<div align="center">
-
-**由 [Moosphan](https://github.com/Moosphan) 精心打造**
-
-</div>
+本项目基于 Apache License 2.0 开源，详见 [LICENSE](./LICENSE)。
