@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { useIpcMutation } from '@/hooks/useIpc'
 import { cn } from '@/lib/utils'
 
@@ -43,6 +44,14 @@ export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
   const [categories, setCategories] = useState<string[]>([])
   const { mutate: markRead } = useIpcMutation('rss:markRead')
   const { mutate: toggleStar } = useIpcMutation('rss:toggleStar')
+  const parentRef = useRef<HTMLDivElement>(null)
+
+  const virtualizer = useVirtualizer({
+    count: articles.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 120,
+    overscan: 5,
+  })
 
   const fetchArticles = useCallback(async () => {
     setLoading(true)
@@ -96,11 +105,11 @@ export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
   }
 
   return (
-    <div className="col-span-12 lg:col-span-8 space-y-md">
+    <div className="col-span-12 lg:col-span-8 flex flex-col gap-md">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pr-2">
         <h2 className="font-headline-lg text-headline-lg">Article Pipeline</h2>
-        <span className="text-body-sm text-on-surface-variant">{articles.length} articles</span>
+        <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">{articles.length} articles</span>
       </div>
 
       {/* Filters */}
@@ -188,84 +197,112 @@ export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
           </p>
         </div>
       ) : (
-        articles.map((article) => (
+        <div
+          ref={parentRef}
+          className="overflow-auto pr-2 flex-1 min-h-0"
+        >
           <div
-            key={article.id}
-            onClick={() => handleOpen(article)}
-            className={cn(
-              'bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 group cursor-pointer hover:border-primary/30 transition-colors',
-              article.is_read && 'opacity-60',
-            )}
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
           >
-            <div className="flex gap-md">
-              {article.thumbnail_url && (
-                <div className="w-40 h-24 shrink-0 rounded-xl overflow-hidden bg-surface-container-highest">
-                  <img src={article.thumbnail_url} alt="" className="w-full h-full object-cover" />
-                </div>
-              )}
-              <div className="flex flex-col justify-between flex-1 min-w-0">
-                {/* Line 1: feed title label + article title */}
-                <h3 className="font-headline-sm text-headline-sm leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                  <span className="inline-flex items-center px-2 py-[1px] bg-primary text-on-primary text-[12px] font-bold rounded-full uppercase tracking-wider align-middle relative -top-[3px] mr-1.5">
-                    {article.feed_title}
-                  </span>
-                  {article.title}
-                </h3>
-                {article.summary && (
-                  <p className="text-on-surface-variant text-body-sm line-clamp-2 mt-xs">{article.summary}</p>
-                )}
-                {/* Bottom row: left = read status + category; right = icons + time */}
-                <div className="flex items-center justify-between mt-sm">
-                  <div className="flex items-center gap-sm">
-                    {article.is_read ? (
-                      <span className="material-symbols-outlined text-[14px] text-on-surface-variant/50">drafts</span>
-                    ) : (
-                      <span className="material-symbols-outlined text-[14px] text-primary">mark_email_unread</span>
-                    )}
-                    {article.feed_category && (
-                      <span className={cn(
-                        'inline-flex items-center rounded-full px-2 py-[2px] text-[10px] font-bold leading-none',
-                        categoryColors[article.feed_category] || 'bg-surface-container text-on-surface-variant',
-                      )}>
-                        {article.feed_category}
-                      </span>
-                    )}
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const article = articles[virtualRow.index]
+              return (
+                <div
+                  key={article.id}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <div className="pb-md">
+                    <div
+                      onClick={() => handleOpen(article)}
+                      className={cn(
+                        'bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 group cursor-pointer hover:border-primary/30 transition-colors',
+                        article.is_read && 'opacity-60',
+                      )}
+                    >
+                      <div className="flex gap-md">
+                        {article.thumbnail_url && (
+                          <div className="w-40 h-24 shrink-0 rounded-xl overflow-hidden bg-surface-container-highest">
+                            <img src={article.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="flex flex-col justify-between flex-1 min-w-0">
+                          <h3 className="font-headline-sm text-headline-sm leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                            <span className="inline-flex items-center px-2 py-[1px] bg-primary text-on-primary text-[12px] font-bold rounded-full uppercase tracking-wider align-middle relative -top-[3px] mr-1.5">
+                              {article.feed_title}
+                            </span>
+                            {article.title}
+                          </h3>
+                          {article.summary && (
+                            <p className="text-on-surface-variant text-body-sm line-clamp-2 mt-xs">{article.summary}</p>
+                          )}
+                          <div className="flex items-center justify-between mt-sm">
+                            <div className="flex items-center gap-sm">
+                              {article.is_read ? (
+                                <span className="material-symbols-outlined text-[14px] text-on-surface-variant/50">drafts</span>
+                              ) : (
+                                <span className="material-symbols-outlined text-[14px] text-primary">mark_email_unread</span>
+                              )}
+                              {article.feed_category && (
+                                <span className={cn(
+                                  'inline-flex items-center rounded-full px-2 py-[2px] text-[10px] font-bold leading-none',
+                                  categoryColors[article.feed_category] || 'bg-surface-container text-on-surface-variant',
+                                )}>
+                                  {article.feed_category}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-xs">
+                              <button
+                                onClick={(e) => handleCopyLink(e, article.url)}
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
+                                title="Copy link"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                              </button>
+                              <button
+                                onClick={(e) => handleOpenExternal(e, article.url)}
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
+                                title="Open in browser"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                              </button>
+                              <button
+                                onClick={(e) => handleStar(e, article.id)}
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary transition-colors"
+                              >
+                                <span className={cn('material-symbols-outlined text-[16px]', article.is_starred && 'fill text-secondary')}>
+                                  {article.is_starred ? 'star' : 'star_border'}
+                                </span>
+                              </button>
+                              <div className="w-px h-4 bg-outline-variant/30 mx-0.5" />
+                              {article.published_at && (
+                                <span className="text-on-surface-variant text-[11px] ml-1">
+                                  {new Date(article.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-xs">
-                    <button
-                      onClick={(e) => handleCopyLink(e, article.url)}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
-                      title="Copy link"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">content_copy</span>
-                    </button>
-                    <button
-                      onClick={(e) => handleOpenExternal(e, article.url)}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
-                      title="Open in browser"
-                    >
-                      <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-                    </button>
-                    <button
-                      onClick={(e) => handleStar(e, article.id)}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-secondary transition-colors"
-                    >
-                      <span className={cn('material-symbols-outlined text-[16px]', article.is_starred && 'fill text-secondary')}>
-                        {article.is_starred ? 'star' : 'star_border'}
-                      </span>
-                    </button>
-                    <div className="w-px h-4 bg-outline-variant/30 mx-0.5" />
-                    {article.published_at && (
-                      <span className="text-on-surface-variant text-[11px] ml-1">
-                        {new Date(article.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                    )}
-                  </div>
                 </div>
-              </div>
-            </div>
+              )
+            })}
           </div>
-        ))
+        </div>
       )}
     </div>
   )

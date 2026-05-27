@@ -2,6 +2,7 @@ import { Suspense, useMemo } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import MainLayout from './layouts/MainLayout'
 import { ToastProvider } from '@/components/ui/toast'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { loadModules, getEnabledModuleIds } from '@/lib/module-loader'
 import { moduleRegistry } from '@/lib/module-registry'
 
@@ -24,16 +25,18 @@ export default function App() {
     <ToastProvider>
       <MainLayout>
         <Suspense fallback={<Loading />}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            {routes.map((route) => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={<route.component />}
-              />
-            ))}
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {routes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={<route.component />}
+                />
+              ))}
+            </Routes>
+          </ErrorBoundary>
         </Suspense>
       </MainLayout>
     </ToastProvider>

@@ -36,7 +36,7 @@ export default function Insights() {
         </button>
       </div>
 
-      <div className="grid grid-cols-12 gap-gutter">
+      <div className="grid grid-cols-12 gap-gutter items-stretch">
         <ArticleFeed refreshTrigger={refreshTrigger} />
         <SocialCards />
       </div>

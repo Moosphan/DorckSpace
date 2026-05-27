@@ -18,6 +18,12 @@ import { runMigrations } from './database/migrations'
 
 const isDev = !app.isPackaged
 
+// Suppress EPIPE errors in dev mode (harmless stdout disconnect)
+process.on('uncaughtException', (err) => {
+  if ((err as NodeJS.ErrnoException).code === 'EPIPE') return
+  console.error('Uncaught Exception:', err)
+})
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1440,

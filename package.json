@@ -12,6 +12,8 @@
     "start": "electron-vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
+    "dist": "electron-vite build && electron-builder",
+    "dist:mac": "electron-vite build && electron-builder --mac",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
@@ -22,6 +24,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toggle": "^1.1.10",
+    "@tanstack/react-virtual": "^3.13.26",
     "@tiptap/extension-code-block-lowlight": "^3.23.6",
     "@tiptap/extension-highlight": "^3.23.6",
     "@tiptap/extension-image": "^3.23.6",
