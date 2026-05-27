@@ -48,8 +48,7 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
     setError('')
     try { new URL(newUrl.trim()) } catch { setError('Please enter a valid URL'); return }
 
-    const title = newTitle.trim() || new URL(newUrl.trim()).hostname
-    const result = await addFeed({ title, url: newUrl.trim(), category: newCategory.trim() || undefined })
+    const result = await addFeed({ title: newTitle.trim(), url: newUrl.trim(), category: newCategory.trim() || undefined })
     if (result) {
       setNewUrl(''); setNewTitle(''); setNewCategory(''); setShowAdd(false); refetch()
       setTimeout(() => onFeedAdded?.(), 1500)
@@ -88,7 +87,7 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
             <h3 className="font-headline-sm text-headline-sm flex-1">Feed Details</h3>
-            <button onClick={() => handleDelete(selectedFeed.id)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors">
+            <button onClick={() => handleDelete(selectedFeed.id)} className="w-8 h-8 rounded-full flex items-center justify-center text-error hover:bg-error/10 transition-colors">
               <span className="material-symbols-outlined text-[18px]">delete</span>
             </button>
           </div>

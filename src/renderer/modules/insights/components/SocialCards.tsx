@@ -104,6 +104,9 @@ function PlatformCard({ account, config }: { account: AccountData; config: Socia
           </div>
         </div>
         <div className="flex items-center gap-xs">
+          <span className="text-secondary font-bold text-body-sm bg-secondary/10 px-sm py-xs rounded-full">
+            {formatChange(primaryValue, prevPrimary)}
+          </span>
           <button
             onClick={handleOpenProfile}
             className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors"
@@ -111,9 +114,6 @@ function PlatformCard({ account, config }: { account: AccountData; config: Socia
           >
             <span className="material-symbols-outlined text-[16px]">open_in_new</span>
           </button>
-          <span className="text-secondary font-bold text-body-sm bg-secondary/10 px-sm py-xs rounded-full">
-            {formatChange(primaryValue, prevPrimary)}
-          </span>
         </div>
       </div>
 

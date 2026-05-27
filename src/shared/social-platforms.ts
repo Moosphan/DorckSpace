@@ -66,7 +66,7 @@ export function formatMetricValue(value: number, key?: string): string {
 }
 
 export function formatChange(current: number, previous: number): string {
-  if (!previous) return '--'
+  if (!previous) return '0%'
   const pct = ((current - previous) / previous) * 100
   const sign = pct >= 0 ? '+' : ''
   return `${sign}${pct.toFixed(1)}%`
