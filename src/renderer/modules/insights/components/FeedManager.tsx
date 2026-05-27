@@ -32,11 +32,13 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
   // Detail view
   const [selectedFeed, setSelectedFeed] = useState<FeedDetail | null>(null)
   const [editTitle, setEditTitle] = useState('')
+  const [editUrl, setEditUrl] = useState('')
   const [editCategory, setEditCategory] = useState('')
 
   useEffect(() => {
     if (selectedFeed) {
       setEditTitle(selectedFeed.title)
+      setEditUrl(selectedFeed.url)
       setEditCategory(selectedFeed.category || '')
     }
   }, [selectedFeed])
@@ -71,7 +73,7 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
 
   const handleSaveEdit = useCallback(async () => {
     if (!selectedFeed) return
-    await updateFeed(selectedFeed.id, { title: editTitle, category: editCategory || undefined })
+    await updateFeed(selectedFeed.id, { title: editTitle, url: editUrl, category: editCategory || undefined })
     setSelectedFeed(null)
     refetch()
   }, [selectedFeed, editTitle, editCategory, updateFeed, refetch])
@@ -99,7 +101,8 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
             </div>
             <div>
               <label className="font-label-sm text-on-surface-variant block mb-xs">URL</label>
-              <p className="text-body-sm text-on-surface bg-surface-container-low rounded-lg px-md py-sm break-all">{selectedFeed.url}</p>
+              <input type="text" value={editUrl} onChange={(e) => setEditUrl(e.target.value)}
+                className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary rounded-lg px-md py-sm text-body-sm outline-none" />
             </div>
             <div>
               <label className="font-label-sm text-on-surface-variant block mb-xs">Category</label>
