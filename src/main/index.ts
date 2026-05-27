@@ -13,8 +13,11 @@ import { registerWeatherIpcHandlers } from './services/weather-service'
 import { registerSearchIpcHandlers } from './ipc/search'
 import { registerNotificationIpcHandlers } from './services/notification-service'
 import { registerRssFetcherHandlers } from './services/rss-fetcher'
+import { registerSocialIpcHandlers } from './ipc/social'
+import { registerSocialFetcherHandlers } from './services/social-fetcher'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
+import { seedSocialData } from './database/seeds/social-seeds'
 
 const isDev = !app.isPackaged
 
@@ -80,6 +83,11 @@ app.whenReady().then(() => {
   registerSearchIpcHandlers()
   registerNotificationIpcHandlers()
   registerRssFetcherHandlers()
+  registerSocialIpcHandlers()
+  registerSocialFetcherHandlers()
+
+  // Seed initial data
+  seedSocialData(db)
 
   createWindow()
 

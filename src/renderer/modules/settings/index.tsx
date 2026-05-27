@@ -42,6 +42,186 @@ function SettingRow({ label, description, children }: { label: string; descripti
   )
 }
 
+const PLATFORM_OPTIONS = [
+  { value: 'bilibili', label: 'Bilibili', placeholder: 'https://space.bilibili.com/...', color: 'bg-[#FB7299]' },
+  { value: 'youtube', label: 'YouTube', placeholder: 'https://www.youtube.com/@...', color: 'bg-[#FF0000]' },
+  { value: 'xiaohongshu', label: 'Xiaohongshu', placeholder: 'https://www.xiaohongshu.com/user/profile/...', color: 'bg-[#FE2C55]' },
+]
+
+interface SocialAccount {
+  id: number
+  platform: string
+  account_name: string
+  profile_url: string | null
+  api_config: string
+}
+
+function extractFromUrl(input: string, platform: string): { accountId: string; profileUrl: string } {
+  const trimmed = input.trim()
+  if (platform === 'bilibili') {
+    const m = trimmed.match(/space\.bilibili\.com\/(\d+)/)
+    if (m) return { accountId: m[1], profileUrl: trimmed }
+    const uid = trimmed.replace(/\D/g, '')
+    return { accountId: uid, profileUrl: `https://space.bilibili.com/${uid}` }
+  }
+  if (platform === 'xiaohongshu') {
+    const m = trimmed.match(/xiaohongshu\.com\/user\/profile\/([a-f0-9]+)/)
+    if (m) return { accountId: m[1], profileUrl: trimmed }
+    return { accountId: trimmed, profileUrl: `https://www.xiaohongshu.com/user/profile/${trimmed}` }
+  }
+  if (platform === 'youtube') {
+    const m = trimmed.match(/youtube\.com\/@?([^/?]+)/)
+    if (m) return { accountId: m[1], profileUrl: trimmed }
+    return { accountId: trimmed, profileUrl: `https://www.youtube.com/@${trimmed}` }
+  }
+  return { accountId: trimmed, profileUrl: trimmed }
+}
+
+function SocialAccountsSection() {
+  const { data: accounts, loading, refetch } = useIpcData<SocialAccount[]>('social:getAccounts')
+  const { mutate: addAccount } = useIpcMutation<number>('social:addAccount')
+  const { mutate: deleteAccount } = useIpcMutation<boolean>('social:deleteAccount')
+  const { mutate: updateAccount } = useIpcMutation<boolean>('social:updateAccount')
+  const { mutate: loginXhs, loading: xhsLogging } = useIpcMutation<boolean>('social:loginXhs')
+  const { mutate: fetchLogo } = useIpcMutation<string>('social:fetchLogo')
+  const [xhsLoggedIn, setXhsLoggedIn] = useState<boolean | null>(null)
+
+  const [adding, setAdding] = useState(false)
+  const [newPlatform, setNewPlatform] = useState('bilibili')
+  const [newInput, setNewInput] = useState('')
+
+  const platformOpt = PLATFORM_OPTIONS.find((p) => p.value === newPlatform) || PLATFORM_OPTIONS[0]
+
+  useEffect(() => {
+    window.electronAPI.invoke('social:xhsLoginStatus').then((v: boolean) => setXhsLoggedIn(v))
+  }, [])
+
+  const handleAdd = async () => {
+    if (!newInput.trim()) return
+    const { accountId, profileUrl } = extractFromUrl(newInput, newPlatform)
+    if (!accountId) return
+    const id = await addAccount({ platform: newPlatform, account_name: accountId, profile_url: profileUrl })
+    if (id && profileUrl) {
+      const logo = await fetchLogo(profileUrl)
+      if (logo) await updateAccount(id, { api_config: { logo } })
+    }
+    setNewInput('')
+    setAdding(false)
+    refetch()
+  }
+
+  const handleDelete = async (id: number) => {
+    await deleteAccount(id)
+    refetch()
+  }
+
+  const handleLoginXhs = async () => {
+    const success = await loginXhs()
+    setXhsLoggedIn(!!success)
+  }
+
+  return (
+    <Section title="Social Accounts">
+      <p className="text-body-sm text-on-surface-variant -mt-2">
+        Add your social media accounts to track performance metrics in Insights.
+      </p>
+
+      {loading ? (
+        <div className="animate-pulse h-20 bg-surface-container rounded-lg" />
+      ) : (
+        <div className="space-y-sm">
+          {accounts?.map((account) => {
+            const opt = PLATFORM_OPTIONS.find((p) => p.value === account.platform)
+            const config = account.api_config ? JSON.parse(account.api_config) : {}
+            return (
+              <div key={account.id} className="flex items-center gap-sm p-sm bg-surface-container rounded-lg">
+                {config.logo ? (
+                  <img src={config.logo} alt={opt?.label} className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className={cn('w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold', opt?.color || 'bg-surface-variant')}>
+                    {opt?.label?.[0] || account.platform[0].toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-label-md text-on-surface truncate">{opt?.label || account.platform}</p>
+                  <p className="text-[11px] text-on-surface-variant truncate">{account.account_name}</p>
+                </div>
+                <button onClick={() => handleDelete(account.id)} className="w-7 h-7 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error transition-colors">
+                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                </button>
+              </div>
+            )
+          })}
+
+          {adding ? (
+            <div className="p-sm bg-surface-container rounded-lg space-y-sm">
+              <div className="flex gap-sm">
+                <select
+                  value={newPlatform}
+                  onChange={(e) => setNewPlatform(e.target.value)}
+                  className="bg-surface-container-low border border-outline-variant/30 rounded-lg px-sm py-1.5 text-body-sm outline-none focus:border-primary"
+                >
+                  {PLATFORM_OPTIONS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={newInput}
+                  onChange={(e) => setNewInput(e.target.value)}
+                  placeholder={platformOpt.placeholder}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                  className="flex-1 bg-surface-container-low border border-outline-variant/30 rounded-lg px-sm py-1.5 text-body-sm outline-none focus:border-primary"
+                />
+              </div>
+              <p className="text-[11px] text-on-surface-variant">Paste the profile URL, account ID will be extracted automatically.</p>
+              <div className="flex gap-sm">
+                <button onClick={handleAdd} className="px-4 py-1.5 bg-primary text-on-primary rounded-full font-label-md text-body-sm hover:brightness-110 transition-all">Add</button>
+                <button onClick={() => setAdding(false)} className="px-4 py-1.5 text-on-surface-variant font-label-md text-body-sm hover:bg-surface-container rounded-full transition-all">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAdding(true)}
+              className="w-full p-sm border-2 border-dashed border-outline-variant/30 rounded-lg text-on-surface-variant hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-xs font-label-md text-body-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Add Account
+            </button>
+          )}
+
+          {accounts?.some((a) => a.platform === 'xiaohongshu') && (
+            <div className="p-sm bg-surface-container-low rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-sm">
+                <div>
+                  <p className="font-label-md text-on-surface">Xiaohongshu Login</p>
+                  <p className="text-[11px] text-on-surface-variant">Required for accurate follower/like data</p>
+                </div>
+                {xhsLoggedIn !== null && (
+                  <span className={cn(
+                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold',
+                    xhsLoggedIn ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-surface-container text-on-surface-variant',
+                  )}>
+                    <span className={cn('w-1.5 h-1.5 rounded-full', xhsLoggedIn ? 'bg-green-500' : 'bg-outline-variant')} />
+                    {xhsLoggedIn ? 'Logged in' : 'Not logged in'}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={handleLoginXhs}
+                disabled={xhsLogging}
+                className="px-4 py-1.5 bg-[#FE2C55] text-white rounded-full font-label-md text-body-sm hover:brightness-110 transition-all disabled:opacity-50"
+              >
+                {xhsLogging ? 'Opening...' : xhsLoggedIn ? 'Re-login' : 'Login'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </Section>
+  )
+}
+
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<string>('appearance')
   const { theme, general, setTheme, setGeneral } = useSettingsStore()
@@ -287,16 +467,19 @@ export default function Settings() {
 
         {/* Integrations */}
         {activeTab === 'integrations' && (
-          <Section title="Platform Integrations">
-            <Input label="Claude Code Path" placeholder="/usr/local/bin/claude" />
-            <Input label="GitHub Token" placeholder="ghp_xxxx" type="password" />
-            <Input label="Notion Token" placeholder="secret_xxxx" type="password" />
-            <div className="pt-2">
-              <button className="px-5 py-2 bg-primary text-on-primary rounded-full font-label-md hover:brightness-110 active:scale-95 transition-all">
-                Test Connections
-              </button>
-            </div>
-          </Section>
+          <>
+            <Section title="Platform Integrations">
+              <Input label="Claude Code Path" placeholder="/usr/local/bin/claude" />
+              <Input label="GitHub Token" placeholder="ghp_xxxx" type="password" />
+              <Input label="Notion Token" placeholder="secret_xxxx" type="password" />
+              <div className="pt-2">
+                <button className="px-5 py-2 bg-primary text-on-primary rounded-full font-label-md hover:brightness-110 active:scale-95 transition-all">
+                  Test Connections
+                </button>
+              </div>
+            </Section>
+            <SocialAccountsSection />
+          </>
         )}
 
         {/* Advanced */}
