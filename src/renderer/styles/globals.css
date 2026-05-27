@@ -4,14 +4,127 @@
 
 @layer base {
   :root {
-    --color-primary: #6B38D4;
-    --color-surface: #F9F9FF;
-    --color-on-surface: #151C27;
+    /* Surface */
+    --color-background: 249 249 255;
+    --color-on-background: 21 28 39;
+    --color-surface: 249 249 255;
+    --color-surface-dim: 211 218 234;
+    --color-surface-container-lowest: 255 255 255;
+    --color-surface-container-low: 240 243 255;
+    --color-surface-container: 231 238 254;
+    --color-surface-container-high: 226 232 248;
+    --color-surface-container-highest: 220 226 243;
+    --color-surface-variant: 220 226 243;
+    --color-surface-tint: 109 59 215;
+    --color-inverse-surface: 42 49 61;
+    --color-inverse-on-surface: 235 241 255;
+
+    /* On Surface */
+    --color-on-surface: 21 28 39;
+    --color-on-surface-variant: 73 68 84;
+
+    /* Primary */
+    --color-primary: 107 56 212;
+    --color-on-primary: 255 255 255;
+    --color-primary-container: 132 85 239;
+    --color-on-primary-container: 255 251 255;
+    --color-inverse-primary: 208 188 255;
+    --color-primary-fixed: 233 221 255;
+    --color-primary-fixed-dim: 208 188 255;
+    --color-on-primary-fixed: 35 0 92;
+    --color-on-primary-fixed-variant: 85 22 190;
+
+    /* Secondary */
+    --color-secondary: 119 90 0;
+    --color-on-secondary: 255 255 255;
+    --color-secondary-container: 254 195 0;
+    --color-on-secondary-container: 109 82 0;
+    --color-secondary-fixed: 255 223 153;
+    --color-secondary-fixed-dim: 247 190 0;
+    --color-on-secondary-fixed: 37 26 0;
+    --color-on-secondary-fixed-variant: 90 67 0;
+
+    /* Tertiary */
+    --color-tertiary: 133 80 0;
+    --color-on-tertiary: 255 255 255;
+    --color-tertiary-container: 167 101 0;
+    --color-on-tertiary-container: 255 251 255;
+    --color-tertiary-fixed: 255 220 187;
+    --color-tertiary-fixed-dim: 255 184 105;
+    --color-on-tertiary-fixed: 44 23 0;
+    --color-on-tertiary-fixed-variant: 103 61 0;
+
+    /* Error */
+    --color-error: 186 26 26;
+    --color-on-error: 255 255 255;
+    --color-error-container: 255 218 214;
+    --color-on-error-container: 147 0 10;
+
+    /* Outline */
+    --color-outline: 123 116 134;
+    --color-outline-variant: 203 195 215;
   }
 
   .dark {
-    --color-surface: #151C27;
-    --color-on-surface: #F9F9FF;
+    /* Surface */
+    --color-background: 21 28 39;
+    --color-on-background: 227 230 240;
+    --color-surface: 21 28 39;
+    --color-surface-dim: 21 28 39;
+    --color-surface-container-lowest: 16 22 31;
+    --color-surface-container-low: 29 36 48;
+    --color-surface-container: 37 44 57;
+    --color-surface-container-high: 48 55 68;
+    --color-surface-container-highest: 63 70 84;
+    --color-surface-variant: 68 75 91;
+    --color-surface-tint: 208 188 255;
+    --color-inverse-surface: 227 230 240;
+    --color-inverse-on-surface: 42 49 61;
+
+    /* On Surface */
+    --color-on-surface: 227 230 240;
+    --color-on-surface-variant: 196 203 218;
+
+    /* Primary */
+    --color-primary: 208 188 255;
+    --color-on-primary: 55 1 139;
+    --color-primary-container: 85 35 180;
+    --color-on-primary-container: 233 221 255;
+    --color-inverse-primary: 107 56 212;
+    --color-primary-fixed: 233 221 255;
+    --color-primary-fixed-dim: 208 188 255;
+    --color-on-primary-fixed: 35 0 92;
+    --color-on-primary-fixed-variant: 85 22 190;
+
+    /* Secondary */
+    --color-secondary: 247 190 0;
+    --color-on-secondary: 61 45 0;
+    --color-secondary-container: 90 67 0;
+    --color-on-secondary-container: 255 223 153;
+    --color-secondary-fixed: 255 223 153;
+    --color-secondary-fixed-dim: 247 190 0;
+    --color-on-secondary-fixed: 37 26 0;
+    --color-on-secondary-fixed-variant: 90 67 0;
+
+    /* Tertiary */
+    --color-tertiary: 255 184 105;
+    --color-on-tertiary: 71 40 0;
+    --color-tertiary-container: 103 61 0;
+    --color-on-tertiary-container: 255 220 187;
+    --color-tertiary-fixed: 255 220 187;
+    --color-tertiary-fixed-dim: 255 184 105;
+    --color-on-tertiary-fixed: 44 23 0;
+    --color-on-tertiary-fixed-variant: 103 61 0;
+
+    /* Error */
+    --color-error: 255 180 171;
+    --color-on-error: 105 0 5;
+    --color-error-container: 147 0 10;
+    --color-on-error-container: 255 218 214;
+
+    /* Outline */
+    --color-outline: 148 155 170;
+    --color-outline-variant: 68 75 91;
   }
 
   * {
@@ -33,17 +146,20 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #CBC3D7;
+    @apply bg-outline-variant;
     border-radius: 10px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #7B7486;
+    @apply bg-outline;
   }
 }
 
 @layer components {
   .glass-card {
     @apply bg-white/70 backdrop-blur-md border border-surface-container-high/50;
+  }
+  .dark .glass-card {
+    @apply bg-surface-container/70;
   }
 
   .bento-grid {

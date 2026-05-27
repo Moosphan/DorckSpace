@@ -43,6 +43,24 @@ const defaultGeneral: GeneralSettings = {
   autoSaveInterval: 30,
 }
 
+function applyThemeClass(mode: ThemeMode) {
+  const root = document.documentElement
+  if (mode === 'dark') {
+    root.classList.add('dark')
+    root.classList.remove('light')
+  } else if (mode === 'light') {
+    root.classList.add('light')
+    root.classList.remove('dark')
+  } else {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    root.classList.toggle('dark', prefersDark)
+    root.classList.toggle('light', !prefersDark)
+  }
+}
+
+// Apply default theme immediately on module load
+applyThemeClass(defaultTheme.mode)
+
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   theme: defaultTheme,
   general: defaultGeneral,
@@ -51,21 +69,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setTheme: (partial) =>
     set((state) => {
       const newTheme = { ...state.theme, ...partial }
-      // Apply dark mode class immediately
       if (partial.mode !== undefined) {
-        const root = document.documentElement
-        if (partial.mode === 'dark') {
-          root.classList.add('dark')
-          root.classList.remove('light')
-        } else if (partial.mode === 'light') {
-          root.classList.add('light')
-          root.classList.remove('dark')
-        } else {
-          // System preference
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-          root.classList.toggle('dark', prefersDark)
-          root.classList.toggle('light', !prefersDark)
-        }
+        applyThemeClass(partial.mode)
       }
       return { theme: newTheme }
     }),
@@ -77,11 +82,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       const settings = await window.electronAPI.getSettings()
       if (settings) {
-        set({
-          theme: { ...defaultTheme, ...(settings as Record<string, unknown>).theme },
-          general: { ...defaultGeneral, ...(settings as Record<string, unknown>).general },
-          loaded: true,
-        })
+        const theme = { ...defaultTheme, ...(settings as Record<string, unknown>).theme } as ThemeSettings
+        applyThemeClass(theme.mode)
+        set({ theme, general: { ...defaultGeneral, ...(settings as Record<string, unknown>).general }, loaded: true })
       } else {
         set({ loaded: true })
       }
