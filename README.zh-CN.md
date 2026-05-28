@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/app-logo.svg" alt="DorckDashboard" width="128" />
+</p>
+
 # DorckDashboard
 
 **本地优先的桌面生产力工作空间**

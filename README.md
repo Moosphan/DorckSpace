@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/app-logo.svg" alt="DorckDashboard" width="128" />
+</p>
+
 # DorckDashboard
 
 **A local-first desktop productivity workspace**
