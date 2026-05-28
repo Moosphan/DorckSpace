@@ -1,4 +1,5 @@
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
+import { usePanelRefresh } from '@/hooks/usePanelRefresh'
 import { cn } from '@/lib/utils'
 import { SOCIAL_PLATFORMS, formatMetricValue, formatChange, type SocialPlatformConfig } from '@shared/social-platforms'
 
@@ -149,22 +150,25 @@ export function SocialCards() {
   const { data, loading, refetch } = useIpcData<AccountData[]>('social:getDashboard')
   const { mutate: fetchAll, loading: fetching } = useIpcMutation<{ success: boolean; updated: number }>('social:fetchAll')
 
-  const handleRefresh = async () => {
-    await fetchAll()
-    refetch()
-  }
+  const { refreshing, refresh } = usePanelRefresh({
+    autoFetch: true,
+    onFetch: async () => {
+      await fetchAll()
+      refetch()
+    },
+  })
 
   return (
     <div className="col-span-12 lg:col-span-4 space-y-md">
       <div className="flex items-center justify-between mb-sm">
         <h2 className="font-headline-lg text-headline-lg">Social Performance</h2>
         <button
-          onClick={handleRefresh}
-          disabled={fetching}
+          onClick={refresh}
+          disabled={refreshing}
           className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors disabled:opacity-50"
           title="Refresh data"
         >
-          <span className={cn('material-symbols-outlined text-[18px]', fetching && 'animate-spin')}>refresh</span>
+          <span className={cn('material-symbols-outlined text-[18px]', refreshing && 'animate-spin')}>refresh</span>
         </button>
       </div>
 

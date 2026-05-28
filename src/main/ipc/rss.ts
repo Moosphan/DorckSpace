@@ -5,12 +5,11 @@ import { RSSFeedRepository, RSSArticleRepository } from '../database/repositorie
 
 const rssParser = new Parser({ timeout: 10000, headers: { 'User-Agent': 'DorckDashboard/1.0' } })
 
-async function fetchAndStoreArticles(feedId: number, feedUrl: string): Promise<number> {
+async function storeArticles(feedId: number, parsed: Awaited<ReturnType<typeof rssParser.parseString>>): Promise<number> {
   const db = getDatabase()
   const articleRepo = new RSSArticleRepository(db)
-  const feed = await rssParser.parseURL(feedUrl)
   let count = 0
-  for (const item of feed.items ?? []) {
+  for (const item of parsed.items ?? []) {
     if (!item.title || !item.link) continue
     const result = articleRepo.create({
       feed_id: feedId,
@@ -62,20 +61,21 @@ export function registerRssIpcHandlers(): void {
   ipcMain.handle(RSS_CHANNELS.ADD_FEED, async (_event, data: { title: string; url: string; category?: string }) => {
     try {
       let title = data.title.trim()
+      let parsed: Awaited<ReturnType<typeof rssParser.parseString>> | null = null
+
+      // Fetch once, reuse for both title and articles
+      try {
+        const res = await fetch(data.url, {
+          headers: { 'User-Agent': 'DorckDashboard/1.0' },
+          signal: AbortSignal.timeout(10000),
+        })
+        const xml = await res.text()
+        parsed = await rssParser.parseString(xml)
+        if (!title && parsed.title?.trim()) title = parsed.title.trim()
+      } catch { /* ignore */ }
+
+      // HTML meta fallback for title only
       if (!title) {
-        // Strategy 1: Fetch XML and parse locally (more reliable than parseURL)
-        try {
-          const res = await fetch(data.url, {
-            headers: { 'User-Agent': 'DorckDashboard/1.0' },
-            signal: AbortSignal.timeout(10000),
-          })
-          const xml = await res.text()
-          const parsed = await rssParser.parseString(xml)
-          if (parsed.title?.trim()) title = parsed.title.trim()
-        } catch { /* ignore */ }
-      }
-      if (!title) {
-        // Strategy 2: Extract from HTML meta tags
         try {
           const res = await fetch(data.url, {
             headers: { 'User-Agent': 'DorckDashboard/1.0', Accept: 'text/html,*/*' },
@@ -89,14 +89,14 @@ export function registerRssIpcHandlers(): void {
         } catch { /* ignore */ }
       }
       if (!title) title = new URL(data.url).hostname
+
       const id = getFeedRepo().create({ ...data, title })
       let articleCount = 0
-      if (id) {
+      if (id && parsed) {
         try {
-          articleCount = await fetchAndStoreArticles(id, data.url)
+          articleCount = await storeArticles(id, parsed)
         } catch (fetchErr) {
-          console.error('RSS fetch error:', (fetchErr as Error).message)
-          // Feed was created but articles couldn't be fetched
+          console.error('RSS store error:', (fetchErr as Error).message)
         }
       }
       return { success: true, data: { feedId: id, articleCount } }
@@ -112,7 +112,13 @@ export function registerRssIpcHandlers(): void {
       let total = 0
       for (const feed of feeds) {
         try {
-          const added = await fetchAndStoreArticles(feed.id, feed.url)
+          const res = await fetch(feed.url, {
+            headers: { 'User-Agent': 'DorckDashboard/1.0' },
+            signal: AbortSignal.timeout(10000),
+          })
+          const xml = await res.text()
+          const parsed = await rssParser.parseString(xml)
+          const added = await storeArticles(feed.id, parsed)
           total += added
         } catch (fetchErr) {
           console.error(`RSS fetch error for ${feed.title}:`, (fetchErr as Error).message)

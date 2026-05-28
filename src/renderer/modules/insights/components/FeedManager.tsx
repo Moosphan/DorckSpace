@@ -18,7 +18,7 @@ interface FeedDetail extends Feed {
 
 export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onFeedAdded?: () => void }) {
   const { data: feeds, refetch } = useIpcData<Feed[]>('rss:getFeeds')
-  const { mutate: addFeed } = useIpcMutation('rss:addFeed')
+  const { mutate: addFeed, loading: adding } = useIpcMutation('rss:addFeed')
   const { mutate: deleteFeed } = useIpcMutation('rss:deleteFeed')
   const { mutate: toggleActive } = useIpcMutation('rss:toggleFeedActive')
   const { mutate: updateFeed } = useIpcMutation('rss:updateFeed')
@@ -212,8 +212,11 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
             <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)}
               placeholder="Category (optional)" className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary rounded-lg px-md py-1.5 text-body-sm outline-none" />
             <div className="flex justify-end gap-sm">
-              <button onClick={() => { setShowAdd(false); setNewUrl(''); setError('') }} className="px-md py-1.5 rounded-full font-label-md text-on-surface-variant hover:bg-surface-container text-body-sm">Cancel</button>
-              <button onClick={handleAdd} disabled={!newUrl.trim()} className="px-md py-1.5 rounded-full bg-primary text-on-primary font-label-md disabled:opacity-40 text-body-sm">Add Feed</button>
+              <button onClick={() => { setShowAdd(false); setNewUrl(''); setError('') }} disabled={adding} className="px-md py-1.5 rounded-full font-label-md text-on-surface-variant hover:bg-surface-container text-body-sm disabled:opacity-50">Cancel</button>
+              <button onClick={handleAdd} disabled={!newUrl.trim() || adding} className="px-md py-1.5 rounded-full bg-primary text-on-primary font-label-md disabled:opacity-40 text-body-sm flex items-center gap-xs">
+                {adding && <span className="material-symbols-outlined text-[14px] animate-spin">refresh</span>}
+                {adding ? 'Adding...' : 'Add Feed'}
+              </button>
             </div>
           </div>
         ) : (
