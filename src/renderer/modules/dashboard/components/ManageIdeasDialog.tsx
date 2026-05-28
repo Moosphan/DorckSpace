@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +21,10 @@ export function ManageIdeasDialog({ open, onClose, onCreateNew, onChanged }: Man
   const { data: ideas, refetch } = useIpcData<Idea[]>('ideas:getRecent', 100)
   const { mutate: togglePin } = useIpcMutation<boolean>('ideas:togglePin')
   const { mutate: deleteIdea } = useIpcMutation<boolean>('ideas:delete')
+
+  useEffect(() => {
+    if (open) refetch()
+  }, [open, refetch])
 
   if (!open) return null
 

@@ -10,11 +10,13 @@ interface Idea {
   created_at: string
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  writing: 'WRITING',
-  coding: 'CODING',
-  design: 'DESIGN',
-  research: 'RESEARCH',
+const CATEGORY_CONFIG: Record<string, { label: string; gradient: string; text: string }> = {
+  writing: { label: 'WRITING', gradient: 'from-primary-fixed to-surface-container-low', text: 'text-primary' },
+  coding: { label: 'CODING', gradient: 'from-blue-100 to-cyan-50', text: 'text-blue-600' },
+  design: { label: 'DESIGN', gradient: 'from-pink-100 to-rose-50', text: 'text-pink-600' },
+  research: { label: 'RESEARCH', gradient: 'from-emerald-100 to-teal-50', text: 'text-emerald-600' },
+  work: { label: 'WORK', gradient: 'from-amber-100 to-orange-50', text: 'text-amber-700' },
+  social: { label: 'SOCIAL MEDIA', gradient: 'from-sky-100 to-cyan-50', text: 'text-sky-600' },
 }
 
 interface IdeaCardProps {
@@ -94,7 +96,10 @@ export const IdeaCard = forwardRef<IdeaCardHandle, IdeaCardProps>(function IdeaC
           <p className="text-body-sm text-on-surface-variant">No ideas yet. Click to add one.</p>
         </div>
       ) : (
-        <div className="relative bg-gradient-to-br from-primary-fixed to-surface-container-low rounded-lg p-md min-h-[140px] flex flex-col items-center justify-center text-center gap-sm overflow-hidden cursor-pointer pb-8">
+        <div className={cn(
+          'relative bg-gradient-to-br rounded-lg p-md min-h-[140px] flex flex-col items-center justify-center text-center gap-sm overflow-hidden cursor-pointer pb-8',
+          CATEGORY_CONFIG[current.category]?.gradient || 'from-primary-fixed to-surface-container-low',
+        )}>
           {current.is_pinned ? (
             <div className="absolute top-3 right-3 z-20 text-primary/60">
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>push_pin</span>
@@ -102,12 +107,18 @@ export const IdeaCard = forwardRef<IdeaCardHandle, IdeaCardProps>(function IdeaC
           ) : null}
 
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="font-headline-xl text-[72px] font-black text-primary/5 uppercase tracking-tighter select-none transform -rotate-6">
-              {CATEGORY_LABELS[current.category] || current.category.toUpperCase()}
+            <span className={cn(
+              'font-headline-xl text-[72px] font-black uppercase tracking-tighter select-none transform -rotate-6 opacity-[0.06]',
+              CATEGORY_CONFIG[current.category]?.text || 'text-primary',
+            )}>
+              {CATEGORY_CONFIG[current.category]?.label || current.category.toUpperCase()}
             </span>
           </div>
 
-          <p className="relative z-10 font-body-md font-semibold italic leading-relaxed max-w-[90%] drop-shadow-sm text-primary">
+          <p className={cn(
+            'relative z-10 font-body-md font-semibold italic leading-relaxed max-w-[90%] drop-shadow-sm',
+            CATEGORY_CONFIG[current.category]?.text || 'text-primary',
+          )}>
             "{current.content}"
           </p>
 

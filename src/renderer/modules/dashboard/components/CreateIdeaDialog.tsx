@@ -3,10 +3,12 @@ import { useIpcMutation } from '@/hooks/useIpc'
 import { cn } from '@/lib/utils'
 
 const CATEGORIES = [
-  { value: 'writing', label: 'Writing', icon: 'edit_note' },
-  { value: 'coding', label: 'Coding', icon: 'code' },
-  { value: 'design', label: 'Design', icon: 'palette' },
-  { value: 'research', label: 'Research', icon: 'science' },
+  { value: 'writing', label: 'Writing', icon: 'edit_note', bg: 'bg-primary-fixed text-on-primary-fixed-variant', ring: 'ring-primary/30' },
+  { value: 'coding', label: 'Coding', icon: 'code', bg: 'bg-blue-100 text-blue-700', ring: 'ring-blue-300' },
+  { value: 'design', label: 'Design', icon: 'palette', bg: 'bg-pink-100 text-pink-700', ring: 'ring-pink-300' },
+  { value: 'research', label: 'Research', icon: 'science', bg: 'bg-emerald-100 text-emerald-700', ring: 'ring-emerald-300' },
+  { value: 'work', label: 'Work', icon: 'work', bg: 'bg-amber-100 text-amber-800', ring: 'ring-amber-300' },
+  { value: 'social', label: 'Social Media', icon: 'share', bg: 'bg-sky-100 text-sky-700', ring: 'ring-sky-300' },
 ]
 
 interface CreateIdeaDialogProps {
@@ -73,10 +75,10 @@ export function CreateIdeaDialog({ open, onClose, onCreated }: CreateIdeaDialogP
                     className="hidden peer"
                   />
                   <span className={cn(
-                    'px-2.5 py-0.5 rounded-full border border-outline-variant text-[11px] font-bold transition-all flex items-center gap-xs',
+                    'px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all flex items-center gap-xs',
                     category === cat.value
-                      ? 'bg-primary-container text-on-primary-container border-transparent'
-                      : 'bg-surface text-on-surface-variant group-hover:bg-surface-container-high',
+                      ? cn(cat.bg, cat.ring, 'ring-1 border-transparent')
+                      : 'border border-outline-variant bg-surface text-on-surface-variant group-hover:bg-surface-container-high',
                   )}>
                     <span className="material-symbols-outlined text-[14px]">{cat.icon}</span>
                     {cat.label}
