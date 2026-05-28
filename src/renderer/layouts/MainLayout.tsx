@@ -1,9 +1,11 @@
-import { type ReactNode, useMemo, useState, useEffect, useCallback } from 'react'
+import { type ReactNode, useMemo, useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { extensionRegistry } from '@/lib/extension-registry'
 import { SearchPanel } from '@/components/SearchPanel'
 import type { ExtensionContribution } from '@shared/types/module'
+
+const appLogoUrl = new URL('../../../assets/app-logo.svg', import.meta.url).href
 
 interface MainLayoutProps {
   children: ReactNode
@@ -73,9 +75,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         {/* Logo - pt-12 clears macOS traffic lights */}
         <div className="p-md pt-12 titlebar-drag">
           <div className="flex items-center gap-sm mb-lg">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
-              <span className="material-symbols-outlined fill">dashboard</span>
-            </div>
+            <img src={appLogoUrl} alt="DorckDashboard logo" className="w-10 h-10 shrink-0" />
             <div>
               <h1 className="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
                 DorckDashboard
