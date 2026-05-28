@@ -2,18 +2,23 @@
   <img src="./assets/app-logo.svg" alt="DorckDashboard" width="128" />
 </p>
 
-# DorckDashboard
+<h1 align="center">DorckDashboard</h1>
 
-**本地优先的桌面生产力工作空间**
+<p align="center"><strong>本地优先的桌面生产力工作空间</strong></p>
 
-![Apache 2.0](./assets/badges/license.svg)
-![Electron 33](./assets/badges/electron.svg)
-![React 18](./assets/badges/react.svg)
-![TypeScript 5.7](./assets/badges/typescript.svg)
-![pnpm 9](./assets/badges/pnpm.svg)
-![Developing](./assets/badges/status.svg)
+<p align="center">
+  <img src="./assets/badges/license.svg" alt="Apache 2.0" />
+  <img src="./assets/badges/electron.svg" alt="Electron 33" />
+  <img src="./assets/badges/react.svg" alt="React 18" />
+  <img src="./assets/badges/typescript.svg" alt="TypeScript 5.7" />
+  <img src="./assets/badges/pnpm.svg" alt="pnpm 9" />
+  <img src="./assets/badges/status.svg" alt="Developing" />
+</p>
 
-[English](README.md) | [中文](README.zh-CN.md)
+<p align="center">
+  <a href="./README.md">English</a> |
+  <a href="./README.zh-CN.md">中文</a>
+</p>
 
 ---
 
