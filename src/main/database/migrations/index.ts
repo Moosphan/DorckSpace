@@ -300,6 +300,23 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 7,
+    name: '007_ideas_table',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS ideas (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          content TEXT NOT NULL,
+          category TEXT DEFAULT 'writing',
+          is_pinned INTEGER DEFAULT 0,
+          is_private INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now'))
+        )
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {
