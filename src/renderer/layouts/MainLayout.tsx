@@ -26,7 +26,7 @@ function NavButton({
       className={cn(
         'w-full flex items-center gap-base rounded-full px-md py-sm font-label-md transition-all active:scale-95',
         isActive
-          ? 'bg-primary-fixed dark:bg-primary-container text-on-primary-fixed-variant dark:text-on-primary-container'
+          ? 'bg-primary-fixed dark:bg-primary-container text-primary dark:text-on-primary-container'
           : 'text-on-surface-variant hover:bg-primary-fixed/50 dark:hover:bg-primary-container/50',
       )}
     >

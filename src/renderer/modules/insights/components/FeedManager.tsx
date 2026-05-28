@@ -162,7 +162,7 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
               >
                 <div className={cn(
                   'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
-                  feed.is_active ? 'bg-primary-fixed text-primary' : 'bg-surface-container text-on-surface-variant',
+                  feed.is_active ? 'bg-primary-fixed dark:bg-primary-container text-primary dark:text-on-primary-container' : 'bg-surface-container text-on-surface-variant',
                 )}>
                   <span className="material-symbols-outlined text-[18px]">rss_feed</span>
                 </div>
@@ -180,7 +180,7 @@ export function FeedManager({ onClose, onFeedAdded }: { onClose: () => void; onF
                 {/* Toggle */}
                 <div onClick={(e) => { e.stopPropagation(); handleToggle(feed.id) }} className="shrink-0 cursor-pointer">
                   <div className={cn('w-9 h-5 rounded-full transition-colors relative', feed.is_active ? 'bg-primary' : 'bg-outline-variant/40')}>
-                    <div className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform', feed.is_active ? 'translate-x-[18px]' : 'translate-x-0.5')} />
+                    <div className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-surface-container-lowest shadow transition-transform', feed.is_active ? 'translate-x-[18px]' : 'translate-x-0.5')} />
                   </div>
                 </div>
               </div>

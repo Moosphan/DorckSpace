@@ -27,7 +27,7 @@ function Modal({
   onConfirm,
   children,
 }: ModalProps) {
-  const iconBg = variant === 'danger' ? 'bg-error-container' : 'bg-primary-fixed'
+  const iconBg = variant === 'danger' ? 'bg-error-container' : 'bg-primary-fixed dark:bg-primary-container'
   const iconColor = variant === 'danger' ? 'text-error' : 'text-primary'
   const confirmBtn =
     variant === 'danger'

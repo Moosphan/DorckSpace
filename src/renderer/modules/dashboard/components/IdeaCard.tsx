@@ -10,13 +10,13 @@ interface Idea {
   created_at: string
 }
 
-const CATEGORY_CONFIG: Record<string, { label: string; gradient: string; text: string }> = {
-  writing: { label: 'WRITING', gradient: 'from-primary-fixed to-surface-container-low', text: 'text-primary' },
-  coding: { label: 'CODING', gradient: 'from-blue-100 to-cyan-50', text: 'text-blue-600' },
-  design: { label: 'DESIGN', gradient: 'from-pink-100 to-rose-50', text: 'text-pink-600' },
-  research: { label: 'RESEARCH', gradient: 'from-emerald-100 to-teal-50', text: 'text-emerald-600' },
-  work: { label: 'WORK', gradient: 'from-amber-100 to-orange-50', text: 'text-amber-700' },
-  social: { label: 'SOCIAL MEDIA', gradient: 'from-sky-100 to-cyan-50', text: 'text-sky-600' },
+const CATEGORY_CONFIG: Record<string, { label: string; icon: string; gradient: string; text: string }> = {
+  writing: { label: 'WRITING', icon: 'edit_note', gradient: 'from-primary-fixed to-surface-container-low', text: 'text-primary' },
+  coding: { label: 'CODING', icon: 'code', gradient: 'from-blue-100 to-cyan-50', text: 'text-blue-600' },
+  design: { label: 'DESIGN', icon: 'palette', gradient: 'from-pink-100 to-rose-50', text: 'text-pink-600' },
+  research: { label: 'RESEARCH', icon: 'science', gradient: 'from-emerald-100 to-teal-50', text: 'text-emerald-600' },
+  work: { label: 'WORK', icon: 'work', gradient: 'from-amber-100 to-orange-50', text: 'text-amber-700' },
+  social: { label: 'SOCIAL MEDIA', icon: 'share', gradient: 'from-sky-100 to-cyan-50', text: 'text-sky-600' },
 }
 
 interface IdeaCardProps {
@@ -108,10 +108,10 @@ export const IdeaCard = forwardRef<IdeaCardHandle, IdeaCardProps>(function IdeaC
 
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <span className={cn(
-              'font-headline-xl text-[72px] font-black uppercase tracking-tighter select-none transform -rotate-6 opacity-[0.06]',
+              'material-symbols-outlined text-[120px] opacity-[0.06] select-none',
               CATEGORY_CONFIG[current.category]?.text || 'text-primary',
             )}>
-              {CATEGORY_CONFIG[current.category]?.label || current.category.toUpperCase()}
+              {CATEGORY_CONFIG[current.category]?.icon || 'lightbulb'}
             </span>
           </div>
 

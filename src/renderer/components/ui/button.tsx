@@ -6,7 +6,7 @@ const variants = {
   primary:
     'bg-primary text-on-primary rounded-full hover:brightness-110 active:scale-95 transition-all',
   secondary:
-    'bg-primary-fixed text-on-primary-fixed-variant rounded-full hover:bg-primary-fixed/80 active:scale-95 transition-all',
+    'bg-primary-fixed dark:bg-primary-container text-on-primary-fixed-variant dark:text-on-primary-container rounded-full hover:bg-primary-fixed/80 dark:hover:bg-primary-container/80 active:scale-95 transition-all',
   outline:
     'border-2 border-primary text-primary rounded-full hover:bg-primary/5 active:scale-95 transition-all',
   ghost: 'text-on-surface-variant hover:text-primary active:scale-95 transition-all',

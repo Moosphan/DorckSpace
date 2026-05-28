@@ -3,11 +3,11 @@ import { cn } from '@/lib/utils'
 
 const variantStyles = {
   high: 'bg-secondary-container text-on-secondary-container',
-  medium: 'bg-primary-fixed text-on-primary-fixed-variant',
+  medium: 'bg-primary-fixed dark:bg-primary-container text-on-primary-fixed-variant dark:text-on-primary-container',
   low: 'bg-surface-variant text-on-surface-variant',
   urgent:
     'bg-secondary-container/20 text-on-secondary-fixed-variant border border-secondary-container/30',
-  new: 'bg-primary-fixed text-on-primary-fixed-variant',
+  new: 'bg-primary-fixed dark:bg-primary-container text-on-primary-fixed-variant dark:text-on-primary-container',
   error: 'bg-error-container text-on-error-container border border-error/20',
   archived: 'bg-surface-container text-on-surface-variant',
   status: '', // uses color prop
