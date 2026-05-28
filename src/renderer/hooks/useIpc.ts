@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { IPCResponse } from '@shared/types/ipc'
 
 /**
@@ -8,9 +8,10 @@ export function useIpcData<T>(channel: string, ...args: unknown[]) {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const isInitialRef = useRef(true)
 
   const refetch = useCallback(async () => {
-    setLoading(true)
+    if (isInitialRef.current) setLoading(true)
     setError(null)
     try {
       const response: IPCResponse<T> = await window.electronAPI.invoke(channel, ...args)
@@ -22,7 +23,10 @@ export function useIpcData<T>(channel: string, ...args: unknown[]) {
     } catch (err) {
       setError((err as Error).message)
     } finally {
-      setLoading(false)
+      if (isInitialRef.current) {
+        setLoading(false)
+        isInitialRef.current = false
+      }
     }
   }, [channel])
 
@@ -31,6 +35,7 @@ export function useIpcData<T>(channel: string, ...args: unknown[]) {
     else {
       setData(null)
       setLoading(false)
+      isInitialRef.current = false
     }
   }, [refetch, channel])
 

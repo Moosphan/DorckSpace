@@ -38,6 +38,7 @@ const categoryColors: Record<string, string> = {
 export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
+  const isInitialRef = useRef(true)
   const [dateRange, setDateRange] = useState<DateRange>('today')
   const [category, setCategory] = useState<string | null>(null)
   const [starred, setStarred] = useState(false)
@@ -54,7 +55,7 @@ export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
   })
 
   const fetchArticles = useCallback(async () => {
-    setLoading(true)
+    if (isInitialRef.current) setLoading(true)
     try {
       const res = await window.electronAPI.invoke('rss:getFilteredArticles', {
         dateRange,
@@ -64,7 +65,10 @@ export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
       })
       if (res.success) setArticles(res.data)
     } catch { /* ignore */ }
-    setLoading(false)
+    if (isInitialRef.current) {
+      setLoading(false)
+      isInitialRef.current = false
+    }
   }, [dateRange, category, starred])
 
   const fetchCategories = useCallback(async () => {

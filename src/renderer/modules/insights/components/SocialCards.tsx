@@ -161,14 +161,14 @@ export function SocialCards() {
   return (
     <div className="col-span-12 lg:col-span-4 space-y-md">
       <div className="flex items-center justify-between mb-sm">
-        <h2 className="font-headline-lg text-headline-lg">Social Performance</h2>
+        <h2 className="font-headline-lg text-headline-lg leading-none">Social Performance</h2>
         <button
           onClick={refresh}
           disabled={refreshing}
           className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors disabled:opacity-50"
           title="Refresh data"
         >
-          <span className={cn('material-symbols-outlined text-[18px]', refreshing && 'animate-spin')}>refresh</span>
+          <span className={cn('material-symbols-outlined text-[18px] translate-y-[1px]', refreshing && 'animate-spin')}>sync</span>
         </button>
       </div>
 

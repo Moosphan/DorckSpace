@@ -63,16 +63,17 @@ export default function Writing() {
   }, [])
 
   const handleBack = useCallback(async () => {
-    // Save new article if user made any changes
-    if (editingId === 0 && !createdIdRef.current) {
-      if (newTitle !== 'Untitled' || newCategory !== null) {
-        await ensureArticle()
-      }
+    // Save before leaving
+    if (createdIdRef.current) {
+      await updateArticle(createdIdRef.current, { title: newTitle, category: newCategory ?? undefined })
+    } else if (editingId === 0) {
+      // New unsaved article - try to persist
+      await ensureArticle()
     }
     setEditingId(null)
     setNewCategory(null)
     createdIdRef.current = null
-  }, [editingId, newTitle, newCategory, ensureArticle])
+  }, [editingId, newTitle, newCategory, ensureArticle, updateArticle])
 
   const handleUpdateContent = useCallback(
     async (content: string) => {

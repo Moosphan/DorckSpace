@@ -148,7 +148,7 @@ export function Editor({ content = '', onUpdate, placeholder = 'Start writing...
       TaskList,
       TaskItem.configure({ nested: true }),
     ],
-    content: content || '<p></p>',
+    content: content || '',
     autofocus: false,
     onCreate: autofocus
       ? ({ editor: ed }) => {
@@ -169,9 +169,12 @@ export function Editor({ content = '', onUpdate, placeholder = 'Start writing...
     },
   })
 
-  // Sync external content changes
+  // Sync external content changes (skip empty-to-empty transitions)
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
+    if (!editor) return
+    const currentHtml = editor.getHTML()
+    const isEmpty = (s: string) => !s || s === '<p></p>'
+    if (!isEmpty(content) && content !== currentHtml) {
       editor.commands.setContent(content)
     }
   }, [content])
@@ -211,7 +214,7 @@ export function Editor({ content = '', onUpdate, placeholder = 'Start writing...
       ) : (
         <EditorContent
           editor={editor}
-          className="flex-1 min-h-[400px] p-md prose prose-sm max-w-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-on-surface-variant/50 [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]"
+          className="flex-1 min-h-[400px] p-md prose prose-sm max-w-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-on-surface-variant/40 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:italic"
         />
       )}
     </div>
