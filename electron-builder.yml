@@ -68,3 +68,4 @@ linux:
   category: Office
   synopsis: Local-first personal productivity workspace
   description: DorckDashboard is an Electron desktop app that brings projects, writing, media assets, RSS reading, social insights, and AI tooling into one local-first workspace.
+  maintainer: Moosphan <Moosphan@users.noreply.github.com>
