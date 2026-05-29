@@ -1,23 +1,47 @@
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, useEditorState, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import Highlight from '@tiptap/extension-highlight'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import { Markdown } from 'tiptap-markdown'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface EditorProps {
   content?: string
   onUpdate?: (content: string) => void
+  onExportMd?: (md: string) => void
   placeholder?: string
   className?: string
   autofocus?: boolean
 }
 
 function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
-  if (!editor) return null
+  // Subscribe to editor state changes for reactive isActive updates
+  const editorState = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => {
+      if (!ed) return null
+      return {
+        bold: ed.isActive('bold'),
+        italic: ed.isActive('italic'),
+        highlight: ed.isActive('highlight'),
+        strike: ed.isActive('strike'),
+        h1: ed.isActive('heading', { level: 1 }),
+        h2: ed.isActive('heading', { level: 2 }),
+        h3: ed.isActive('heading', { level: 3 }),
+        bulletList: ed.isActive('bulletList'),
+        orderedList: ed.isActive('orderedList'),
+        taskList: ed.isActive('taskList'),
+        codeBlock: ed.isActive('codeBlock'),
+        blockquote: ed.isActive('blockquote'),
+      }
+    },
+  })
+
+  if (!editor || !editorState) return null
 
   const ToolButton = ({
     icon,
@@ -31,6 +55,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
     title: string
   }) => (
     <button
+      onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       title={title}
       className={cn(
@@ -46,86 +71,22 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
 
   return (
     <div className="flex items-center gap-xs p-sm border-b border-outline-variant/30 flex-wrap">
-      <ToolButton
-        icon="format_bold"
-        isActive={editor.isActive('bold')}
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        title="Bold"
-      />
-      <ToolButton
-        icon="format_italic"
-        isActive={editor.isActive('italic')}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        title="Italic"
-      />
-      <ToolButton
-        icon="highlight"
-        isActive={editor.isActive('highlight')}
-        onClick={() => editor.chain().focus().toggleHighlight().run()}
-        title="Highlight"
-      />
-      <ToolButton
-        icon="strikethrough_s"
-        isActive={editor.isActive('strike')}
-        onClick={() => editor.chain().focus().toggleStrike().run()}
-        title="Strike"
-      />
+      <ToolButton icon="format_bold" isActive={editorState.bold} onClick={() => editor.chain().focus().toggleBold().run()} title="Bold" />
+      <ToolButton icon="format_italic" isActive={editorState.italic} onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic" />
+      <ToolButton icon="highlight" isActive={editorState.highlight} onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight" />
+      <ToolButton icon="strikethrough_s" isActive={editorState.strike} onClick={() => editor.chain().focus().toggleStrike().run()} title="Strike" />
       <div className="w-px h-6 bg-outline-variant/30 mx-xs" />
-      <ToolButton
-        icon="format_h1"
-        isActive={editor.isActive('heading', { level: 1 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        title="H1"
-      />
-      <ToolButton
-        icon="format_h2"
-        isActive={editor.isActive('heading', { level: 2 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        title="H2"
-      />
-      <ToolButton
-        icon="format_h3"
-        isActive={editor.isActive('heading', { level: 3 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        title="H3"
-      />
+      <ToolButton icon="format_h1" isActive={editorState.h1} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="H1" />
+      <ToolButton icon="format_h2" isActive={editorState.h2} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="H2" />
+      <ToolButton icon="format_h3" isActive={editorState.h3} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="H3" />
       <div className="w-px h-6 bg-outline-variant/30 mx-xs" />
-      <ToolButton
-        icon="format_list_bulleted"
-        isActive={editor.isActive('bulletList')}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        title="Bullet List"
-      />
-      <ToolButton
-        icon="format_list_numbered"
-        isActive={editor.isActive('orderedList')}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        title="Ordered List"
-      />
-      <ToolButton
-        icon="checklist"
-        isActive={editor.isActive('taskList')}
-        onClick={() => editor.chain().focus().toggleTaskList().run()}
-        title="Task List"
-      />
+      <ToolButton icon="format_list_bulleted" isActive={editorState.bulletList} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bullet List" />
+      <ToolButton icon="format_list_numbered" isActive={editorState.orderedList} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Ordered List" />
+      <ToolButton icon="checklist" isActive={editorState.taskList} onClick={() => editor.chain().focus().toggleTaskList().run()} title="Task List" />
       <div className="w-px h-6 bg-outline-variant/30 mx-xs" />
-      <ToolButton
-        icon="code"
-        isActive={editor.isActive('codeBlock')}
-        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-        title="Code Block"
-      />
-      <ToolButton
-        icon="format_quote"
-        isActive={editor.isActive('blockquote')}
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        title="Quote"
-      />
-      <ToolButton
-        icon="horizontal_rule"
-        onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        title="Divider"
-      />
+      <ToolButton icon="code" isActive={editorState.codeBlock} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Code Block" />
+      <ToolButton icon="format_quote" isActive={editorState.blockquote} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Quote" />
+      <ToolButton icon="horizontal_rule" onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Divider" />
       <div className="flex-1" />
       <span className="text-body-sm text-on-surface-variant">
         {editor.storage.characterCount?.characters?.() ?? editor.getText().length} chars
@@ -134,9 +95,10 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
   )
 }
 
-export function Editor({ content = '', onUpdate, placeholder = 'Start writing...', className, autofocus }: EditorProps) {
+export function Editor({ content = '', onUpdate, onExportMd, placeholder = 'Start writing...', className, autofocus }: EditorProps) {
   const [isSourceMode, setIsSourceMode] = useState(false)
-  const [sourceContent, setSourceContent] = useState(content)
+  const [mdSource, setMdSource] = useState(content)
+  const [copied, setCopied] = useState(false)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>()
 
   const editor = useEditor({
@@ -147,6 +109,7 @@ export function Editor({ content = '', onUpdate, placeholder = 'Start writing...
       Highlight,
       TaskList,
       TaskItem.configure({ nested: true }),
+      Markdown.configure({ html: true, breaks: true }),
     ],
     content: content || '',
     autofocus: false,
@@ -158,13 +121,9 @@ export function Editor({ content = '', onUpdate, placeholder = 'Start writing...
         }
       : undefined,
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML()
-      setSourceContent(html)
-
-      // Auto-save with debounce
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
       autoSaveTimer.current = setTimeout(() => {
-        onUpdate?.(html)
+        onUpdate?.(editor.getHTML())
       }, 2000)
     },
   })
@@ -181,14 +140,43 @@ export function Editor({ content = '', onUpdate, placeholder = 'Start writing...
 
   const toggleSourceMode = useCallback(() => {
     if (isSourceMode) {
-      // Switch back to WYSIWYG: apply source content
-      editor?.commands.setContent(sourceContent)
+      // Switch back to WYSIWYG: parse markdown via tiptap-markdown parser
+      if (editor) {
+        const parsed = editor.storage.markdown?.parser?.parse(mdSource)
+        if (parsed) {
+          editor.commands.setContent(parsed)
+        } else {
+          editor.commands.setContent(mdSource)
+        }
+        editor.commands.focus('start')
+      }
     } else {
-      // Switch to source: get current HTML
-      setSourceContent(editor?.getHTML() ?? '')
+      // Switch to source: get markdown
+      const md = editor?.storage.markdown?.getMarkdown() ?? ''
+      setMdSource(md)
     }
     setIsSourceMode(!isSourceMode)
-  }, [isSourceMode, editor, sourceContent])
+  }, [isSourceMode, editor, mdSource])
+
+  const handleCopyMd = useCallback(async () => {
+    const md = editor?.storage.markdown?.getMarkdown() ?? ''
+    try {
+      await navigator.clipboard.writeText(md)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { /* ignore */ }
+  }, [editor])
+
+  const handleExportMd = useCallback(() => {
+    const md = editor?.storage.markdown?.getMarkdown() ?? ''
+    const blob = new Blob([md], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'article.md'
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [editor])
 
   return (
     <div className={cn('flex flex-col bg-surface-container-lowest rounded-lg border border-outline-variant/30 overflow-hidden', className)}>
@@ -201,20 +189,38 @@ export function Editor({ content = '', onUpdate, placeholder = 'Start writing...
             isSourceMode ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high',
           )}
         >
-          {isSourceMode ? 'Visual' : 'Source'}
+          {isSourceMode ? 'Visual' : 'Markdown'}
+        </button>
+        <div className="flex-1" />
+        <button
+          onClick={handleCopyMd}
+          className="flex items-center gap-xs px-2 py-1 rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          title="Copy as Markdown"
+        >
+          <span className="material-symbols-outlined text-[14px]">{copied ? 'check' : 'content_copy'}</span>
+          {copied ? 'Copied' : 'Copy MD'}
+        </button>
+        <button
+          onClick={handleExportMd}
+          className="flex items-center gap-xs px-2 py-1 rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          title="Export as Markdown file"
+        >
+          <span className="material-symbols-outlined text-[14px]">download</span>
+          Export
         </button>
       </div>
       {isSourceMode ? (
         <textarea
-          value={sourceContent}
-          onChange={(e) => setSourceContent(e.target.value)}
+          value={mdSource}
+          onChange={(e) => setMdSource(e.target.value)}
           className="flex-1 min-h-[400px] p-md font-mono text-body-sm text-on-surface bg-transparent outline-none resize-none"
           spellCheck={false}
+          placeholder="Write Markdown here..."
         />
       ) : (
         <EditorContent
           editor={editor}
-          className="flex-1 min-h-[400px] p-md prose prose-sm max-w-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-on-surface-variant/40 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:italic"
+          className="flex-1 min-h-[400px] p-md prose-editor [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[400px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-on-surface-variant/40 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:italic"
         />
       )}
     </div>

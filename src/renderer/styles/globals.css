@@ -152,6 +152,101 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-outline;
   }
+
+  /* Rich text editor typography */
+  .prose-editor .ProseMirror {
+    @apply text-on-surface;
+  }
+  .prose-editor .ProseMirror > * + * {
+    margin-top: 0.5em;
+  }
+  .prose-editor .ProseMirror h1 {
+    @apply text-[32px] font-bold leading-tight mt-6 mb-2;
+  }
+  .prose-editor .ProseMirror h2 {
+    @apply text-[24px] font-bold leading-tight mt-5 mb-2;
+  }
+  .prose-editor .ProseMirror h3 {
+    @apply text-[20px] font-semibold leading-tight mt-4 mb-1;
+  }
+  .prose-editor .ProseMirror p {
+    @apply text-[16px] leading-relaxed my-1;
+  }
+  .prose-editor .ProseMirror strong {
+    @apply font-bold;
+  }
+  .prose-editor .ProseMirror em {
+    @apply italic;
+  }
+  .prose-editor .ProseMirror s {
+    @apply line-through;
+  }
+  .prose-editor .ProseMirror mark {
+    @apply bg-secondary-container/40 rounded px-0.5;
+  }
+  .prose-editor .ProseMirror a {
+    @apply text-primary underline;
+  }
+  .prose-editor .ProseMirror ul:not([data-type="taskList"]) {
+    list-style-type: disc !important;
+    padding-left: 1.5rem;
+    margin: 0.25em 0;
+  }
+  .prose-editor .ProseMirror ol {
+    list-style-type: decimal !important;
+    padding-left: 1.5rem;
+    margin: 0.25em 0;
+  }
+  .prose-editor .ProseMirror ul[data-type="taskList"] {
+    list-style-type: none !important;
+    padding-left: 0;
+    margin: 0.25em 0;
+  }
+  .prose-editor .ProseMirror li {
+    font-size: 16px;
+    line-height: 1.6;
+    display: list-item !important;
+  }
+  .prose-editor .ProseMirror ul[data-type="taskList"] > li {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+    list-style: none !important;
+    padding-left: 0 !important;
+  }
+  .prose-editor .ProseMirror ul[data-type="taskList"] > li > div {
+    flex: 1;
+    min-width: 0;
+  }
+  .prose-editor .ProseMirror ul[data-type="taskList"] > li > label {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+  .prose-editor .ProseMirror ul[data-type="taskList"] > li > label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: rgb(var(--color-primary));
+    cursor: pointer;
+  }
+  .prose-editor .ProseMirror li > p {
+    @apply my-0;
+  }
+  .prose-editor .ProseMirror blockquote {
+    @apply border-l-4 border-primary/30 pl-4 italic text-on-surface-variant my-2;
+  }
+  .prose-editor .ProseMirror code {
+    @apply bg-surface-container px-1.5 py-0.5 rounded text-[14px] font-mono text-primary;
+  }
+  .prose-editor .ProseMirror pre {
+    @apply bg-surface-container p-md rounded-lg my-2 overflow-x-auto;
+  }
+  .prose-editor .ProseMirror pre code {
+    @apply bg-transparent p-0 text-on-surface;
+  }
+  .prose-editor .ProseMirror hr {
+    @apply border-t border-outline-variant/30 my-4;
+  }
 }
 
 @layer components {
