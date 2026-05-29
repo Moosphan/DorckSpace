@@ -23,7 +23,7 @@ interface EditorProps {
   autofocus?: boolean
 }
 
-function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+function EditorToolbar({ editor, onSave }: { editor: ReturnType<typeof useEditor>; onSave?: (html: string) => void }) {
   const [urlInput, setUrlInput] = useState<{ type: 'link' | 'image'; value: string } | null>(null)
   const [showImageMenu, setShowImageMenu] = useState(false)
   const [showTableBar, setShowTableBar] = useState(false)
@@ -38,10 +38,13 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       const { $from } = selection
       const node = 'node' in selection ? (selection as unknown as { node: { type: { name: string }; attrs: Record<string, unknown> } }).node : null
       if (node?.type.name === 'image') {
+        const title = String(node.attrs.title || '')
+        const alignMatch = title.match(/align:(\w+)/)
+        const widthMatch = title.match(/width:([^|]*)/)
         setImgEdit({
           pos: $from.pos,
-          width: String(node.attrs.width || ''),
-          align: String(node.attrs.align || 'left'),
+          width: widthMatch?.[1] || String(node.attrs.width || ''),
+          align: alignMatch?.[1] || 'left',
         })
       } else {
         setImgEdit(null)
@@ -266,33 +269,37 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       {imgEdit && (() => {
         const selectedImg = editor.view.dom.querySelector('img.ProseMirror-selectednode') as HTMLElement | null
 
-        const applyAlign = (align: string) => {
-          // Persist to ProseMirror node
-          const node = editor.state.doc.nodeAt(imgEdit.pos)
-          if (node) {
-            const tr = editor.state.tr.setNodeMarkup(imgEdit.pos, undefined, { ...node.attrs, align })
-            editor.view.dispatch(tr)
-          }
-          // Apply visual style immediately
-          if (selectedImg) {
-            selectedImg.style.display = 'block'
-            if (align === 'center') { selectedImg.style.margin = '0 auto' }
-            else if (align === 'right') { selectedImg.style.margin = '0 0 0 auto' }
-            else { selectedImg.style.margin = '0' }
-          }
-          setImgEdit({ ...imgEdit, align })
+        const applyStyle = (el: HTMLElement, align: string, width: string) => {
+          el.style.display = 'block'
+          if (align === 'center') el.style.margin = '0 auto'
+          else if (align === 'right') el.style.margin = '0 0 0 auto'
+          else el.style.margin = '0'
+          el.style.width = width || ''
         }
 
-        const applyWidth = (w: string) => {
+        const updateImage = (newAttrs: Record<string, string | null>) => {
+          const align = String(newAttrs.align ?? imgEdit.align)
+          const width = String(newAttrs.width ?? imgEdit.width)
+
+          // 1. Apply visual immediately
+          if (selectedImg) {
+            applyStyle(selectedImg, align, width)
+          }
+
+          // 2. Persist via title attribute: "align:center|width:50%"
+          const titleStr = `align:${align}|width:${width}`
           const node = editor.state.doc.nodeAt(imgEdit.pos)
           if (node) {
-            const tr = editor.state.tr.setNodeMarkup(imgEdit.pos, undefined, { ...node.attrs, width: w || null })
+            const tr = editor.state.tr.setNodeMarkup(imgEdit.pos, undefined, {
+              ...node.attrs,
+              title: titleStr,
+            })
             editor.view.dispatch(tr)
           }
-          if (selectedImg) {
-            selectedImg.style.width = w
-          }
-          setImgEdit({ ...imgEdit, width: w })
+
+          // 3. Save
+          setTimeout(() => onSave?.(editor.getHTML()), 50)
+          setImgEdit({ ...imgEdit, ...newAttrs } as typeof imgEdit)
         }
 
         return (
@@ -302,7 +309,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
               <button
                 key={s.label}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => applyWidth(s.w)}
+                onClick={() => updateImage({ width: s.w || null })}
                 className={cn(
                   'w-7 h-7 rounded flex items-center justify-center text-[11px] font-bold transition-colors',
                   imgEdit.width === s.w ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high',
@@ -321,7 +328,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
               <button
                 key={item.a}
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => applyAlign(item.a)}
+                onClick={() => updateImage({ align: item.a })}
                 className={cn(
                   'w-7 h-7 rounded flex items-center justify-center transition-colors',
                   imgEdit.align === item.a ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high',
@@ -343,30 +350,28 @@ export function Editor({ content = '', onUpdate, onExportMd, placeholder = 'Star
   const [copied, setCopied] = useState(false)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>()
 
+  const applyImageAlign = useCallback((ed: NonNullable<ReturnType<typeof useEditor>>) => {
+    const imgs = ed.view.dom.querySelectorAll('img[title*="align:"]') as NodeListOf<HTMLElement>
+    imgs.forEach((img) => {
+      const title = img.getAttribute('title') || ''
+      const alignMatch = title.match(/align:(\w+)/)
+      const widthMatch = title.match(/width:([^|]*)/)
+      const align = alignMatch?.[1] || 'left'
+      const width = widthMatch?.[1] || ''
+      img.style.display = 'block'
+      if (align === 'center') img.style.margin = '0 auto'
+      else if (align === 'right') img.style.margin = '0 0 0 auto'
+      else img.style.margin = '0'
+      if (width) img.style.width = width
+    })
+  }, [])
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder }),
       Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-primary underline' } }),
-      Image.configure({
-        allowBase64: true,
-        inline: false,
-        HTMLAttributes: { class: 'max-w-full rounded-lg' },
-        addAttributes() {
-          return {
-            src: { default: null },
-            alt: { default: null },
-            title: { default: null },
-            width: { default: null },
-            height: { default: null },
-            align: {
-              default: 'left',
-              parseHTML: (el: HTMLElement) => el.getAttribute('data-align') || 'left',
-              renderHTML: (attrs: { align?: string }) => ({ 'data-align': attrs.align || 'left' }),
-            },
-          }
-        },
-      }),
+      Image.configure({ allowBase64: true, inline: false }),
       Highlight,
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -378,13 +383,17 @@ export function Editor({ content = '', onUpdate, onExportMd, placeholder = 'Star
     ],
     content: content || '',
     autofocus: false,
-    onCreate: autofocus
-      ? ({ editor: ed }) => {
-          setTimeout(() => {
-            if (ed && !ed.isDestroyed) ed.commands.focus('start')
-          }, 100)
-        }
-      : undefined,
+    onCreate: ({ editor: ed }) => {
+      setTimeout(() => applyImageAlign(ed), 100)
+      if (autofocus) {
+        setTimeout(() => {
+          if (ed && !ed.isDestroyed) ed.commands.focus('start')
+        }, 100)
+      }
+    },
+    onTransaction: ({ editor: ed }) => {
+      applyImageAlign(ed)
+    },
     onUpdate: ({ editor }) => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
       autoSaveTimer.current = setTimeout(() => {
@@ -445,7 +454,7 @@ export function Editor({ content = '', onUpdate, onExportMd, placeholder = 'Star
 
   return (
     <div className={cn('flex flex-col bg-surface-container-lowest rounded-lg border border-outline-variant/30 overflow-hidden', className)}>
-      <EditorToolbar editor={editor} />
+      <EditorToolbar editor={editor} onSave={onUpdate} />
       <div className="flex items-center gap-sm px-sm py-xs border-b border-outline-variant/30 bg-surface-container-low/50">
         <button
           onClick={toggleSourceMode}

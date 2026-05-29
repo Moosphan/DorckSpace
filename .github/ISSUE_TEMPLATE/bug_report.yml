@@ -1,0 +1,121 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in DorckDashboard
+title: "[bug]: "
+labels: ["bug"]
+type: Bug
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below to help us diagnose and fix the issue.
+
+        **Before submitting**, please:
+        - Search [existing issues](https://github.com/Moosphan/DorckSpace/issues) to avoid duplicates
+        - Make sure you're running the latest version
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight Checklist
+      options:
+        - label: I have searched the [existing issues](https://github.com/Moosphan/DorckSpace/issues) and this has not been reported before
+          required: true
+        - label: I am using the latest version of DorckDashboard
+          required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App Version
+      description: The version of DorckDashboard you are using (e.g., 0.1.0)
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: Which OS are you using?
+      multiple: true
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS Version
+      description: e.g., macOS 14.2, Windows 11 23H2, Ubuntu 24.04
+      placeholder: "macOS 14.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Provide a clear, step-by-step description of how to reproduce the bug.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include any error messages.
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Screen Recording
+      description: If applicable, add screenshots or screen recordings to help explain the problem.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste any relevant logs from the main process or renderer console (Cmd+Option+I).
+      render: bash
+    validations:
+      required: false
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected Area
+      description: Which part of the app is affected?
+      multiple: true
+      options:
+        - Dashboard
+        - Writing Studio
+        - Video Studio
+        - Insights (RSS / Social)
+        - AI Lab
+        - Settings
+        - Editor
+        - Sidebar / Navigation
+        - Other
+    validations:
+      required: false
