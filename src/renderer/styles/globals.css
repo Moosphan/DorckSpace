@@ -229,6 +229,32 @@
     accent-color: rgb(var(--color-primary));
     cursor: pointer;
   }
+  .prose-editor .ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 0.5em 0;
+  }
+  .prose-editor .ProseMirror table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.5em 0;
+    font-size: 14px;
+  }
+  .prose-editor .ProseMirror th,
+  .prose-editor .ProseMirror td {
+    border: 1px solid rgb(var(--color-outline-variant));
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    min-width: 80px;
+  }
+  .prose-editor .ProseMirror th {
+    background: rgb(var(--color-surface-container));
+    font-weight: 600;
+  }
+  .prose-editor .ProseMirror .selectedCell {
+    background: rgb(var(--color-primary) / 0.1);
+  }
   .prose-editor .ProseMirror li > p {
     @apply my-0;
   }
