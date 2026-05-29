@@ -25,7 +25,31 @@ interface EditorProps {
 
 function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
   const [urlInput, setUrlInput] = useState<{ type: 'link' | 'image'; value: string } | null>(null)
+  const [showImageMenu, setShowImageMenu] = useState(false)
+  const [showTableBar, setShowTableBar] = useState(false)
   const urlInputRef = useRef<HTMLInputElement>(null)
+  const [imgEdit, setImgEdit] = useState<{ pos: number; width: string; align: string } | null>(null)
+
+  // Track image selection
+  useEffect(() => {
+    if (!editor) return
+    const handler = () => {
+      const { selection } = editor.state
+      const { $from } = selection
+      const node = 'node' in selection ? (selection as unknown as { node: { type: { name: string }; attrs: Record<string, unknown> } }).node : null
+      if (node?.type.name === 'image') {
+        setImgEdit({
+          pos: $from.pos,
+          width: String(node.attrs.width || ''),
+          align: String(node.attrs.align || 'left'),
+        })
+      } else {
+        setImgEdit(null)
+      }
+    }
+    editor.on('selectionUpdate', handler)
+    return () => { editor.off('selectionUpdate', handler) }
+  }, [editor])
 
   // Subscribe to editor state changes for reactive isActive updates
   const editorState = useEditorState({
@@ -113,16 +137,20 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       <div className="w-px h-6 bg-outline-variant/30 mx-xs" />
       <ToolButton
         icon="image"
-        onClick={() => {
-          setUrlInput({ type: 'image', value: '' })
-          setTimeout(() => urlInputRef.current?.focus(), 50)
-        }}
+        onClick={() => setShowImageMenu((v) => !v)}
         title="Image"
       />
       <ToolButton
         icon="table_chart"
         isActive={editorState.table}
-        onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+        onClick={() => {
+          if (editorState.table) {
+            setShowTableBar((v) => !v)
+          } else {
+            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+            setShowTableBar(true)
+          }
+        }}
         title="Table"
       />
       <div className="flex-1" />
@@ -131,6 +159,18 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       </span>
     </div>
   )
+
+  const handleLocalImage = async () => {
+    setShowImageMenu(false)
+    try {
+      const res = await window.electronAPI.invoke('editor:pickImage')
+      if (res?.success && res.data) {
+        editor.chain().focus().setImage({ src: res.data.url }).run()
+      }
+    } catch (err) {
+      console.error('Failed to pick image:', err)
+    }
+  }
 
   const handleUrlSubmit = () => {
     if (!urlInput || !urlInput.value.trim()) {
@@ -170,6 +210,129 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
           <button onClick={() => setUrlInput(null)} className="px-2 py-0.5 rounded text-label-sm text-on-surface-variant hover:bg-surface-container">Cancel</button>
         </div>
       )}
+
+      {/* Image source menu */}
+      {showImageMenu && (
+        <div className="flex items-center gap-xs px-sm py-1.5 border-b border-outline-variant/30 bg-surface-container-low/50">
+          <button
+            onClick={handleLocalImage}
+            className="flex items-center gap-xs px-2.5 py-1 rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px]">upload_file</span>
+            Upload from computer
+          </button>
+          <div className="w-px h-4 bg-outline-variant/30" />
+          <button
+            onClick={() => { setShowImageMenu(false); setUrlInput({ type: 'image', value: '' }); setTimeout(() => urlInputRef.current?.focus(), 50) }}
+            className="flex items-center gap-xs px-2.5 py-1 rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container-high transition-colors"
+          >
+            <span className="material-symbols-outlined text-[16px]">link</span>
+            From URL
+          </button>
+        </div>
+      )}
+
+      {/* Table editing bar */}
+      {showTableBar && editor.isActive('table') && (
+        <div className="flex items-center gap-xs px-sm py-1.5 border-b border-outline-variant/30 bg-surface-container-low/50">
+          <button onClick={() => editor.chain().focus().addRowBefore().run()} className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Add row above">
+            <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
+          </button>
+          <button onClick={() => editor.chain().focus().addRowAfter().run()} className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Add row below">
+            <span className="material-symbols-outlined text-[16px]">arrow_downward</span>
+          </button>
+          <button onClick={() => editor.chain().focus().deleteRow().run()} className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" title="Delete row">
+            <span className="material-symbols-outlined text-[16px]">delete</span>
+          </button>
+          <div className="w-px h-4 bg-outline-variant/30 mx-xs" />
+          <button onClick={() => editor.chain().focus().addColumnBefore().run()} className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Add column left">
+            <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+          </button>
+          <button onClick={() => editor.chain().focus().addColumnAfter().run()} className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Add column right">
+            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          </button>
+          <button onClick={() => editor.chain().focus().deleteColumn().run()} className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" title="Delete column">
+            <span className="material-symbols-outlined text-[16px]">delete</span>
+          </button>
+          <div className="w-px h-4 bg-outline-variant/30 mx-xs" />
+          <button onClick={() => { editor.chain().focus().deleteTable().run(); setShowTableBar(false) }} className="flex items-center gap-xs px-2 py-1 rounded text-label-sm text-error hover:bg-error/10 transition-colors">
+            <span className="material-symbols-outlined text-[14px]">delete_forever</span>
+            Delete Table
+          </button>
+        </div>
+      )}
+
+      {/* Image editing bar */}
+      {imgEdit && (() => {
+        const selectedImg = editor.view.dom.querySelector('img.ProseMirror-selectednode') as HTMLElement | null
+
+        const applyAlign = (align: string) => {
+          // Persist to ProseMirror node
+          const node = editor.state.doc.nodeAt(imgEdit.pos)
+          if (node) {
+            const tr = editor.state.tr.setNodeMarkup(imgEdit.pos, undefined, { ...node.attrs, align })
+            editor.view.dispatch(tr)
+          }
+          // Apply visual style immediately
+          if (selectedImg) {
+            selectedImg.style.display = 'block'
+            if (align === 'center') { selectedImg.style.margin = '0 auto' }
+            else if (align === 'right') { selectedImg.style.margin = '0 0 0 auto' }
+            else { selectedImg.style.margin = '0' }
+          }
+          setImgEdit({ ...imgEdit, align })
+        }
+
+        const applyWidth = (w: string) => {
+          const node = editor.state.doc.nodeAt(imgEdit.pos)
+          if (node) {
+            const tr = editor.state.tr.setNodeMarkup(imgEdit.pos, undefined, { ...node.attrs, width: w || null })
+            editor.view.dispatch(tr)
+          }
+          if (selectedImg) {
+            selectedImg.style.width = w
+          }
+          setImgEdit({ ...imgEdit, width: w })
+        }
+
+        return (
+          <div className="flex items-center gap-xs px-sm py-1.5 border-b border-outline-variant/30 bg-surface-container-low/50">
+            <span className="text-[11px] text-on-surface-variant font-bold mr-1">Size</span>
+            {[{ label: 'S', w: '33%' }, { label: 'M', w: '50%' }, { label: 'L', w: '75%' }, { label: 'XL', w: '' }].map((s) => (
+              <button
+                key={s.label}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyWidth(s.w)}
+                className={cn(
+                  'w-7 h-7 rounded flex items-center justify-center text-[11px] font-bold transition-colors',
+                  imgEdit.width === s.w ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high',
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+            <div className="w-px h-4 bg-outline-variant/30 mx-xs" />
+            <span className="text-[11px] text-on-surface-variant font-bold mr-1">Align</span>
+            {[
+              { a: 'left', icon: 'format_align_left' },
+              { a: 'center', icon: 'format_align_center' },
+              { a: 'right', icon: 'format_align_right' },
+            ].map((item) => (
+              <button
+                key={item.a}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyAlign(item.a)}
+                className={cn(
+                  'w-7 h-7 rounded flex items-center justify-center transition-colors',
+                  imgEdit.align === item.a ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high',
+                )}
+              >
+                <span className="material-symbols-outlined text-[16px]">{item.icon}</span>
+              </button>
+            ))}
+          </div>
+        )
+      })()}
     </>
   )
 }
@@ -185,7 +348,25 @@ export function Editor({ content = '', onUpdate, onExportMd, placeholder = 'Star
       StarterKit,
       Placeholder.configure({ placeholder }),
       Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-primary underline' } }),
-      Image.configure({ HTMLAttributes: { class: 'max-w-full rounded-lg' } }),
+      Image.configure({
+        allowBase64: true,
+        inline: false,
+        HTMLAttributes: { class: 'max-w-full rounded-lg' },
+        addAttributes() {
+          return {
+            src: { default: null },
+            alt: { default: null },
+            title: { default: null },
+            width: { default: null },
+            height: { default: null },
+            align: {
+              default: 'left',
+              parseHTML: (el: HTMLElement) => el.getAttribute('data-align') || 'left',
+              renderHTML: (attrs: { align?: string }) => ({ 'data-align': attrs.align || 'left' }),
+            },
+          }
+        },
+      }),
       Highlight,
       TaskList,
       TaskItem.configure({ nested: true }),

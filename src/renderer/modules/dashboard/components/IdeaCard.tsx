@@ -106,7 +106,7 @@ export const IdeaCard = forwardRef<IdeaCardHandle, IdeaCardProps>(function IdeaC
             </div>
           ) : null}
 
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute -top-4 -left-4 pointer-events-none">
             <span className={cn(
               'material-symbols-outlined text-[120px] opacity-[0.06] select-none',
               CATEGORY_CONFIG[current.category]?.text || 'text-primary',
