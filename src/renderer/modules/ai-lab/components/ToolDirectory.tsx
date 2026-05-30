@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { extensionRegistry } from '@/lib/extension-registry'
 import { cn } from '@/lib/utils'
+import { SlidingTabs } from '@/components/ui/sliding-tabs'
 
 const categories = ['All Tools', 'Text', 'Image', 'Code', 'Audio', 'Video'] as const
 type Category = (typeof categories)[number]
@@ -13,6 +14,8 @@ const categoryFilterMap: Record<Category, string | null> = {
   Audio: 'audio',
   Video: 'video',
 }
+
+const categoryTabs = categories.map((c) => ({ value: c, label: c }))
 
 interface DefaultTool {
   id: string
@@ -61,25 +64,14 @@ export function ToolDirectory({ onOpenTool }: ToolDirectoryProps) {
     <div className="space-y-md">
       <div className="flex items-center justify-between">
         <h2 className="font-headline-lg text-headline-lg">AI Tool Directory</h2>
-        <div className="flex bg-surface-container rounded-lg p-1">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={cn(
-                'px-md py-1.5 rounded-lg text-label-md transition-all',
-                activeCategory === cat
-                  ? 'bg-surface-container-lowest text-primary font-bold shadow-sm'
-                  : 'hover:bg-surface-container-high font-medium',
-              )}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        <SlidingTabs
+          tabs={categoryTabs}
+          value={activeCategory}
+          onChange={(v) => setActiveCategory(v as Category)}
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-sm">
         {allTools.map((tool) => (
           <div
             key={tool.id}
@@ -90,23 +82,25 @@ export function ToolDirectory({ onOpenTool }: ToolDirectoryProps) {
                 onOpenTool?.(tool.url)
               }
             }}
-            className="bento-card group cursor-pointer border-outline-variant/60 rounded-lg hover:border-primary transition-colors"
+            className="group cursor-pointer bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-sm hover:border-primary/40 hover:shadow-ambient transition-all"
           >
-            <div className="flex justify-between items-start mb-md">
-              <div className="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
-                <span className="material-symbols-outlined">{tool.icon}</span>
+            <div className="flex items-center gap-sm mb-sm">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <span className="material-symbols-outlined text-[18px]">{tool.icon}</span>
               </div>
-              <span className="px-sm py-1 bg-primary/10 text-primary text-[10px] font-bold rounded-full uppercase">
-                {tool.category}
-              </span>
+              <div className="min-w-0">
+                <h4 className="font-label-md font-bold text-on-surface truncate">{tool.name}</h4>
+                <p className="text-[10px] text-on-surface-variant">{tool.provider}</p>
+              </div>
             </div>
-            <h4 className="font-headline-sm text-headline-sm mb-xs">{tool.name}</h4>
-            <p className="text-on-surface-variant text-[13px] mb-lg leading-relaxed">
+            <p className="text-on-surface-variant text-[11px] leading-relaxed line-clamp-2 min-h-[2.4em] mb-sm">
               {tool.description}
             </p>
-            <div className="flex items-center justify-between mt-auto pt-md border-t border-outline-variant/30">
-              <span className="font-mono text-[11px] opacity-60">{tool.provider}</span>
-              <span className="material-symbols-outlined text-[18px] text-primary opacity-0 group-hover:opacity-100 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="px-2 py-0.5 bg-primary/10 text-primary text-[9px] font-bold rounded-full uppercase">
+                {tool.category}
+              </span>
+              <span className="material-symbols-outlined text-[14px] text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                 {isBlocked(tool.url) ? 'open_in_new' : 'arrow_forward'}
               </span>
             </div>

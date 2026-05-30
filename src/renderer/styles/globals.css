@@ -146,11 +146,19 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-outline-variant;
+    background: rgb(var(--color-outline-variant) / 0.5);
     border-radius: 10px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-outline;
+    @apply bg-outline-variant;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   /* Rich text editor typography */
