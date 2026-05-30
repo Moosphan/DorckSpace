@@ -24,24 +24,26 @@ function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => [...prev, { ...data, id }])
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, 3000)
+    }, 2500)
   }, [])
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-sm">
+      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-sm items-end">
         {toasts.map((t) => (
           <div
             key={t.id}
             className={cn(
-              'bg-inverse-surface text-inverse-on-surface rounded-xl px-md py-sm shadow-lg min-w-[280px] max-w-sm animate-fade-in',
-              t.variant === 'error' && 'bg-error text-on-error',
-              t.variant === 'success' && 'bg-primary text-on-primary',
+              'rounded-xl px-md py-2.5 shadow-lg min-w-[200px] max-w-sm animate-fade-in text-center backdrop-blur-md',
+              !t.variant && 'bg-inverse-surface/80 text-inverse-on-surface',
+              t.variant === 'error' && 'bg-error/80 text-on-error',
+              t.variant === 'success' && 'bg-primary/80 text-on-primary',
+              t.variant === 'info' && 'bg-surface-container/80 text-on-surface',
             )}
           >
             {t.title && <p className="font-label-md">{t.title}</p>}
-            {t.description && <p className="text-body-sm opacity-80">{t.description}</p>}
+            {t.description && <p className="text-body-sm opacity-80 mt-0.5">{t.description}</p>}
           </div>
         ))}
       </div>

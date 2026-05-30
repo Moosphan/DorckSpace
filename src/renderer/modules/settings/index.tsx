@@ -56,6 +56,43 @@ interface SocialAccount {
   api_config: string
 }
 
+function AiSummarySection() {
+  const { general, setGeneral } = useSettingsStore()
+  const [prompt, setPrompt] = useState('')
+
+  useEffect(() => {
+    window.electronAPI.getSetting('integrations').then((val: unknown) => {
+      const integrations = (val as Record<string, unknown>) || {}
+      setPrompt((integrations.aiSummaryPrompt as string) || '')
+    })
+  }, [])
+
+  const handleSave = async () => {
+    const val = await window.electronAPI.getSetting('integrations')
+    const integrations = (val as Record<string, unknown>) || {}
+    integrations.aiSummaryPrompt = prompt
+    await window.electronAPI.setSetting('integrations', integrations)
+  }
+
+  return (
+    <Section title="AI Summary">
+      <div className="space-y-xs">
+        <label className="font-label-sm text-on-surface-variant px-sm">Custom Prompt</label>
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onBlur={handleSave}
+          placeholder="e.g. Summarize in bullet points, focus on actionable insights, reply in Chinese..."
+          className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary rounded-xl px-md py-sm font-body-md text-body-sm text-on-surface placeholder-on-surface-variant/50 outline-none resize-none transition-all h-24"
+        />
+        <p className="text-[11px] text-on-surface-variant px-sm">
+          Leave empty to use the default prompt. The prompt will be combined with the article text when generating summaries.
+        </p>
+      </div>
+    </Section>
+  )
+}
+
 function extractFromUrl(input: string, platform: string): { accountId: string; profileUrl: string } {
   const trimmed = input.trim()
   if (platform === 'bilibili') {
@@ -294,11 +331,14 @@ export default function Settings() {
           <>
             <Section title="General">
               <SettingRow label="Language" description="Interface language">
-                <select className="bg-surface-container-low border-none rounded-lg px-3 py-1.5 font-label-md text-on-surface appearance-none pr-8 text-body-sm"
+                <select
+                  value={general.language}
+                  onChange={(e) => setGeneral({ language: e.target.value })}
+                  className="bg-surface-container-low border-none rounded-lg px-3 py-1.5 font-label-md text-on-surface appearance-none pr-8 text-body-sm"
                   style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' fill=\'%237B7486\' viewBox=\'0 0 16 16\'%3E%3Cpath d=\'M4 6l4 4 4-4\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
                 >
-                  <option>English</option>
-                  <option>中文</option>
+                  <option value="en-US">English</option>
+                  <option value="zh-CN">中文</option>
                 </select>
               </SettingRow>
               <SettingRow label="Auto-save" description="Automatically save content while editing">
@@ -478,6 +518,7 @@ export default function Settings() {
                 </button>
               </div>
             </Section>
+            <AiSummarySection />
             <SocialAccountsSection />
           </>
         )}

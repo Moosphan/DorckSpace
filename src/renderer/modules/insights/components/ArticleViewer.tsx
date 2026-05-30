@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
+import { useToast } from '@/components/ui/toast'
 
 interface ArticleViewerProps {
   articleId: number
@@ -26,6 +27,7 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
   const webviewRef = useRef<HTMLWebViewElement>(null)
   const listenersAttached = useRef(false)
 
+  const { toast } = useToast()
   const { data: highlights, refetch: refetchHighlights } = useIpcData<Highlight[]>('highlights:getByArticle', articleId)
   const { mutate: createHighlight } = useIpcMutation<number>('highlights:create')
   const { mutate: deleteHighlight } = useIpcMutation<boolean>('highlights:delete')
@@ -223,14 +225,14 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
         <header className="flex items-center gap-sm px-md py-2 border-b border-outline-variant/30 bg-surface shrink-0">
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors"
           >
-            <span className="material-symbols-outlined">arrow_back</span>
+            <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
           <div className="flex-1 min-w-0">
             <p className="font-label-md text-on-surface truncate">{articleTitle}</p>
           </div>
-          <div className="flex items-center gap-xs">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => window.electronAPI.openExternal(articleUrl)}
               className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
@@ -374,9 +376,9 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
                     <span className="material-symbols-outlined text-[16px]">close</span>
                   </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-sm">
+                <div className="flex-1 overflow-y-auto p-sm flex flex-col">
                   {summaryLoading ? (
-                    <div className="flex flex-col items-center justify-center py-xl gap-sm">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-sm">
                       <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       <p className="text-body-sm text-on-surface-variant">Generating summary...</p>
                     </div>
@@ -386,7 +388,7 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
                       {summary && (
                         <div className="flex gap-xs pt-sm border-t border-outline-variant/30">
                           <button
-                            onClick={() => handleCopy(summary)}
+                            onClick={() => { handleCopy(summary); toast({ title: 'Copied to clipboard', variant: 'success' }) }}
                             className="flex items-center gap-xs px-2.5 py-1 rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container transition-colors"
                           >
                             <span className="material-symbols-outlined text-[14px]">content_copy</span>
@@ -396,6 +398,7 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
                             onClick={async () => {
                               await createHighlight({ article_id: articleId, selected_text: summary, note: 'AI Summary' })
                               refetchHighlights()
+                              toast({ title: 'Saved as highlight', variant: 'success' })
                             }}
                             className="flex items-center gap-xs px-2.5 py-1 rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container transition-colors"
                           >

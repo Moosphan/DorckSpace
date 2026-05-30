@@ -131,8 +131,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       return { theme: newTheme }
     }),
 
-  setGeneral: (partial) =>
-    set((state) => ({ general: { ...state.general, ...partial } })),
+  setGeneral: (partial) => {
+    set((state) => ({ general: { ...state.general, ...partial } }))
+    // Persist to disk after state update
+    const { general } = get()
+    window.electronAPI.setSetting('general', general)
+  },
 
   loadSettings: async () => {
     try {

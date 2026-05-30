@@ -20,9 +20,31 @@ function getLanguage(): string {
   return 'English'
 }
 
+function getCustomPrompt(): string {
+  try {
+    const db = getDatabase()
+    const row = db.prepare("SELECT value FROM settings WHERE key = 'integrations'").get() as { value: string } | undefined
+    if (row) {
+      const integrations = JSON.parse(row.value)
+      return integrations.aiSummaryPrompt || ''
+    }
+  } catch { /* ignore */ }
+  return ''
+}
+
 function buildPrompt(text: string, language: string): string {
   const truncated = text.substring(0, 6000)
-  return `Summarize the following article in 3-5 concise bullet points. Focus on key insights and actionable takeaways. Reply in ${language}:\n\n${truncated}`
+  const custom = getCustomPrompt()
+
+  if (custom) {
+    const langHint = language === 'Chinese' ? '请用中文回答。' : ''
+    return `${custom}${langHint}\n\n${truncated}`
+  }
+
+  if (language === 'Chinese') {
+    return `请用中文总结以下文章，列出3-5个要点，重点关注核心观点和可操作的要点：\n\n${truncated}`
+  }
+  return `Summarize the following article in 3-5 concise bullet points. Focus on key insights and actionable takeaways:\n\n${truncated}`
 }
 
 async function summarizeViaClaudeCli(text: string, language: string): Promise<string> {

@@ -3,6 +3,7 @@ import { Editor } from './components/Editor'
 import { ArticleList } from './components/ArticleList'
 import { CategorySelector } from './components/CategorySelector'
 import { PublishPanel } from './components/PublishPanel'
+import { HighlightsModal } from './components/HighlightsModal'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 
 interface Article {
@@ -19,6 +20,7 @@ export default function Writing() {
   const [newTitle, setNewTitle] = useState('Untitled')
   const [newCategory, setNewCategory] = useState<string | null>(null)
   const [showPublish, setShowPublish] = useState(false)
+  const [showHighlights, setShowHighlights] = useState(false)
   const createdIdRef = useRef<number | null>(null)
 
   const { data: article, refetch } = useIpcData<Article | null>(
@@ -191,7 +193,10 @@ export default function Writing() {
             <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1">Active Research</h4>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-auto">Saved articles and threads</p>
           </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-ambient h-48 flex flex-col cursor-pointer hover:-translate-y-1 transition-transform">
+          <div
+            onClick={() => setShowHighlights(true)}
+            className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-ambient h-48 flex flex-col cursor-pointer hover:-translate-y-1 transition-transform"
+          >
             <div className="w-12 h-12 rounded-xl bg-secondary-fixed flex items-center justify-center text-secondary mb-4">
               <span className="material-symbols-outlined fill">bookmarks</span>
             </div>
@@ -209,6 +214,11 @@ export default function Writing() {
       </section>
 
       <ArticleList onOpenArticle={handleOpenArticle} />
+
+      <HighlightsModal
+        open={showHighlights}
+        onClose={() => setShowHighlights(false)}
+      />
     </div>
   )
 }
