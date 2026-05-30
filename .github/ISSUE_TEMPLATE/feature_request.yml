@@ -2,7 +2,6 @@ name: Feature Request
 description: Suggest a new feature or improvement for DorckDashboard
 title: "[feat]: "
 labels: ["enhancement"]
-type: Enhancement
 
 body:
   - type: markdown
