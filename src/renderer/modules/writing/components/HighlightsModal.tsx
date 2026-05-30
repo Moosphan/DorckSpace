@@ -17,9 +17,10 @@ interface HighlightWithArticle {
 interface HighlightsModalProps {
   open: boolean
   onClose: () => void
+  onOpenArticle?: (article: { id: number; url: string; title: string }) => void
 }
 
-export function HighlightsModal({ open, onClose }: HighlightsModalProps) {
+export function HighlightsModal({ open, onClose, onOpenArticle }: HighlightsModalProps) {
   const { data: highlights, loading, refetch } = useIpcData<HighlightWithArticle[]>('highlights:getAll', 200)
   const { mutate: deleteHighlight } = useIpcMutation<boolean>('highlights:delete')
   const { mutate: updateNote } = useIpcMutation<boolean>('highlights:updateNote')
@@ -45,8 +46,12 @@ export function HighlightsModal({ open, onClose }: HighlightsModalProps) {
     refetch()
   }
 
-  const handleOpenArticle = (url: string) => {
-    window.electronAPI.openExternal(url)
+  const handleOpenArticle = (articleId: number, url: string, title: string) => {
+    if (onOpenArticle) {
+      onOpenArticle({ id: articleId, url, title })
+    } else {
+      window.electronAPI.openExternal(url)
+    }
   }
 
   const handleExport = async () => {
@@ -126,7 +131,7 @@ export function HighlightsModal({ open, onClose }: HighlightsModalProps) {
                   <div className="flex items-center gap-sm pb-xs border-b border-outline-variant/20">
                     <span className="material-symbols-outlined text-[16px] text-primary">description</span>
                     <button
-                      onClick={() => handleOpenArticle(items[0].article_url)}
+                      onClick={() => handleOpenArticle(items[0].article_id, items[0].article_url, articleTitle)}
                       className="font-label-md text-on-surface hover:text-primary transition-colors truncate text-left"
                     >
                       {articleTitle}
@@ -175,7 +180,7 @@ export function HighlightsModal({ open, onClose }: HighlightsModalProps) {
                             <span className="material-symbols-outlined text-[14px]">edit_note</span>
                           </button>
                           <button
-                            onClick={() => handleOpenArticle(h.article_url)}
+                            onClick={() => handleOpenArticle(h.article_id, h.article_url, h.article_title)}
                             className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
                             title="Open article"
                           >

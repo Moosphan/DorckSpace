@@ -4,6 +4,7 @@ import { ArticleList } from './components/ArticleList'
 import { CategorySelector } from './components/CategorySelector'
 import { PublishPanel } from './components/PublishPanel'
 import { HighlightsModal } from './components/HighlightsModal'
+import { ArticleViewer } from '@/modules/insights/components/ArticleViewer'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 
 interface Article {
@@ -21,6 +22,7 @@ export default function Writing() {
   const [newCategory, setNewCategory] = useState<string | null>(null)
   const [showPublish, setShowPublish] = useState(false)
   const [showHighlights, setShowHighlights] = useState(false)
+  const [viewingArticle, setViewingArticle] = useState<{ id: number; url: string; title: string } | null>(null)
   const createdIdRef = useRef<number | null>(null)
 
   const { data: article, refetch } = useIpcData<Article | null>(
@@ -218,7 +220,20 @@ export default function Writing() {
       <HighlightsModal
         open={showHighlights}
         onClose={() => setShowHighlights(false)}
+        onOpenArticle={(article) => {
+          setShowHighlights(false)
+          setViewingArticle(article)
+        }}
       />
+
+      {viewingArticle && (
+        <ArticleViewer
+          articleId={viewingArticle.id}
+          articleUrl={viewingArticle.url}
+          articleTitle={viewingArticle.title}
+          onClose={() => setViewingArticle(null)}
+        />
+      )}
     </div>
   )
 }

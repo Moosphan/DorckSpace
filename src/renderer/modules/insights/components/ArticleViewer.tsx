@@ -40,6 +40,7 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
     const onDomReady = () => {
       setLoading(false)
       injectSelectionListener(wv)
+      injectScrollbarStyle(wv)
     }
     const onDidStartLoading = () => setLoading(true)
     const onDidStopLoading = () => setLoading(false)
@@ -68,6 +69,11 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
       refetchHighlights()
     }
   }, [activePanel, refetchHighlights])
+
+  const injectScrollbarStyle = (wv: HTMLWebViewElement) => {
+    const css = `::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(203,195,215,0.6); border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: rgba(123,116,134,0.8); }`
+    try { wv.insertCSS(css) } catch { /* ignore */ }
+  }
 
   const injectSelectionListener = (wv: HTMLWebViewElement) => {
     const script = `
@@ -314,14 +320,14 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
             <div className="absolute inset-0 z-20 flex justify-end">
               <div className="absolute inset-0 bg-black/30" onClick={() => setActivePanel(null)} />
               <div className="relative w-80 bg-surface-container-lowest border-l border-outline-variant/30 flex flex-col shadow-xl">
-                <div className="flex items-center justify-between px-sm py-2 border-b border-outline-variant/30 shrink-0">
-                  <h3 className="font-label-md text-on-surface flex items-center gap-xs">
+                <div className="flex items-center justify-between px-sm py-2 border-b border-outline-variant/30 shrink-0 h-10">
+                  <h3 className="font-label-md text-on-surface flex items-center gap-xs leading-none">
                     <span className="material-symbols-outlined text-[16px] text-primary">format_ink_highlighter</span>
                     Highlights
                   </h3>
-                  <div className="flex items-center gap-xs">
-                    <span className="text-[11px] text-on-surface-variant">{highlights?.length ?? 0}</span>
-                    <button onClick={() => setActivePanel(null)} className="text-on-surface-variant hover:text-on-surface transition-colors">
+                  <div className="flex items-center gap-sm">
+                    <span className="text-label-sm text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded-full leading-none">{highlights?.length ?? 0}</span>
+                    <button onClick={() => setActivePanel(null)} className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
                       <span className="material-symbols-outlined text-[16px]">close</span>
                     </button>
                   </div>
