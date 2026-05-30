@@ -35,7 +35,7 @@ const categoryColors: Record<string, string> = {
   Dev: 'bg-surface-container text-on-surface-variant',
 }
 
-export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
+export function ArticleFeed({ refreshTrigger, onOpenArticle }: { refreshTrigger?: number; onOpenArticle?: (article: Article) => void }) {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const isInitialRef = useRef(true)
@@ -87,7 +87,11 @@ export function ArticleFeed({ refreshTrigger }: { refreshTrigger?: number }) {
       await markRead(article.id)
       setArticles((prev) => prev.map((a) => a.id === article.id ? { ...a, is_read: 1 } : a))
     }
-    window.electronAPI.openExternal(article.url)
+    if (onOpenArticle) {
+      onOpenArticle(article)
+    } else {
+      window.electronAPI.openExternal(article.url)
+    }
   }
 
   const handleStar = async (e: React.MouseEvent, id: number) => {

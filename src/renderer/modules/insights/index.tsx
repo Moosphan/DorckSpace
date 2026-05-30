@@ -2,10 +2,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { ArticleFeed } from './components/ArticleFeed'
 import { SocialCards } from './components/SocialCards'
 import { FeedManager } from './components/FeedManager'
+import { ArticleViewer } from './components/ArticleViewer'
+
+interface SelectedArticle {
+  id: number
+  url: string
+  title: string
+}
 
 export default function Insights() {
   const [showFeedManager, setShowFeedManager] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [viewingArticle, setViewingArticle] = useState<SelectedArticle | null>(null)
 
   // Fetch all RSS feeds on page load
   useEffect(() => {
@@ -16,6 +24,10 @@ export default function Insights() {
 
   const handleFeedAdded = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1)
+  }, [])
+
+  const handleOpenArticle = useCallback((article: { id: number; url: string; title: string }) => {
+    setViewingArticle({ id: article.id, url: article.url, title: article.title })
   }, [])
 
   return (
@@ -37,7 +49,7 @@ export default function Insights() {
       </div>
 
       <div className="grid grid-cols-12 gap-gutter items-stretch">
-        <ArticleFeed refreshTrigger={refreshTrigger} />
+        <ArticleFeed refreshTrigger={refreshTrigger} onOpenArticle={handleOpenArticle} />
         <SocialCards />
       </div>
 
@@ -45,6 +57,15 @@ export default function Insights() {
         <FeedManager
           onClose={() => setShowFeedManager(false)}
           onFeedAdded={handleFeedAdded}
+        />
+      )}
+
+      {viewingArticle && (
+        <ArticleViewer
+          articleId={viewingArticle.id}
+          articleUrl={viewingArticle.url}
+          articleTitle={viewingArticle.title}
+          onClose={() => setViewingArticle(null)}
         />
       )}
     </div>

@@ -317,6 +317,22 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 8,
+    name: '008_article_highlights',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS article_highlights (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          article_id INTEGER NOT NULL REFERENCES rss_articles(id) ON DELETE CASCADE,
+          selected_text TEXT NOT NULL,
+          note TEXT,
+          color TEXT DEFAULT '#FEC300',
+          created_at TEXT DEFAULT (datetime('now'))
+        )
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {
