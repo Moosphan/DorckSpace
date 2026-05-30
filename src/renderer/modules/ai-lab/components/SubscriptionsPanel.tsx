@@ -19,12 +19,12 @@ interface Subscription {
 }
 
 const PROVIDERS = [
-  { value: 'openai', label: 'OpenAI', color: 'bg-on-surface', abbr: 'OAI' },
-  { value: 'anthropic', label: 'Anthropic', color: 'bg-primary', abbr: 'ANT' },
-  { value: 'google', label: 'Google', color: 'bg-blue-500', abbr: 'GGL' },
-  { value: 'midjourney', label: 'Midjourney', color: 'bg-purple-600', abbr: 'MJ' },
-  { value: 'deepseek', label: 'DeepSeek', color: 'bg-teal-600', abbr: 'DS' },
-  { value: 'other', label: 'Other', color: 'bg-surface-variant', abbr: '...' },
+  { value: 'openai', label: 'OpenAI', color: 'bg-on-surface', abbr: 'OAI', logo: 'https://thesvg.org/icons/openai/light.svg', logoDark: 'https://thesvg.org/icons/openai/dark.svg' },
+  { value: 'anthropic', label: 'Anthropic', color: 'bg-primary', abbr: 'ANT', logo: 'https://thesvg.org/icons/claude/default.svg', logoDark: '' },
+  { value: 'google', label: 'Google', color: 'bg-blue-500', abbr: 'GGL', logo: 'https://thesvg.org/icons/google/default.svg', logoDark: '' },
+  { value: 'midjourney', label: 'Midjourney', color: 'bg-purple-600', abbr: 'MJ', logo: 'https://thesvg.org/icons/midjourney/default.svg', logoDark: '' },
+  { value: 'deepseek', label: 'DeepSeek', color: 'bg-teal-600', abbr: 'DS', logo: 'https://thesvg.org/icons/deepseek/default.svg', logoDark: '' },
+  { value: 'other', label: 'Other', color: 'bg-surface-variant', abbr: '...', logo: '', logoDark: '' },
 ]
 
 const BILLING_CYCLES = [
@@ -167,9 +167,22 @@ export function SubscriptionsPanel() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-sm">
-                    <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center text-on-primary text-[9px] font-bold', provider.color)}>
-                      {provider.abbr}
-                    </div>
+                    {provider.logo ? (
+                      <div className="w-8 h-8 rounded-lg bg-surface-container-low p-0.5 relative">
+                        {provider.logoDark ? (
+                          <>
+                            <img src={provider.logo} alt={provider.label} className="w-full h-full object-contain dark:hidden" />
+                            <img src={provider.logoDark} alt={provider.label} className="w-full h-full object-contain hidden dark:block" />
+                          </>
+                        ) : (
+                          <img src={provider.logo} alt={provider.label} className="w-full h-full object-contain" />
+                        )}
+                      </div>
+                    ) : (
+                      <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center text-on-primary text-[9px] font-bold', provider.color)}>
+                        {provider.abbr}
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="font-label-md font-bold text-on-surface truncate">{sub.plan_name}</p>
                       <p className="text-[10px] text-on-surface-variant">{provider.label}</p>
