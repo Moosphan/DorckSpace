@@ -27,11 +27,6 @@ interface DefaultTool {
   icon: string
 }
 
-const BLOCKED_HOSTS = ['claude.ai', 'chat.openai.com', 'gemini.google.com', 'midjourney.com', 'github.com']
-
-function isBlocked(url: string): boolean {
-  try { return BLOCKED_HOSTS.some((h) => new URL(url).hostname.includes(h)) } catch { return false }
-}
 
 const defaultTools: DefaultTool[] = [
   { id: 'claude', name: 'Claude', description: 'Advanced reasoning and coding assistant with Artifacts UI.', category: 'text', provider: 'Anthropic', url: 'https://claude.ai', icon: 'smart_toy' },
@@ -75,13 +70,7 @@ export function ToolDirectory({ onOpenTool }: ToolDirectoryProps) {
         {allTools.map((tool) => (
           <div
             key={tool.id}
-            onClick={() => {
-              if (isBlocked(tool.url)) {
-                window.electronAPI.openExternal(tool.url)
-              } else {
-                onOpenTool?.(tool.url)
-              }
-            }}
+            onClick={() => onOpenTool?.(tool.url)}
             className="group cursor-pointer bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-sm hover:border-primary/40 hover:shadow-ambient transition-all"
           >
             <div className="flex items-center gap-sm mb-sm">
@@ -101,7 +90,7 @@ export function ToolDirectory({ onOpenTool }: ToolDirectoryProps) {
                 {tool.category}
               </span>
               <span className="material-symbols-outlined text-[14px] text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                {isBlocked(tool.url) ? 'open_in_new' : 'arrow_forward'}
+                arrow_forward
               </span>
             </div>
           </div>
