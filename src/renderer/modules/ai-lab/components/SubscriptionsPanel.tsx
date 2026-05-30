@@ -126,7 +126,7 @@ export function SubscriptionsPanel() {
   }
 
   return (
-    <div className="col-span-12 lg:col-span-7 bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30">
+    <div className="bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30">
       <div className="flex items-center justify-between mb-md">
         <div>
           <h3 className="font-headline-sm text-headline-sm">Active Subscriptions</h3>

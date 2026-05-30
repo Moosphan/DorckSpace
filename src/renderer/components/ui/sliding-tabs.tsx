@@ -43,10 +43,10 @@ export function SlidingTabs({ tabs, value, onChange, className }: SlidingTabsPro
   return (
     <div
       ref={containerRef}
-      className={cn('relative flex bg-surface-container rounded-md p-0.5', className)}
+      className={cn('relative flex bg-surface-container rounded-md p-[2px]', className)}
     >
       <div
-        className="absolute top-0.5 bottom-0.5 bg-surface-container-lowest rounded-md shadow-sm transition-all duration-200 ease-out"
+        className="absolute top-[2px] bottom-[2px] bg-surface-container-lowest rounded-[5px] shadow-sm transition-all duration-200 ease-out"
         style={{ left: style.left, width: style.width }}
       />
       {tabs.map((tab) => (
@@ -55,7 +55,7 @@ export function SlidingTabs({ tabs, value, onChange, className }: SlidingTabsPro
           ref={(el) => { if (el) tabRefs.current.set(tab.value, el) }}
           onClick={() => onChange(tab.value)}
           className={cn(
-            'relative z-10 px-md py-1 rounded-md text-label-sm transition-colors whitespace-nowrap',
+            'relative z-10 px-3 py-0.5 rounded-[5px] text-[11px] transition-colors whitespace-nowrap',
             value === tab.value
               ? 'text-primary font-bold'
               : 'text-on-surface-variant hover:text-on-surface font-medium',
