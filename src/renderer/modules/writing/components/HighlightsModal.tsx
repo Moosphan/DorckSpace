@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
+import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
 interface HighlightWithArticle {
@@ -21,6 +22,7 @@ interface HighlightsModalProps {
 }
 
 export function HighlightsModal({ open, onClose, onOpenArticle }: HighlightsModalProps) {
+  const { toast } = useToast()
   const { data: highlights, loading, refetch } = useIpcData<HighlightWithArticle[]>('highlights:getAll', 200)
   const { mutate: deleteHighlight } = useIpcMutation<boolean>('highlights:delete')
   const { mutate: updateNote } = useIpcMutation<boolean>('highlights:updateNote')
@@ -54,18 +56,49 @@ export function HighlightsModal({ open, onClose, onOpenArticle }: HighlightsModa
     }
   }
 
-  const handleExport = async () => {
-    if (!highlights || highlights.length === 0) return
+  const buildMarkdown = () => {
+    if (!highlights || highlights.length === 0) return ''
     const lines = highlights.map((h) => {
       let line = `> ${h.selected_text}`
       if (h.note) line += `\n\n*Note: ${h.note}*`
       line += `\n\nSource: [${h.article_title}](${h.article_url})`
       return line
     })
-    const md = `# Bookmarks Export\n\n${lines.join('\n\n---\n\n')}`
+    return `# Saved Highlights\n\n${lines.join('\n\n---\n\n')}`
+  }
+
+  const handleExport = async () => {
+    const md = buildMarkdown()
+    if (!md) {
+      toast({ title: 'No highlights to export', variant: 'info' })
+      return
+    }
+    try {
+      const blob = new Blob([md], { type: 'text/markdown' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `highlights-${new Date().toISOString().split('T')[0]}.md`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast({ title: 'Exported as Markdown', variant: 'success' })
+    } catch {
+      toast({ title: 'Export failed', variant: 'error' })
+    }
+  }
+
+  const handleCopy = async () => {
+    const md = buildMarkdown()
+    if (!md) {
+      toast({ title: 'No highlights to copy', variant: 'info' })
+      return
+    }
     try {
       await navigator.clipboard.writeText(md)
-    } catch { /* ignore */ }
+      toast({ title: 'Copied to clipboard', variant: 'success' })
+    } catch {
+      toast({ title: 'Copy failed', variant: 'error' })
+    }
   }
 
   // Group highlights by article
@@ -93,9 +126,17 @@ export function HighlightsModal({ open, onClose, onOpenArticle }: HighlightsModa
           </div>
           <div className="flex items-center gap-xs">
             <button
+              onClick={handleCopy}
+              className="flex items-center gap-xs px-2.5 py-1 rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container transition-colors"
+              title="Copy as Markdown"
+            >
+              <span className="material-symbols-outlined text-[14px]">content_copy</span>
+              Copy
+            </button>
+            <button
               onClick={handleExport}
               className="flex items-center gap-xs px-2.5 py-1 rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container transition-colors"
-              title="Export as Markdown"
+              title="Download as Markdown"
             >
               <span className="material-symbols-outlined text-[14px]">download</span>
               Export

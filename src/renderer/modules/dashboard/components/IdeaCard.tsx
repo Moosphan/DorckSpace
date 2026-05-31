@@ -10,13 +10,13 @@ interface Idea {
   created_at: string
 }
 
-const CATEGORY_CONFIG: Record<string, { label: string; icon: string; gradient: string; text: string }> = {
-  writing: { label: 'WRITING', icon: 'edit_note', gradient: 'from-primary-fixed to-surface-container-low', text: 'text-primary' },
-  coding: { label: 'CODING', icon: 'code', gradient: 'from-blue-100 to-cyan-50', text: 'text-blue-600' },
-  design: { label: 'DESIGN', icon: 'palette', gradient: 'from-pink-100 to-rose-50', text: 'text-pink-600' },
-  research: { label: 'RESEARCH', icon: 'science', gradient: 'from-emerald-100 to-teal-50', text: 'text-emerald-600' },
-  work: { label: 'WORK', icon: 'work', gradient: 'from-amber-100 to-orange-50', text: 'text-amber-700' },
-  social: { label: 'SOCIAL MEDIA', icon: 'share', gradient: 'from-sky-100 to-cyan-50', text: 'text-sky-600' },
+const CATEGORY_CONFIG: Record<string, { label: string; icon: string; gradient: string; darkGradient: string; text: string; darkText: string }> = {
+  writing: { label: 'WRITING', icon: 'edit_note', gradient: 'from-primary-fixed to-surface-container-low', darkGradient: 'dark:from-primary/20 dark:to-surface-container', text: 'text-primary', darkText: 'dark:text-primary-fixed-dim' },
+  coding: { label: 'CODING', icon: 'code', gradient: 'from-blue-100 to-cyan-50', darkGradient: 'dark:from-blue-950 dark:to-cyan-950', text: 'text-blue-600', darkText: 'dark:text-blue-300' },
+  design: { label: 'DESIGN', icon: 'palette', gradient: 'from-pink-100 to-rose-50', darkGradient: 'dark:from-pink-950 dark:to-rose-950', text: 'text-pink-600', darkText: 'dark:text-pink-300' },
+  research: { label: 'RESEARCH', icon: 'science', gradient: 'from-emerald-100 to-teal-50', darkGradient: 'dark:from-emerald-950 dark:to-teal-950', text: 'text-emerald-600', darkText: 'dark:text-emerald-300' },
+  work: { label: 'WORK', icon: 'work', gradient: 'from-amber-100 to-orange-50', darkGradient: 'dark:from-amber-950 dark:to-orange-950', text: 'text-amber-700', darkText: 'dark:text-amber-300' },
+  social: { label: 'SOCIAL MEDIA', icon: 'share', gradient: 'from-sky-100 to-cyan-50', darkGradient: 'dark:from-sky-950 dark:to-cyan-950', text: 'text-sky-600', darkText: 'dark:text-sky-300' },
 }
 
 interface IdeaCardProps {
@@ -99,6 +99,7 @@ export const IdeaCard = forwardRef<IdeaCardHandle, IdeaCardProps>(function IdeaC
         <div className={cn(
           'relative bg-gradient-to-br rounded-lg p-md min-h-[140px] flex flex-col items-center justify-center text-center gap-sm overflow-hidden cursor-pointer pb-8',
           CATEGORY_CONFIG[current.category]?.gradient || 'from-primary-fixed to-surface-container-low',
+          CATEGORY_CONFIG[current.category]?.darkGradient,
         )}>
           {current.is_pinned ? (
             <div className="absolute top-3 right-3 z-20 text-primary/60">
@@ -108,8 +109,9 @@ export const IdeaCard = forwardRef<IdeaCardHandle, IdeaCardProps>(function IdeaC
 
           <div className="absolute -top-4 -left-4 pointer-events-none">
             <span className={cn(
-              'material-symbols-outlined text-[120px] opacity-[0.06] select-none',
+              'material-symbols-outlined text-[120px] opacity-[0.06] dark:opacity-[0.1] select-none',
               CATEGORY_CONFIG[current.category]?.text || 'text-primary',
+              CATEGORY_CONFIG[current.category]?.darkText,
             )}>
               {CATEGORY_CONFIG[current.category]?.icon || 'lightbulb'}
             </span>
@@ -118,6 +120,7 @@ export const IdeaCard = forwardRef<IdeaCardHandle, IdeaCardProps>(function IdeaC
           <p className={cn(
             'relative z-10 font-body-md font-semibold italic leading-relaxed max-w-[90%] drop-shadow-sm',
             CATEGORY_CONFIG[current.category]?.text || 'text-primary',
+            CATEGORY_CONFIG[current.category]?.darkText,
           )}>
             "{current.content}"
           </p>
