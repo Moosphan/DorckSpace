@@ -5,6 +5,8 @@ export interface AISubscriptionRow {
   id: number
   provider: string
   plan_name: string
+  base_url: string | null
+  api_key: string | null
   monthly_cost: number | null
   currency: string
   billing_date: number | null
@@ -12,7 +14,6 @@ export interface AISubscriptionRow {
   tokens_used: number
   reset_date: string | null
   is_active: number
-  api_key: string | null
   metadata: string
   created_at: string
   updated_at: string
@@ -45,15 +46,19 @@ export class AISubscriptionRepository extends BaseRepository<AISubscriptionRow> 
   create(data: {
     provider: string
     plan_name: string
+    base_url?: string
+    api_key?: string
     monthly_cost?: number
     token_limit?: number
     metadata?: string
   }): number {
     const result = this.run(
-      `INSERT INTO ai_subscriptions (provider, plan_name, monthly_cost, token_limit, metadata)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO ai_subscriptions (provider, plan_name, base_url, api_key, monthly_cost, token_limit, metadata)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       data.provider,
       data.plan_name,
+      data.base_url ?? null,
+      data.api_key ?? null,
       data.monthly_cost ?? null,
       data.token_limit ?? null,
       data.metadata ?? '{}',

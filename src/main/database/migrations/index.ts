@@ -333,6 +333,15 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 9,
+    name: '009_ai_subscriptions_base_url',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE ai_subscriptions ADD COLUMN base_url TEXT
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

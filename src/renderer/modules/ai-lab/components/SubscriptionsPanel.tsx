@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
+import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
 
@@ -7,6 +8,8 @@ interface Subscription {
   id: number
   provider: string
   plan_name: string
+  base_url: string | null
+  api_key: string | null
   monthly_cost: number | null
   currency: string
   billing_date: number | null
@@ -14,8 +17,12 @@ interface Subscription {
   tokens_used: number
   reset_date: string | null
   is_active: number
-  api_key: string | null
   metadata: string
+}
+
+function maskApiKey(key: string): string {
+  if (!key || key.length <= 8) return key || ''
+  return key.slice(0, 4) + '***' + key.slice(-4)
 }
 
 const PROVIDERS = [
@@ -51,11 +58,15 @@ function getNextRenewal(startDate: string, cycleDays: number): Date | null {
   return next
 }
 
-function getProvider(value: string) {
-  return PROVIDERS.find((p) => p.value === value) || PROVIDERS[PROVIDERS.length - 1]
+function getProvider(value: string): { label: string; color: string; abbr: string; logo: string; logoDark: string } {
+  const found = PROVIDERS.find((p) => p.value === value)
+  if (found) return found
+  // Custom provider
+  return { label: value, color: 'bg-surface-variant', abbr: value.slice(0, 3).toUpperCase(), logo: '', logoDark: '' }
 }
 
 export function SubscriptionsPanel() {
+  const { toast } = useToast()
   const { data: subscriptions, loading, refetch } = useIpcData<Subscription[]>('ai:getAllSubscriptions')
   const { mutate: createSub } = useIpcMutation<number>('ai:createSubscription')
   const { mutate: updateSub } = useIpcMutation<boolean>('ai:updateSubscription')
@@ -64,23 +75,27 @@ export function SubscriptionsPanel() {
 
   const [showDialog, setShowDialog] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [form, setForm] = useState({ provider: 'openai', plan_name: '', monthly_cost: '', token_limit: '', billing_cycle: 'monthly', start_date: '' })
+  const [form, setForm] = useState({ provider: 'openai', custom_provider: '', plan_name: '', base_url: '', api_key: '', monthly_cost: '', token_limit: '', billing_cycle: 'monthly', start_date: '' })
 
   const activeSubs = subscriptions?.filter((s) => s.is_active) ?? []
   const totalCost = activeSubs.reduce((sum, s) => sum + (s.monthly_cost ?? 0), 0)
 
   const handleOpenCreate = () => {
     const today = new Date().toISOString().split('T')[0]
-    setForm({ provider: 'openai', plan_name: '', monthly_cost: '', token_limit: '', billing_cycle: 'monthly', start_date: today })
+    setForm({ provider: 'openai', custom_provider: '', plan_name: '', base_url: '', api_key: '', monthly_cost: '', token_limit: '', billing_cycle: 'monthly', start_date: today })
     setEditingId(null)
     setShowDialog(true)
   }
 
   const handleOpenEdit = (sub: Subscription) => {
     const meta = sub.metadata ? JSON.parse(sub.metadata) : {}
+    const isCustom = !PROVIDERS.some((p) => p.value === sub.provider)
     setForm({
-      provider: sub.provider,
+      provider: isCustom ? 'other' : sub.provider,
+      custom_provider: isCustom ? sub.provider : '',
       plan_name: sub.plan_name,
+      base_url: sub.base_url || '',
+      api_key: sub.api_key || '',
       monthly_cost: sub.monthly_cost?.toString() ?? '',
       token_limit: sub.token_limit?.toString() ?? '',
       billing_cycle: meta.billing_cycle || 'monthly',
@@ -92,19 +107,24 @@ export function SubscriptionsPanel() {
 
   const handleSave = async () => {
     if (!form.plan_name.trim()) return
+    const provider = form.provider === 'other' ? (form.custom_provider.trim() || 'other') : form.provider
     const metadata = JSON.stringify({ billing_cycle: form.billing_cycle, start_date: form.start_date })
     if (editingId) {
       await updateSub(editingId, {
-        provider: form.provider,
+        provider,
         plan_name: form.plan_name.trim(),
+        base_url: form.base_url.trim() || null,
+        api_key: form.api_key.trim() || null,
         monthly_cost: form.monthly_cost ? Number(form.monthly_cost) : null,
         token_limit: form.token_limit ? Number(form.token_limit) : null,
         metadata,
       })
     } else {
       await createSub({
-        provider: form.provider,
+        provider,
         plan_name: form.plan_name.trim(),
+        base_url: form.base_url.trim() || undefined,
+        api_key: form.api_key.trim() || undefined,
         monthly_cost: form.monthly_cost ? Number(form.monthly_cost) : undefined,
         token_limit: form.token_limit ? Number(form.token_limit) : undefined,
         metadata,
@@ -225,6 +245,25 @@ export function SubscriptionsPanel() {
                     </div>
                   </div>
                 )}
+
+                {sub.api_key && (
+                  <div className="flex items-center gap-1 pt-1 border-t border-outline-variant/20">
+                    <span className="material-symbols-outlined text-[12px] text-on-surface-variant">key</span>
+                    <span className="font-mono text-[10px] text-on-surface-variant truncate flex-1">{maskApiKey(sub.api_key)}</span>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(sub.api_key!)
+                          toast({ title: 'API key copied', variant: 'success' })
+                        } catch { toast({ title: 'Copy failed', variant: 'error' }) }
+                      }}
+                      className="w-5 h-5 rounded flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+                      title="Copy API key"
+                    >
+                      <span className="material-symbols-outlined text-[12px]">content_copy</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -261,6 +300,16 @@ export function SubscriptionsPanel() {
                     </button>
                   ))}
                 </div>
+                {form.provider === 'other' && (
+                  <input
+                    type="text"
+                    value={form.custom_provider}
+                    onChange={(e) => setForm({ ...form, custom_provider: e.target.value })}
+                    placeholder="e.g. Cohere, Mistral, Moonshot..."
+                    className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary rounded-lg px-md py-sm text-body-sm outline-none mt-xs"
+                    autoFocus
+                  />
+                )}
               </div>
 
               <div className="space-y-xs">
@@ -271,6 +320,28 @@ export function SubscriptionsPanel() {
                   onChange={(e) => setForm({ ...form, plan_name: e.target.value })}
                   placeholder="e.g. Pro, Team, Free"
                   className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary rounded-lg px-md py-sm text-body-sm outline-none"
+                />
+              </div>
+
+              <div className="space-y-xs">
+                <label className="font-label-sm text-on-surface-variant">Base URL <span className="opacity-50">(optional)</span></label>
+                <input
+                  type="text"
+                  value={form.base_url}
+                  onChange={(e) => setForm({ ...form, base_url: e.target.value })}
+                  placeholder="e.g. https://api.openai.com/v1"
+                  className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary rounded-lg px-md py-sm text-body-sm outline-none font-mono"
+                />
+              </div>
+
+              <div className="space-y-xs">
+                <label className="font-label-sm text-on-surface-variant">API Key <span className="opacity-50">(optional)</span></label>
+                <input
+                  type="password"
+                  value={form.api_key}
+                  onChange={(e) => setForm({ ...form, api_key: e.target.value })}
+                  placeholder="sk-..."
+                  className="w-full bg-surface-container-low border-2 border-transparent focus:border-primary rounded-lg px-md py-sm text-body-sm outline-none font-mono"
                 />
               </div>
 
