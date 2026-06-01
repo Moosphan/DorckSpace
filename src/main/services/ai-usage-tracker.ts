@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../database/connection'
+import { usageProviderRegistry } from './usage-provider-registry'
 
 interface UsageResult {
   balance: number
@@ -183,18 +184,45 @@ async function fetchUsage(subscription: { provider: string; api_key: string | nu
   if (!subscription.api_key) return { result: null, error: 'No API key configured' }
 
   const providerKey = detectProvider(subscription.provider)
-  const api = PROVIDER_APIS[providerKey]
-  if (!api) return { result: null, error: `Usage tracking not available for ${subscription.provider}` }
 
-  try {
-    console.log(`[AI Usage] Calling ${subscription.provider} API...`)
-    const result = await api.query(subscription.api_key, subscription.base_url ?? undefined)
-    console.log(`[AI Usage] ${subscription.provider} result:`, JSON.stringify(result))
-    return { result }
-  } catch (err) {
-    console.error(`[AI Usage] ${subscription.provider} exception:`, err)
-    return { result: null, error: (err as Error).message }
+  // Check built-in providers first
+  const api = PROVIDER_APIS[providerKey]
+  if (api) {
+    try {
+      console.log(`[AI Usage] Calling ${subscription.provider} API...`)
+      const result = await api.query(subscription.api_key, subscription.base_url ?? undefined)
+      console.log(`[AI Usage] ${subscription.provider} result:`, JSON.stringify(result))
+      return { result }
+    } catch (err) {
+      console.error(`[AI Usage] ${subscription.provider} exception:`, err)
+      return { result: null, error: (err as Error).message }
+    }
   }
+
+  // Check plugin-registered providers
+  const pluginProvider = usageProviderRegistry.get(subscription.provider)
+  if (pluginProvider) {
+    try {
+      console.log(`[AI Usage] Calling plugin provider for ${subscription.provider}...`)
+      const pResult = await pluginProvider(subscription.api_key, subscription.base_url ?? undefined)
+      console.log(`[AI Usage] Plugin provider result:`, JSON.stringify(pResult))
+      return {
+        result: {
+          balance: 0,
+          currency: 'CNY',
+          total_tokens: pResult.total_tokens,
+          input_tokens: pResult.input_tokens,
+          output_tokens: pResult.output_tokens,
+          is_available: pResult.is_available,
+        },
+      }
+    } catch (err) {
+      console.error(`[AI Usage] Plugin provider exception:`, err)
+      return { result: null, error: (err as Error).message }
+    }
+  }
+
+  return { result: null, error: `Usage tracking not available for ${subscription.provider}` }
 }
 
 async function trackAllSubscriptions(): Promise<{ success: boolean; updated: number; errors: string[] }> {
@@ -273,6 +301,10 @@ export function registerAiUsageHandlers(): void {
   ipcMain.handle('ai:stopUsagePolling', () => {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
     return { success: true }
+  })
+
+  ipcMain.handle('ai:getRegisteredProviders', () => {
+    return { success: true, data: usageProviderRegistry.list() }
   })
 
   // Start default polling (2 minutes) on app launch

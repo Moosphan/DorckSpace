@@ -361,6 +361,23 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 11,
+    name: '011_plugin_registry',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS plugin_registry (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          version TEXT NOT NULL,
+          enabled INTEGER DEFAULT 1,
+          installed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          metadata TEXT DEFAULT '{}'
+        )
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

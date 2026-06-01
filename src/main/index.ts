@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { registerAllIpcHandlers } from './ipc'
 import { initFileStorage, registerFileIpcHandlers } from './services/file-service'
@@ -19,6 +19,7 @@ import { registerIdeaIpcHandlers } from './ipc/ideas'
 import { registerHighlightIpcHandlers } from './ipc/highlights'
 import { registerAiSummaryHandlers } from './services/ai-summary'
 import { registerAiUsageHandlers } from './services/ai-usage-tracker'
+import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
 import { seedSocialData } from './database/seeds/social-seeds'
@@ -93,6 +94,20 @@ app.whenReady().then(() => {
   registerHighlightIpcHandlers()
   registerAiSummaryHandlers()
   registerAiUsageHandlers()
+
+  // Load plugins
+  const loadedPluginInfos = loadPlugins()
+  console.log(`[App] Loaded ${loadedPluginInfos.length} plugins`)
+
+  // Plugin management IPC
+  ipcMain.handle('plugins:list', () => {
+    return { success: true, data: getLoadedPlugins() }
+  })
+
+  ipcMain.handle('plugins:unload', async (_event, pluginId: string) => {
+    const result = await unloadPlugin(pluginId)
+    return { success: result }
+  })
 
   // Seed initial data
   seedSocialData(db)

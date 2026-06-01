@@ -20,6 +20,23 @@ interface Subscription {
   metadata: string
 }
 
+interface CodexzhStats {
+  todayCalls: number
+  totalCalls: number
+  todayUsed: number
+  todayUsedFormatted: string
+  weekUsed: number
+  weekUsedFormatted: string
+  totalUsed: number
+  totalUsedFormatted: string
+  rpm: number
+  tpm: number
+  dailyQuota: number
+  weeklyQuota: number
+  subscriptionStart: string
+  subscriptionEnd: string
+}
+
 function maskApiKey(key: string): string {
   if (!key || key.length <= 8) return key || ''
   return key.slice(0, 4) + '***' + key.slice(-4)
@@ -58,6 +75,23 @@ function getNextRenewal(startDate: string, cycleDays: number): Date | null {
   return next
 }
 
+function getBillingCycleProgress(startDate: string, cycleDays: number): number {
+  if (!startDate || !cycleDays) return 0
+  const start = new Date(startDate)
+  const now = new Date()
+  let cycleStart = new Date(start)
+  // Find current cycle start
+  while (true) {
+    const nextCycleStart = new Date(cycleStart)
+    nextCycleStart.setDate(nextCycleStart.getDate() + cycleDays)
+    if (nextCycleStart > now) break
+    cycleStart = nextCycleStart
+  }
+  const elapsed = now.getTime() - cycleStart.getTime()
+  const total = cycleDays * 24 * 60 * 60 * 1000
+  return Math.min(Math.round((elapsed / total) * 100), 100)
+}
+
 function getProvider(value: string): { label: string; color: string; abbr: string; logo: string; logoDark: string } {
   const found = PROVIDERS.find((p) => p.value === value)
   if (found) return found
@@ -75,6 +109,7 @@ export function SubscriptionsPanel() {
   const { mutate: trackUsage, loading: tracking } = useIpcMutation<{ success: boolean; updated: number; errors: string[] }>('ai:trackUsage')
 
   const [usageMap, setUsageMap] = useState<Record<number, { balance: number; total_tokens: number; cost: number }>>({})
+  const [codexzhStats, setCodexzhStats] = useState<{ weekUsed: number; weekUsedFormatted: string; weeklyQuota: number } | null>(null)
 
   const fetchUsageData = async () => {
     if (!subscriptions || subscriptions.length === 0) return
@@ -89,6 +124,21 @@ export function SubscriptionsPanel() {
       } catch { /* ignore */ }
     }
     setUsageMap(map)
+
+    // Fetch CodexZh stats from plugin
+    const hasCodexzh = subscriptions.some(s => s.provider === 'CodexZh' && s.is_active)
+    if (hasCodexzh) {
+      try {
+        const res = await window.electronAPI.invoke('plugin:codexzh-usage:getUsageFromDb')
+        if (res?.success && res.data) {
+          setCodexzhStats({
+            weekUsed: res.data.weekUsed ?? 0,
+            weekUsedFormatted: res.data.weekUsedFormatted ?? '',
+            weeklyQuota: res.data.weeklyQuota ?? 0,
+          })
+        }
+      } catch { /* ignore */ }
+    }
   }
 
   useEffect(() => { fetchUsageData() }, [subscriptions]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -238,6 +288,7 @@ export function SubscriptionsPanel() {
             const meta = sub.metadata ? JSON.parse(sub.metadata) : {}
             const cycle = BILLING_CYCLES.find((c) => c.value === meta.billing_cycle)
             const nextRenewal = getNextRenewal(meta.start_date, cycle?.days ?? 30)
+            const billingProgress = getBillingCycleProgress(meta.start_date, cycle?.days ?? 30)
             return (
               <div
                 key={sub.id}
@@ -290,22 +341,24 @@ export function SubscriptionsPanel() {
                   )}
                 </div>
 
-                {usageMap[sub.id] && usageMap[sub.id].balance > 0 && (
-                  <div className="flex items-center gap-1.5 pt-1 border-t border-outline-variant/20">
-                    <span className="material-symbols-outlined text-[14px] text-primary">account_balance_wallet</span>
-                    <p className="font-mono text-[12px] text-on-surface font-bold">
-                      ¥{usageMap[sub.id].balance.toFixed(2)}
-                    </p>
-                    <span className="text-[10px] text-on-surface-variant">balance</span>
+                {/* CodexZh plugin usage */}
+                {sub.provider === 'CodexZh' && codexzhStats && (
+                  <div>
+                    <Progress value={codexzhStats.weeklyQuota > 0 ? Math.min(Math.round((codexzhStats.weekUsed / (codexzhStats.weeklyQuota / 500000)) * 100), 100) : 0} />
+                    <div className="flex justify-between text-[10px] text-on-surface-variant mt-0.5">
+                      <span>{codexzhStats.weekUsedFormatted || '$0'} used</span>
+                      <span>${(codexzhStats.weeklyQuota / 500000).toFixed(0)} quota</span>
+                    </div>
                   </div>
                 )}
 
-                {sub.token_limit != null && (
+                {/* Billing cycle progress for non-CodexZh subscriptions */}
+                {sub.provider !== 'CodexZh' && nextRenewal && (
                   <div>
-                    <Progress value={usagePercent} />
+                    <Progress value={billingProgress} />
                     <div className="flex justify-between text-[10px] text-on-surface-variant mt-0.5">
-                      <span>{sub.tokens_used.toLocaleString()} used</span>
-                      <span>{sub.token_limit.toLocaleString()} limit</span>
+                      <span>{cycle?.label || 'Monthly'} cycle</span>
+                      <span>{sub.token_limit ? (sub.token_limit >= 1000000 ? `${(sub.token_limit / 1000000).toFixed(0)}M` : sub.token_limit >= 1000 ? `${(sub.token_limit / 1000).toFixed(0)}K` : sub.token_limit) + ' tokens' : ''}</span>
                     </div>
                   </div>
                 )}

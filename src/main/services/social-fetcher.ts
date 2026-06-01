@@ -62,7 +62,7 @@ function extractXhsDataFromHtml(html: string): XhsProfile {
     const userPage = data?.user?.userPageData || data?.user || {}
     const basicInfo = userPage.basicInfo || {}
     const interactions = userPage.interactions || []
-    const notesData = userPage.notes || []
+    const notesData = userPage.notes || userPage.noteList || []
 
     const getInteraction = (type: string): number => {
       const item = interactions.find((i: { type: string }) => i.type === type)
@@ -76,29 +76,40 @@ function extractXhsDataFromHtml(html: string): XhsProfile {
       return 0
     }
 
+    // 尝试从笔记数据中汇总
     let totalLikes = 0
     let totalFavorites = 0
     let totalShares = 0
     let totalViews = 0
-    if (Array.isArray(notesData)) {
+    let notesCount = 0
+
+    if (Array.isArray(notesData) && notesData.length > 0) {
+      notesCount = notesData.length
       for (const note of notesData) {
-        totalLikes += note.likedCount || note.likes || 0
-        totalFavorites += note.favCount || note.collectCount || 0
-        totalShares += note.shareCount || note.share_count || 0
-        totalViews += note.viewCount || note.readCount || note.view_count || 0
+        const noteData = note.noteCard || note
+        totalLikes += noteData.likedCount || noteData.likes || noteData.interactInfo?.likedCount || 0
+        totalFavorites += noteData.favCount || noteData.collectCount || noteData.interactInfo?.collectedCount || 0
+        totalShares += noteData.shareCount || noteData.share_count || noteData.interactInfo?.shareCount || 0
+        totalViews += noteData.viewCount || noteData.readCount || noteData.view_count || noteData.interactInfo?.viewCount || 0
       }
+    }
+
+    // 如果笔记数据为空，尝试从其他字段获取
+    if (notesCount === 0) {
+      // 尝试获取笔记总数
+      notesCount = getInteraction('notes') || userPage.notesCount || userPage.noteCount || 0
     }
 
     return {
       nickname: basicInfo.nickname || '',
-      avatar: basicInfo.images || basicInfo.imageb || '',
+      avatar: basicInfo.images || basicInfo.imageb || basicInfo.avatar || '',
       desc: basicInfo.desc || '',
-      followers: getInteraction('fans'),
-      likes: totalLikes || getInteraction('interaction'),
-      favorites: totalFavorites,
-      shares: totalShares,
-      views: totalViews,
-      notes: Array.isArray(notesData) ? notesData.length : 0,
+      followers: getInteraction('fans') || getInteraction('followers'),
+      likes: totalLikes || getInteraction('interaction') || getInteraction('likes'),
+      favorites: totalFavorites || getInteraction('favorites') || getInteraction('collects'),
+      shares: totalShares || getInteraction('shares'),
+      views: totalViews || getInteraction('views'),
+      notes: notesCount,
     }
   } catch {
     return empty
@@ -120,11 +131,30 @@ async function fetchXhsViaWebview(userId: string): Promise<XhsProfile> {
 
     const timeout = setTimeout(() => {
       win.destroy()
-      resolve({ nickname: '', avatar: '', desc: '', followers: 0, likes: 0, notes: 0 })
-    }, 15000)
+      resolve({ nickname: '', avatar: '', desc: '', followers: 0, likes: 0, favorites: 0, shares: 0, views: 0, notes: 0 })
+    }, 20000)
 
     win.webContents.on('did-finish-load', async () => {
       try {
+        // 等待页面加载完成
+        await new Promise(r => setTimeout(r, 3000))
+
+        // 尝试滚动页面加载更多内容
+        await win.webContents.executeJavaScript(`
+          (async () => {
+            // 滚动几次加载笔记数据
+            for (let i = 0; i < 3; i++) {
+              window.scrollBy(0, 500);
+              await new Promise(r => setTimeout(r, 500));
+            }
+            // 滚回顶部
+            window.scrollTo(0, 0);
+          })()
+        `)
+
+        // 再等待一下让数据加载
+        await new Promise(r => setTimeout(r, 1000))
+
         const html = await win.webContents.executeJavaScript(
           'document.documentElement.outerHTML',
         )
@@ -135,14 +165,14 @@ async function fetchXhsViaWebview(userId: string): Promise<XhsProfile> {
       } catch {
         clearTimeout(timeout)
         win.destroy()
-        resolve({ nickname: '', avatar: '', desc: '', followers: 0, likes: 0, notes: 0 })
+        resolve({ nickname: '', avatar: '', desc: '', followers: 0, likes: 0, favorites: 0, shares: 0, views: 0, notes: 0 })
       }
     })
 
     win.webContents.on('did-fail-load', () => {
       clearTimeout(timeout)
       win.destroy()
-      resolve({ nickname: '', avatar: '', desc: '', followers: 0, likes: 0, notes: 0 })
+      resolve({ nickname: '', avatar: '', desc: '', followers: 0, likes: 0, favorites: 0, shares: 0, views: 0, notes: 0 })
     })
 
     win.loadURL(`https://www.xiaohongshu.com/user/profile/${userId}`)
@@ -216,14 +246,20 @@ async function updateAccountData(repo: SocialRepository, account: SocialAccountR
     if (data.avatar) { config.avatar = data.avatar; profileUpdated = true }
     if (data.desc) { config.desc = data.desc }
 
-    repo.addMetricsSnapshot(account.id, [
-      { metric_type: 'followers', metric_value: data.followers, snapshot_date: today },
-      { metric_type: 'likes', metric_value: data.likes, snapshot_date: today },
-      { metric_type: 'favorites', metric_value: data.favorites, snapshot_date: today },
-      { metric_type: 'shares', metric_value: data.shares, snapshot_date: today },
-      { metric_type: 'views', metric_value: data.views, snapshot_date: today },
-      { metric_type: 'notes', metric_value: data.notes, snapshot_date: today },
-    ])
+    // 只有当有有效数据时才写入数据库（防止网络失败时用零值覆盖好数据）
+    const hasValidData = data.followers > 0 || data.likes > 0
+    if (hasValidData) {
+      repo.addMetricsSnapshot(account.id, [
+        { metric_type: 'followers', metric_value: data.followers, snapshot_date: today },
+        { metric_type: 'likes', metric_value: data.likes, snapshot_date: today },
+        { metric_type: 'favorites', metric_value: data.favorites, snapshot_date: today },
+        { metric_type: 'shares', metric_value: data.shares, snapshot_date: today },
+        { metric_type: 'views', metric_value: data.views, snapshot_date: today },
+        { metric_type: 'notes', metric_value: data.notes, snapshot_date: today },
+      ])
+    } else {
+      console.log('[Social] Xiaohongshu fetch returned no data, skipping DB write')
+    }
   }
 
   if (profileUpdated) {
