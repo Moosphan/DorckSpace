@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
-import { usePanelRefresh } from '@/hooks/usePanelRefresh'
+import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { SOCIAL_PLATFORMS, formatMetricValue, formatChange, type SocialPlatformConfig } from '@shared/social-platforms'
 
@@ -147,28 +148,42 @@ function PlatformCard({ account, config }: { account: AccountData; config: Socia
 }
 
 export function SocialCards() {
+  const { toast } = useToast()
   const { data, loading, refetch } = useIpcData<AccountData[]>('social:getDashboard')
   const { mutate: fetchAll, loading: fetching } = useIpcMutation<{ success: boolean; updated: number }>('social:fetchAll')
+  const [refreshing, setRefreshing] = useState(false)
 
-  const { refreshing, refresh } = usePanelRefresh({
-    autoFetch: true,
-    onFetch: async () => {
-      await fetchAll()
-      refetch()
-    },
-  })
+  const handleRefresh = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    try {
+      const result = await fetchAll()
+      if (result?.success) {
+        toast({ title: 'Social data refreshed', variant: 'success' })
+      } else {
+        toast({ title: 'Failed to refresh social data', variant: 'error' })
+      }
+      await refetch()
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    handleRefresh()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="col-span-12 lg:col-span-4 space-y-md">
       <div className="flex items-center justify-between mb-sm">
         <h2 className="font-headline-lg text-headline-lg leading-none">Social Performance</h2>
         <button
-          onClick={refresh}
+          onClick={handleRefresh}
           disabled={refreshing}
           className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors disabled:opacity-50"
           title="Refresh data"
         >
-          <span className={cn('material-symbols-outlined text-[18px] translate-y-[1px]', refreshing && 'animate-spin')}>sync</span>
+          <span className={cn('material-symbols-outlined text-[18px]', refreshing && 'animate-spin')}>sync</span>
         </button>
       </div>
 

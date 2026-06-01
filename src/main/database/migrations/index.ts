@@ -342,6 +342,25 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 10,
+    name: '010_ai_usage_logs',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS ai_usage_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          subscription_id INTEGER NOT NULL REFERENCES ai_subscriptions(id) ON DELETE CASCADE,
+          input_tokens INTEGER DEFAULT 0,
+          output_tokens INTEGER DEFAULT 0,
+          total_tokens INTEGER DEFAULT 0,
+          cost REAL DEFAULT 0,
+          model TEXT,
+          snapshot_date TEXT DEFAULT (date('now')),
+          created_at TEXT DEFAULT (datetime('now'))
+        )
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

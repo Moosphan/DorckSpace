@@ -76,7 +76,7 @@ const config: Config = {
         xl: '80px',
       },
       fontFamily: {
-        sans: ['"Alibaba PuHuiTi 3.0"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        sans: ['"Noto Sans SC"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         'headline-xl': ['40px', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '800' }],

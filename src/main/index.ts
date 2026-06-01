@@ -18,6 +18,7 @@ import { registerSocialFetcherHandlers } from './services/social-fetcher'
 import { registerIdeaIpcHandlers } from './ipc/ideas'
 import { registerHighlightIpcHandlers } from './ipc/highlights'
 import { registerAiSummaryHandlers } from './services/ai-summary'
+import { registerAiUsageHandlers } from './services/ai-usage-tracker'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
 import { seedSocialData } from './database/seeds/social-seeds'
@@ -91,6 +92,7 @@ app.whenReady().then(() => {
   registerIdeaIpcHandlers()
   registerHighlightIpcHandlers()
   registerAiSummaryHandlers()
+  registerAiUsageHandlers()
 
   // Seed initial data
   seedSocialData(db)

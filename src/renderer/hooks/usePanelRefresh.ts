@@ -20,11 +20,13 @@ export function usePanelRefresh(config: PanelRefreshConfig): PanelRefreshStatus 
 
   const refresh = useCallback(async () => {
     if (refreshing) return
+    console.log('[usePanelRefresh] Setting refreshing to true')
     setRefreshing(true)
     try {
       await onFetch()
       if (mountedRef.current) setLastRefreshedAt(new Date())
     } finally {
+      console.log('[usePanelRefresh] Setting refreshing to false')
       if (mountedRef.current) setRefreshing(false)
     }
   }, [onFetch, refreshing])

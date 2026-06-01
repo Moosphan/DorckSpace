@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
@@ -72,6 +72,26 @@ export function SubscriptionsPanel() {
   const { mutate: updateSub } = useIpcMutation<boolean>('ai:updateSubscription')
   const { mutate: deleteSub } = useIpcMutation<boolean>('ai:deleteSubscription')
   const { mutate: resetTokens } = useIpcMutation<boolean>('ai:resetTokens')
+  const { mutate: trackUsage, loading: tracking } = useIpcMutation<{ success: boolean; updated: number; errors: string[] }>('ai:trackUsage')
+
+  const [usageMap, setUsageMap] = useState<Record<number, { balance: number; total_tokens: number; cost: number }>>({})
+
+  const fetchUsageData = async () => {
+    if (!subscriptions || subscriptions.length === 0) return
+    const map: Record<number, { balance: number; total_tokens: number; cost: number }> = {}
+    for (const sub of subscriptions) {
+      try {
+        const res = await window.electronAPI.invoke('ai:getUsageLogs', sub.id, 1)
+        if (res?.success && res.data?.length > 0) {
+          const latest = res.data[0]
+          map[sub.id] = { balance: latest.balance ?? 0, total_tokens: latest.total_tokens ?? 0, cost: latest.cost ?? 0 }
+        }
+      } catch { /* ignore */ }
+    }
+    setUsageMap(map)
+  }
+
+  useEffect(() => { fetchUsageData() }, [subscriptions]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [showDialog, setShowDialog] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -135,6 +155,30 @@ export function SubscriptionsPanel() {
     await refetch()
   }
 
+  const handleTrackUsage = async () => {
+    const result = await trackUsage()
+    console.log('[UI] trackUsage result:', result)
+    if (result) {
+      const { updated, errors } = result
+      if (updated > 0 && (!errors || errors.length === 0)) {
+        // All succeeded
+        toast({ title: `Usage updated for ${updated} subscription(s)`, variant: 'success' })
+      } else if (updated > 0 && errors && errors.length > 0) {
+        // Partial success
+        toast({ title: `Updated ${updated}, failed ${errors.length}`, variant: 'info' })
+      } else if (updated === 0 && errors && errors.length > 0) {
+        // All failed
+        toast({ title: `All ${errors.length} subscriptions failed`, variant: 'error' })
+      } else {
+        // Nothing to track
+        toast({ title: 'No subscriptions with API key to track', variant: 'info' })
+      }
+      await refetch()
+    } else {
+      toast({ title: 'Failed to track usage', variant: 'error' })
+    }
+  }
+
   const handleDelete = async (id: number) => {
     await deleteSub(id)
     await refetch()
@@ -156,13 +200,23 @@ export function SubscriptionsPanel() {
             </p>
           )}
         </div>
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center gap-xs px-3 py-1.5 bg-primary text-on-primary rounded-full font-label-md hover:brightness-110 active:scale-95 transition-all text-body-sm"
-        >
-          <span className="material-symbols-outlined text-[16px]">add</span>
-          Add
-        </button>
+        <div className="flex items-center gap-xs">
+          <button
+            onClick={handleTrackUsage}
+            disabled={tracking}
+            className="flex items-center gap-xs px-3 py-1.5 border border-outline-variant text-on-surface-variant rounded-full font-label-md hover:bg-surface-container transition-all text-body-sm disabled:opacity-50"
+          >
+            <span className={cn('material-symbols-outlined text-[16px]', tracking && 'animate-spin')}>sync</span>
+            {tracking ? 'Tracking...' : 'Track Usage'}
+          </button>
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-xs px-3 py-1.5 bg-primary text-on-primary rounded-full font-label-md hover:brightness-110 active:scale-95 transition-all text-body-sm"
+          >
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            Add
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -235,6 +289,16 @@ export function SubscriptionsPanel() {
                     </p>
                   )}
                 </div>
+
+                {usageMap[sub.id] && usageMap[sub.id].balance > 0 && (
+                  <div className="flex items-center gap-1.5 pt-1 border-t border-outline-variant/20">
+                    <span className="material-symbols-outlined text-[14px] text-primary">account_balance_wallet</span>
+                    <p className="font-mono text-[12px] text-on-surface font-bold">
+                      ¥{usageMap[sub.id].balance.toFixed(2)}
+                    </p>
+                    <span className="text-[10px] text-on-surface-variant">balance</span>
+                  </div>
+                )}
 
                 {sub.token_limit != null && (
                   <div>
