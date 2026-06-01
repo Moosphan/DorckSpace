@@ -4,6 +4,7 @@ import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 import { cn } from '@/lib/utils'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
+import { ProfileDialog } from '@/components/ProfileDialog'
 
 const tabs = [
   { id: 'general', label: 'General', icon: 'tune' },
@@ -261,6 +262,7 @@ function SocialAccountsSection() {
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<string>('appearance')
+  const [profileOpen, setProfileOpen] = useState(false)
   const { theme, general, setTheme, setGeneral } = useSettingsStore()
   const { data: cities, refetch: refetchCities } = useIpcData<Array<{ id: number; name: string; is_default: number }>>('weather:getCities')
   const { mutate: addCity } = useIpcMutation('weather:addCity')
@@ -329,6 +331,18 @@ export default function Settings() {
         {/* General */}
         {activeTab === 'general' && (
           <>
+            <Section title="Personal Info">
+              <SettingRow label="Profile" description="Manage your personal information, avatar, and social links">
+                <button
+                  onClick={() => setProfileOpen(true)}
+                  className="flex items-center gap-xs px-3 py-1.5 bg-primary text-on-primary rounded-full font-label-md hover:brightness-110 active:scale-95 transition-all text-body-sm"
+                >
+                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                  Edit
+                </button>
+              </SettingRow>
+            </Section>
+
             <Section title="General">
               <SettingRow label="Language" description="Interface language">
                 <select
@@ -555,6 +569,9 @@ export default function Settings() {
           </button>
         </div>
       </div>
+
+      {/* Profile Dialog */}
+      <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   )
 }

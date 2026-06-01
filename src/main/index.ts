@@ -19,6 +19,7 @@ import { registerIdeaIpcHandlers } from './ipc/ideas'
 import { registerHighlightIpcHandlers } from './ipc/highlights'
 import { registerAiSummaryHandlers } from './services/ai-summary'
 import { registerAiUsageHandlers } from './services/ai-usage-tracker'
+import { registerProfileIpcHandlers } from './ipc/profile'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
@@ -94,6 +95,7 @@ app.whenReady().then(() => {
   registerHighlightIpcHandlers()
   registerAiSummaryHandlers()
   registerAiUsageHandlers()
+  registerProfileIpcHandlers()
 
   // Load plugins
   const loadedPluginInfos = loadPlugins()

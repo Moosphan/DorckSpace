@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { extensionRegistry } from '@/lib/extension-registry'
 import { SearchPanel } from '@/components/SearchPanel'
+import { ProfileDialog } from '@/components/ProfileDialog'
 import type { ExtensionContribution } from '@shared/types/module'
 
 const appLogoUrl = new URL('../../../assets/app-logo.svg', import.meta.url).href
@@ -45,6 +46,34 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchOpen, setSearchOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [profile, setProfile] = useState<{ name: string; avatar_data_url: string | null } | null>(null)
+
+  // Fetch profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await window.electronAPI.invoke('profile:get')
+        if (res.success && res.data) {
+          setProfile({ name: res.data.name, avatar_data_url: res.data.avatar_data_url })
+        }
+      } catch { /* ignore */ }
+    }
+    fetchProfile()
+  }, [])
+
+  // Listen for profile updates
+  useEffect(() => {
+    const handler = () => {
+      window.electronAPI.invoke('profile:get').then(res => {
+        if (res.success && res.data) {
+          setProfile({ name: res.data.name, avatar_data_url: res.data.avatar_data_url })
+        }
+      }).catch(() => {})
+    }
+    window.addEventListener('profile-updated', handler)
+    return () => window.removeEventListener('profile-updated', handler)
+  }, [])
 
   // Cmd+K keyboard shortcut
   useEffect(() => {
@@ -116,15 +145,26 @@ export default function MainLayout({ children }: MainLayoutProps) {
           ))}
 
           {/* User Card */}
-          <div className="p-sm bg-surface-container rounded-2xl flex items-center gap-sm">
-            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm">
-              D
-            </div>
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="w-full p-sm bg-surface-container rounded-2xl flex items-center gap-sm hover:bg-surface-container-high transition-colors text-left"
+          >
+            {profile?.avatar_data_url ? (
+              <img
+                src={profile.avatar_data_url}
+                alt="Avatar"
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-sm">
+                {(profile?.name || 'D').charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="overflow-hidden">
-              <p className="font-label-md text-on-surface truncate">Dorck</p>
+              <p className="font-label-md text-on-surface truncate">{profile?.name || 'Dorck'}</p>
               <p className="text-[10px] text-on-surface-variant truncate">Workspace Owner</p>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -151,8 +191,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <span className="material-symbols-outlined">notifications</span>
               <span className="absolute top-2 right-2 w-2 h-2 bg-secondary-container rounded-full border-2 border-surface" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs cursor-pointer titlebar-no-drag">
-              D
+            <div
+              className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs cursor-pointer titlebar-no-drag overflow-hidden"
+              onClick={() => setProfileOpen(true)}
+            >
+              {profile?.avatar_data_url ? (
+                <img src={profile.avatar_data_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                (profile?.name || 'D').charAt(0).toUpperCase()
+              )}
             </div>
           </div>
         </header>
@@ -163,6 +210,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       {/* Global Search Panel (Cmd+K) */}
       <SearchPanel open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* Profile Dialog */}
+      <ProfileDialog
+        open={profileOpen}
+        onClose={() => {
+          setProfileOpen(false)
+          // Refresh profile data after dialog closes
+          window.electronAPI.invoke('profile:get').then(res => {
+            if (res.success && res.data) {
+              setProfile({ name: res.data.name, avatar_path: res.data.avatar_path })
+            }
+          }).catch(() => {})
+        }}
+      />
     </div>
   )
 }

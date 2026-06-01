@@ -378,6 +378,21 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 12,
+    name: '012_extend_user_profile',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE user_profile ADD COLUMN email TEXT
+      `)
+      db.exec(`
+        ALTER TABLE user_profile ADD COLUMN location TEXT
+      `)
+      db.exec(`
+        ALTER TABLE user_profile ADD COLUMN website TEXT
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {
