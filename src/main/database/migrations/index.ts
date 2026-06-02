@@ -393,6 +393,27 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 13,
+    name: '013_moodboard_items',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS moodboard_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          url TEXT NOT NULL,
+          description TEXT,
+          category TEXT DEFAULT 'general',
+          thumbnail_url TEXT,
+          rating REAL DEFAULT 0 CHECK(rating >= 0 AND rating <= 5),
+          tags TEXT DEFAULT '[]',
+          is_pinned INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

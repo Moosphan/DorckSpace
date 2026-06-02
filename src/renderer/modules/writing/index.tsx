@@ -4,6 +4,8 @@ import { ArticleList } from './components/ArticleList'
 import { CategorySelector } from './components/CategorySelector'
 import { PublishPanel } from './components/PublishPanel'
 import { HighlightsModal } from './components/HighlightsModal'
+import { ResearchModal } from './components/ResearchModal'
+import { MoodboardModal } from './components/MoodboardModal'
 import { ArticleViewer } from '@/modules/insights/components/ArticleViewer'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 
@@ -22,6 +24,8 @@ export default function Writing() {
   const [newCategory, setNewCategory] = useState<string | null>(null)
   const [showPublish, setShowPublish] = useState(false)
   const [showHighlights, setShowHighlights] = useState(false)
+  const [showResearch, setShowResearch] = useState(false)
+  const [showMoodboard, setShowMoodboard] = useState(false)
   const [viewingArticle, setViewingArticle] = useState<{ id: number; url: string; title: string } | null>(null)
   const createdIdRef = useRef<number | null>(null)
 
@@ -188,7 +192,10 @@ export default function Writing() {
           </h3>
         </div>
         <div className="grid grid-cols-3 gap-6">
-          <div className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-ambient h-48 flex flex-col cursor-pointer hover:-translate-y-1 transition-transform">
+          <div
+            onClick={() => setShowResearch(true)}
+            className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-ambient h-48 flex flex-col cursor-pointer hover:-translate-y-1 transition-transform"
+          >
             <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary mb-4">
               <span className="material-symbols-outlined fill">travel_explore</span>
             </div>
@@ -205,12 +212,15 @@ export default function Writing() {
             <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1">Saved Links</h4>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-auto">Bookmarks and references</p>
           </div>
-          <div className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-ambient h-48 flex flex-col cursor-pointer hover:-translate-y-1 transition-transform">
+          <div
+            onClick={() => setShowMoodboard(true)}
+            className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-ambient h-48 flex flex-col cursor-pointer hover:-translate-y-1 transition-transform"
+          >
             <div className="w-12 h-12 rounded-xl bg-tertiary-fixed flex items-center justify-center text-tertiary mb-4">
               <span className="material-symbols-outlined fill">palette</span>
             </div>
             <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1">Moodboards</h4>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mt-auto">Visual inspiration spaces</p>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mt-auto">Resource sites collection</p>
           </div>
         </div>
       </section>
@@ -224,6 +234,20 @@ export default function Writing() {
           setShowHighlights(false)
           setViewingArticle(article)
         }}
+      />
+
+      <ResearchModal
+        open={showResearch}
+        onClose={() => setShowResearch(false)}
+        onOpenArticle={(article) => {
+          setShowResearch(false)
+          setViewingArticle({ id: article.id, url: article.url, title: article.title })
+        }}
+      />
+
+      <MoodboardModal
+        open={showMoodboard}
+        onClose={() => setShowMoodboard(false)}
       />
 
       {viewingArticle && (

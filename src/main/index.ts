@@ -20,6 +20,7 @@ import { registerHighlightIpcHandlers } from './ipc/highlights'
 import { registerAiSummaryHandlers } from './services/ai-summary'
 import { registerAiUsageHandlers } from './services/ai-usage-tracker'
 import { registerProfileIpcHandlers } from './ipc/profile'
+import { registerMoodboardIpcHandlers } from './ipc/moodboard'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
@@ -96,6 +97,7 @@ app.whenReady().then(() => {
   registerAiSummaryHandlers()
   registerAiUsageHandlers()
   registerProfileIpcHandlers()
+  registerMoodboardIpcHandlers()
 
   // Load plugins
   const loadedPluginInfos = loadPlugins()
