@@ -4,6 +4,19 @@ import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 import { Progress } from '@/components/ui/progress'
 
+// Local logo imports
+import openaiLight from '@/assets/logos/openai-light.svg'
+import openaiDark from '@/assets/logos/openai-dark.svg'
+import anthropicLogo from '@/assets/logos/anthropic.svg'
+import googleLogo from '@/assets/logos/google.svg'
+import deepseekLogo from '@/assets/logos/deepseek.svg'
+import zhipuLogo from '@/assets/logos/zhipu.svg'
+import minimaxLogo from '@/assets/logos/minimax.svg'
+import qwenLight from '@/assets/logos/qwen-light.svg'
+import qwenDark from '@/assets/logos/qwen-dark.svg'
+import xiaomiLogo from '@/assets/logos/xiaomi.svg'
+import midjourneyLogo from '@/assets/logos/midjourney.svg'
+
 interface Subscription {
   id: number
   provider: string
@@ -43,15 +56,15 @@ function maskApiKey(key: string): string {
 }
 
 const PROVIDERS = [
-  { value: 'openai', label: 'OpenAI', color: 'bg-on-surface', abbr: 'OAI', logo: 'https://thesvg.org/icons/openai/light.svg', logoDark: 'https://thesvg.org/icons/openai/dark.svg' },
-  { value: 'anthropic', label: 'Anthropic', color: 'bg-primary', abbr: 'ANT', logo: 'https://thesvg.org/icons/claude/default.svg', logoDark: '' },
-  { value: 'google', label: 'Google', color: 'bg-blue-500', abbr: 'GGL', logo: 'https://thesvg.org/icons/google/default.svg', logoDark: '' },
-  { value: 'deepseek', label: 'DeepSeek', color: 'bg-teal-600', abbr: 'DS', logo: 'https://thesvg.org/icons/deepseek/default.svg', logoDark: '' },
-  { value: 'zhipu', label: 'GLM', color: 'bg-indigo-600', abbr: 'GLM', logo: 'https://thesvg.org/icons/zhipu/default.svg', logoDark: '' },
-  { value: 'minimax', label: 'MiniMax', color: 'bg-orange-500', abbr: 'MM', logo: 'https://thesvg.org/icons/minimax/default.svg', logoDark: '' },
-  { value: 'qwen', label: 'Qwen', color: 'bg-sky-600', abbr: 'QW', logo: 'https://thesvg.org/icons/qwen/light.svg', logoDark: 'https://thesvg.org/icons/qwen/dark.svg' },
-  { value: 'mimo', label: 'MiMo', color: 'bg-orange-600', abbr: 'MI', logo: 'https://thesvg.org/icons/xiaomi/default.svg', logoDark: '' },
-  { value: 'midjourney', label: 'Midjourney', color: 'bg-purple-600', abbr: 'MJ', logo: 'https://thesvg.org/icons/midjourney/default.svg', logoDark: '' },
+  { value: 'openai', label: 'OpenAI', color: 'bg-on-surface', abbr: 'OAI', logo: openaiLight, logoDark: openaiDark },
+  { value: 'anthropic', label: 'Anthropic', color: 'bg-primary', abbr: 'ANT', logo: anthropicLogo, logoDark: '' },
+  { value: 'google', label: 'Google', color: 'bg-blue-500', abbr: 'GGL', logo: googleLogo, logoDark: '' },
+  { value: 'deepseek', label: 'DeepSeek', color: 'bg-teal-600', abbr: 'DS', logo: deepseekLogo, logoDark: '' },
+  { value: 'zhipu', label: 'GLM', color: 'bg-indigo-600', abbr: 'GLM', logo: zhipuLogo, logoDark: '' },
+  { value: 'minimax', label: 'MiniMax', color: 'bg-orange-500', abbr: 'MM', logo: minimaxLogo, logoDark: '' },
+  { value: 'qwen', label: 'Qwen', color: 'bg-sky-600', abbr: 'QW', logo: qwenLight, logoDark: qwenDark },
+  { value: 'mimo', label: 'MiMo', color: 'bg-orange-600', abbr: 'MI', logo: xiaomiLogo, logoDark: '' },
+  { value: 'midjourney', label: 'Midjourney', color: 'bg-purple-600', abbr: 'MJ', logo: midjourneyLogo, logoDark: '' },
   { value: 'other', label: 'Other', color: 'bg-surface-variant', abbr: '...', logo: '', logoDark: '' },
 ]
 
