@@ -109,7 +109,7 @@ export function SubscriptionsPanel() {
   const { mutate: trackUsage, loading: tracking } = useIpcMutation<{ success: boolean; updated: number; errors: string[] }>('ai:trackUsage')
 
   const [usageMap, setUsageMap] = useState<Record<number, { balance: number; total_tokens: number; cost: number }>>({})
-  const [codexzhStats, setCodexzhStats] = useState<{ weekUsed: number; weekUsedFormatted: string; weeklyQuota: number } | null>(null)
+  const [codexzhStatsMap, setCodexzhStatsMap] = useState<Record<number, { weekUsed: number; weekUsedFormatted: string; weeklyQuota: number }>>({})
 
   const fetchUsageData = async () => {
     if (!subscriptions || subscriptions.length === 0) return
@@ -130,12 +130,18 @@ export function SubscriptionsPanel() {
     if (hasCodexzh) {
       try {
         const res = await window.electronAPI.invoke('plugin:codexzh-usage:getUsageFromDb')
-        if (res?.success && res.data) {
-          setCodexzhStats({
-            weekUsed: res.data.weekUsed ?? 0,
-            weekUsedFormatted: res.data.weekUsedFormatted ?? '',
-            weeklyQuota: res.data.weeklyQuota ?? 0,
-          })
+        if (res?.success && Array.isArray(res.data)) {
+          const statsMap: Record<number, { weekUsed: number; weekUsedFormatted: string; weeklyQuota: number }> = {}
+          for (const item of res.data) {
+            if (item.id && !item.error) {
+              statsMap[item.id] = {
+                weekUsed: item.weekUsed ?? 0,
+                weekUsedFormatted: item.weekUsedFormatted ?? '',
+                weeklyQuota: item.weeklyQuota ?? 0,
+              }
+            }
+          }
+          setCodexzhStatsMap(statsMap)
         }
       } catch { /* ignore */ }
     }
@@ -342,12 +348,12 @@ export function SubscriptionsPanel() {
                 </div>
 
                 {/* CodexZh plugin usage */}
-                {sub.provider === 'CodexZh' && codexzhStats && (
+                {sub.provider === 'CodexZh' && (
                   <div>
-                    <Progress value={codexzhStats.weeklyQuota > 0 ? Math.min(Math.round((codexzhStats.weekUsed / (codexzhStats.weeklyQuota / 500000)) * 100), 100) : 0} />
+                    <Progress value={codexzhStatsMap[sub.id]?.weeklyQuota > 0 ? Math.min(Math.round((codexzhStatsMap[sub.id].weekUsed / (codexzhStatsMap[sub.id].weeklyQuota / 500000)) * 100), 100) : 0} />
                     <div className="flex justify-between text-[10px] text-on-surface-variant mt-0.5">
-                      <span>{codexzhStats.weekUsedFormatted || '$0'} used</span>
-                      <span>${(codexzhStats.weeklyQuota / 500000).toFixed(0)} quota</span>
+                      <span>{codexzhStatsMap[sub.id]?.weekUsedFormatted || '$0'} used</span>
+                      <span>${codexzhStatsMap[sub.id] ? (codexzhStatsMap[sub.id].weeklyQuota / 500000).toFixed(0) : '0'} quota</span>
                     </div>
                   </div>
                 )}
