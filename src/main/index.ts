@@ -21,6 +21,8 @@ import { registerAiSummaryHandlers } from './services/ai-summary'
 import { registerAiUsageHandlers } from './services/ai-usage-tracker'
 import { registerProfileIpcHandlers } from './ipc/profile'
 import { registerMoodboardIpcHandlers } from './ipc/moodboard'
+import { registerCalendarIpcHandlers } from './ipc/calendar'
+import { registerPortfolioIpcHandlers } from './ipc/portfolio'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
@@ -98,6 +100,8 @@ app.whenReady().then(() => {
   registerAiUsageHandlers()
   registerProfileIpcHandlers()
   registerMoodboardIpcHandlers()
+  registerCalendarIpcHandlers()
+  registerPortfolioIpcHandlers()
 
   // Load plugins
   const loadedPluginInfos = loadPlugins()

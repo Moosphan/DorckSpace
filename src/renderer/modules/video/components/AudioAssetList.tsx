@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
+import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { Waveform } from './Waveform'
 import { cn } from '@/lib/utils'
 
 interface AudioAsset {
@@ -17,6 +19,24 @@ export function AudioAssetList() {
   const { mutate: importFile } = useIpcMutation('video:importFile')
   const [filter, setFilter] = useState(false)
 
+  const {
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    isLoading: audioLoading,
+    play,
+    pause,
+    stop,
+    seek,
+    setVolume,
+    getWaveformData,
+  } = useAudioPlayer()
+
+  const [playingId, setPlayingId] = useState<number | null>(null)
+  const [audioDataUrl, setAudioDataUrl] = useState<string | null>(null)
+  const [waveformData, setWaveformData] = useState<Record<number, number[]>>({})
+
   const formatDuration = (sec: number | null) => {
     if (!sec) return '--:--'
     const m = Math.floor(sec / 60)
@@ -30,15 +50,115 @@ export function AudioAssetList() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = Math.floor(seconds % 60)
+    return `${m}:${String(s).padStart(2, '0')}`
+  }
+
   const handleImport = async () => {
     await importFile('audio')
     refetch()
   }
 
   const handleDelete = async (id: number) => {
+    if (playingId === id) {
+      stop()
+      setPlayingId(null)
+      setAudioDataUrl(null)
+    }
     await deleteAsset(id)
     refetch()
   }
+
+  const [audioDurations, setAudioDurations] = useState<Record<number, number>>({})
+
+  const loadAudioData = useCallback(async (audio: AudioAsset) => {
+    try {
+      const res = await window.electronAPI.invoke('video:getAudioData', audio.file_path)
+      if (res?.success && res.data?.dataUrl) {
+        setAudioDataUrl(res.data.dataUrl)
+
+        // Load waveform data if not cached
+        if (!waveformData[audio.id]) {
+          const data = await getWaveformData(res.data.dataUrl)
+          setWaveformData(prev => ({ ...prev, [audio.id]: data }))
+        }
+
+        // Get actual duration from audio data if not in DB
+        if (!audio.duration_seconds && !audioDurations[audio.id]) {
+          try {
+            const ctx = new AudioContext()
+            const response = await fetch(res.data.dataUrl)
+            const arrayBuffer = await response.arrayBuffer()
+            const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+            setAudioDurations(prev => ({ ...prev, [audio.id]: audioBuffer.duration }))
+            ctx.close()
+          } catch { /* ignore */ }
+        }
+
+        return res.data.dataUrl
+      }
+    } catch (err) {
+      console.error('Failed to load audio:', err)
+    }
+    return null
+  }, [getWaveformData, waveformData, audioDurations])
+
+  const handlePlay = async (audio: AudioAsset) => {
+    if (playingId === audio.id && isPlaying) {
+      pause()
+      return
+    }
+
+    if (playingId === audio.id && audioDataUrl) {
+      await play(audioDataUrl)
+      return
+    }
+
+    // Load new audio
+    setPlayingId(audio.id)
+    const dataUrl = await loadAudioData(audio)
+    if (dataUrl) {
+      await play(dataUrl)
+    }
+  }
+
+  const handleSeek = (audioId: number, position: number) => {
+    if (playingId === audioId && duration > 0) {
+      seek(position * duration)
+    }
+  }
+
+  const getProgress = (audioId: number) => {
+    if (playingId === audioId && duration > 0) {
+      return currentTime / duration
+    }
+    return 0
+  }
+
+  // Preload audio durations for items without duration_seconds
+  useEffect(() => {
+    if (!audios) return
+    const loadDurations = async () => {
+      for (const audio of audios) {
+        if (!audio.duration_seconds && !audioDurations[audio.id]) {
+          try {
+            const res = await window.electronAPI.invoke('video:getAudioData', audio.file_path)
+            if (res?.success && res.data?.dataUrl) {
+              const ctx = new AudioContext()
+              const response = await fetch(res.data.dataUrl)
+              const arrayBuffer = await response.arrayBuffer()
+              const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+              setAudioDurations(prev => ({ ...prev, [audio.id]: audioBuffer.duration }))
+              ctx.close()
+            }
+          } catch { /* ignore */ }
+        }
+      }
+    }
+    loadDurations()
+  }, [audios]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = filter ? audios?.filter((a) => a.title.toLowerCase().includes('voiceover') || a.title.toLowerCase().includes('narration')) : audios
 
@@ -85,35 +205,86 @@ export function AudioAssetList() {
         </div>
       ) : (
         <div className="space-y-base">
-          {filtered.map((audio) => (
-            <div
-              key={audio.id}
-              className="flex items-center gap-md p-md bg-surface-container-lowest rounded-xl border border-outline-variant/50 hover:bg-primary-fixed/10 transition-all cursor-pointer group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                <span className="material-symbols-outlined fill">graphic_eq</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-label-md text-label-md text-on-surface truncate">{audio.title}</h4>
-                <p className="text-body-sm text-on-surface-variant">
-                  {audio.file_format?.toUpperCase() || 'Audio'} • {formatDuration(audio.duration_seconds)}
-                  {audio.file_size && ` • ${formatSize(audio.file_size)}`}
-                </p>
-              </div>
-              {/* Waveform placeholder */}
-              <div className="hidden md:block w-32 h-8">
-                <svg className="w-full h-full text-primary/40" viewBox="0 0 100 20">
-                  <path d="M0 10 Q 5 0, 10 10 T 20 10 T 30 10 T 40 10 T 50 10 T 60 10 T 70 10 T 80 10 T 90 10 T 100 10" fill="none" stroke="currentColor" strokeWidth="2" />
-                </svg>
-              </div>
-              <button
-                onClick={() => handleDelete(audio.id)}
-                className="p-2 text-on-surface-variant hover:text-error transition-colors opacity-0 group-hover:opacity-100"
+          {filtered.map((audio) => {
+            const isActive = playingId === audio.id
+            const progress = getProgress(audio.id)
+
+            return (
+              <div
+                key={audio.id}
+                className={cn(
+                  'flex items-center gap-md p-md bg-surface-container-lowest rounded-xl border transition-all cursor-pointer group',
+                  isActive ? 'border-primary/50 bg-primary-fixed/10' : 'border-outline-variant/50 hover:bg-primary-fixed/10',
+                )}
+                onClick={() => handlePlay(audio)}
               >
-                <span className="material-symbols-outlined text-[18px]">delete</span>
-              </button>
-            </div>
-          ))}
+                {/* Play/Pause button */}
+                <div className={cn(
+                  'w-12 h-12 rounded-xl flex items-center justify-center transition-colors shrink-0',
+                  isActive ? 'bg-primary text-on-primary' : 'bg-primary-fixed text-primary group-hover:bg-primary group-hover:text-on-primary',
+                )}>
+                  {audioLoading && isActive ? (
+                    <span className="material-symbols-outlined animate-spin text-[20px]">sync</span>
+                  ) : isPlaying && isActive ? (
+                    <span className="material-symbols-outlined fill text-[20px]">pause</span>
+                  ) : (
+                    <span className="material-symbols-outlined fill text-[20px]">play_arrow</span>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-label-md text-label-md text-on-surface truncate">{audio.title}</h4>
+                  <div className="flex items-center gap-sm text-body-sm text-on-surface-variant">
+                    <span>{audio.file_format?.toUpperCase() || 'Audio'}</span>
+                    <span>•</span>
+                    <span>{formatDuration(audio.duration_seconds || audioDurations[audio.id])}</span>
+                    {audio.file_size && (
+                      <>
+                        <span>•</span>
+                        <span>{formatSize(audio.file_size)}</span>
+                      </>
+                    )}
+                    {isActive && (
+                      <>
+                        <span>•</span>
+                        <span className="text-primary font-mono">{formatTime(currentTime)} / {formatTime(duration)}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Waveform */}
+                <div className="hidden md:block flex-1 max-w-xs h-8">
+                  {waveformData[audio.id] ? (
+                    <Waveform
+                      data={waveformData[audio.id]}
+                      progress={progress}
+                      height={32}
+                      onClick={(pos) => handleSeek(audio.id, pos)}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <svg className="w-full h-full text-outline-variant/30" viewBox="0 0 100 20">
+                        <path d="M0 10 Q 5 0, 10 10 T 20 10 T 30 10 T 40 10 T 50 10 T 60 10 T 70 10 T 80 10 T 90 10 T 100 10" fill="none" stroke="currentColor" strokeWidth="2" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* Delete button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(audio.id)
+                  }}
+                  className="p-2 text-on-surface-variant hover:text-error transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                >
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

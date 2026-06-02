@@ -3,6 +3,7 @@ import { FocusProjectCard } from './components/FocusProjectCard'
 import { PriorityTaskList } from './components/PriorityTaskList'
 import { WeatherClockWidget } from './components/WeatherClockWidget'
 import { ActivityHeatmap } from './components/ActivityHeatmap'
+// import { CalendarWidget } from './components/CalendarWidget'
 import { IdeaCard, type IdeaCardHandle } from './components/IdeaCard'
 import { CreateIdeaDialog } from './components/CreateIdeaDialog'
 import { ManageIdeasDialog } from './components/ManageIdeasDialog'
@@ -17,6 +18,7 @@ export default function Dashboard() {
       {/* Left Stream: Focus + Tasks */}
       <div className="flex-1 flex flex-col gap-lg overflow-y-auto pr-sm">
         <FocusProjectCard />
+        {/* <CalendarWidget /> */}
         <PriorityTaskList />
       </div>
 

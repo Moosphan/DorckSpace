@@ -1,7 +1,7 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron'
 import { getDatabase } from '../database/connection'
 import { VideoAssetRepository } from '../database/repositories/video-asset-repository'
-import { copyFileSync, existsSync, mkdirSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync } from 'fs'
 import { join, basename, extname } from 'path'
 import { app } from 'electron'
 
@@ -12,6 +12,7 @@ const VIDEO_CHANNELS = {
   UPDATE: 'video:update',
   DELETE: 'video:delete',
   IMPORT_FILE: 'video:importFile',
+  GET_AUDIO_DATA: 'video:getAudioData',
 } as const
 
 function getRepo(): VideoAssetRepository {
@@ -108,6 +109,40 @@ export function registerVideoAssetIpcHandlers(): void {
       }
 
       return { success: true, data: imported }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(VIDEO_CHANNELS.GET_AUDIO_DATA, (_event, filePath: string) => {
+    try {
+      if (!existsSync(filePath)) {
+        return { success: false, error: 'File not found' }
+      }
+
+      const stats = statSync(filePath)
+      const ext = extname(filePath).toLowerCase()
+      const mimeTypes: Record<string, string> = {
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.m4a': 'audio/mp4',
+        '.flac': 'audio/flac',
+        '.ogg': 'audio/ogg',
+      }
+      const mimeType = mimeTypes[ext] || 'audio/mpeg'
+
+      const buffer = readFileSync(filePath)
+      const base64 = buffer.toString('base64')
+      const dataUrl = `data:${mimeType};base64,${base64}`
+
+      return {
+        success: true,
+        data: {
+          dataUrl,
+          size: stats.size,
+          mimeType,
+        },
+      }
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }
