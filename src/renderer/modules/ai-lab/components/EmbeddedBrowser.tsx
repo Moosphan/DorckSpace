@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 interface EmbeddedBrowserProps {
@@ -105,10 +106,12 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
     try { window.electronAPI.openExternal(webviewRef.current?.getURL() || inputUrl) } catch { /* ignore */ }
   }, [inputUrl])
 
-  return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+  const browserOverlay = (
+    <div className="fixed inset-0 z-[200] bg-background flex flex-col titlebar-no-drag">
+      <div aria-hidden="true" className="h-12 shrink-0 bg-surface titlebar-drag" />
+
       {/* Browser Chrome */}
-      <div className="flex items-center gap-sm px-md py-2 bg-surface border-b border-outline-variant/30 shrink-0">
+      <div className="flex items-center gap-sm px-md py-2 bg-surface border-b border-outline-variant/30 shrink-0 titlebar-no-drag">
         <button onClick={handleBack} className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors">
           <span className="material-symbols-outlined text-[18px]">arrow_back</span>
         </button>
@@ -209,4 +212,6 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
       `}</style>
     </div>
   )
+
+  return createPortal(browserOverlay, document.body)
 }
