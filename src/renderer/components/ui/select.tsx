@@ -15,8 +15,9 @@ const SelectTrigger = forwardRef<
     className={cn(
       'w-full flex items-center justify-between bg-surface-container-low border-2 border-transparent rounded-md font-label-md text-on-surface outline-none transition-all',
       'hover:bg-surface-container focus:border-primary focus:ring-0',
+      'dark:bg-surface-container dark:hover:bg-surface-container-high',
       'disabled:opacity-50 disabled:cursor-not-allowed',
-      size === 'sm' ? 'px-sm py-1.5 text-[12px]' : 'px-md py-sm',
+      size === 'sm' ? 'pl-sm pr-1.5 py-1.5 text-[12px]' : 'pl-md pr-2 py-sm',
       className,
     )}
     {...props}
@@ -45,6 +46,7 @@ function SelectContent({
       <SelectPrimitive.Content
         className={cn(
           'bg-surface-container-lowest border border-outline-variant/30 rounded-md shadow-floating overflow-hidden z-50',
+          'dark:bg-surface-container dark:border-outline-variant/20',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
           'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
           'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -72,7 +74,9 @@ const SelectItem = forwardRef<
     className={cn(
       'relative flex items-center gap-sm px-sm py-1 rounded font-label-md text-on-surface outline-none cursor-pointer transition-colors my-0.5',
       'hover:bg-primary-fixed data-[highlighted]:bg-primary-fixed',
+      'dark:hover:bg-primary-container dark:data-[highlighted]:bg-primary-container',
       'data-[state=checked]:bg-primary-fixed data-[state=checked]:text-primary',
+      'dark:data-[state=checked]:bg-primary-container dark:data-[state=checked]:text-on-primary-container',
       className,
     )}
     {...props}
@@ -97,7 +101,7 @@ function SelectGroup({ children, ...props }: ComponentPropsWithoutRef<typeof Sel
 function SelectLabel({ className, ...props }: ComponentPropsWithoutRef<typeof SelectPrimitive.Label>) {
   return (
     <SelectPrimitive.Label
-      className={cn('px-sm py-1 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider', className)}
+      className={cn('px-sm py-1 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider dark:text-on-surface-variant/80', className)}
       {...props}
     />
   )

@@ -4,6 +4,7 @@ import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 import { cn } from '@/lib/utils'
 import { Toggle } from '@/components/ui/toggle'
 import { Input } from '@/components/ui/input'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { ProfileDialog } from '@/components/ProfileDialog'
 
 const tabs = [
@@ -194,15 +195,16 @@ function SocialAccountsSection() {
           {adding ? (
             <div className="p-sm bg-surface-container rounded-lg space-y-sm">
               <div className="flex gap-sm">
-                <select
-                  value={newPlatform}
-                  onChange={(e) => setNewPlatform(e.target.value)}
-                  className="bg-surface-container-low border border-outline-variant/30 rounded-lg px-sm py-1.5 text-body-sm outline-none focus:border-primary"
-                >
-                  {PLATFORM_OPTIONS.map((p) => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
+                <Select value={newPlatform} onValueChange={setNewPlatform}>
+                  <SelectTrigger size="sm" className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PLATFORM_OPTIONS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <input
                   type="text"
                   value={newInput}
@@ -345,15 +347,15 @@ export default function Settings() {
 
             <Section title="General">
               <SettingRow label="Language" description="Interface language">
-                <select
-                  value={general.language}
-                  onChange={(e) => setGeneral({ language: e.target.value })}
-                  className="bg-surface-container-low border-none rounded-lg px-3 py-1.5 font-label-md text-on-surface appearance-none pr-8 text-body-sm"
-                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' fill=\'%237B7486\' viewBox=\'0 0 16 16\'%3E%3Cpath d=\'M4 6l4 4 4-4\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-                >
-                  <option value="en-US">English</option>
-                  <option value="zh-CN">中文</option>
-                </select>
+                <Select value={general.language} onValueChange={(v) => setGeneral({ language: v })}>
+                  <SelectTrigger size="sm" className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en-US">English</SelectItem>
+                    <SelectItem value="zh-CN">中文</SelectItem>
+                  </SelectContent>
+                </Select>
               </SettingRow>
               <SettingRow label="Auto-save" description="Automatically save content while editing">
                 <Toggle pressed={general.autoSave} onPressedChange={(v) => setGeneral({ autoSave: v })} />
@@ -479,16 +481,16 @@ export default function Settings() {
             </Section>
             <Section title="Typography">
               <SettingRow label="Interface Font" description="Used for all standard UI elements">
-                <span className="font-label-md text-on-surface text-body-sm">Alibaba PuHuiTi 3.0</span>
+                <span className="font-label-md text-on-surface text-body-sm">Noto Sans SC</span>
               </SettingRow>
               <SettingRow label="Density" description="Adjust the overall size of text and UI elements">
-                <div className="flex bg-surface-container-low p-1 rounded-lg">
+                <div className="flex bg-surface-container-low p-0.5 rounded">
                   {(['compact', 'comfortable', 'spacious'] as const).map((d) => (
                     <button
                       key={d}
                       onClick={() => setTheme({ density: d })}
                       className={cn(
-                        'px-3 py-1 rounded-md text-body-sm capitalize transition-colors',
+                        'px-2.5 py-0.5 rounded text-[12px] capitalize transition-colors',
                         theme.density === d ? 'bg-surface-container-lowest shadow-sm text-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container-high',
                       )}
                     >

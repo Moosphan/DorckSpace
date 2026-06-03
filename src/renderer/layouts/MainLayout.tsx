@@ -219,7 +219,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           // Refresh profile data after dialog closes
           window.electronAPI.invoke('profile:get').then(res => {
             if (res.success && res.data) {
-              setProfile({ name: res.data.name, avatar_path: res.data.avatar_path })
+              setProfile({ name: res.data.name, avatar_data_url: res.data.avatar_data_url })
             }
           }).catch(() => {})
         }}
