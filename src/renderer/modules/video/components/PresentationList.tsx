@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
+import { PresentationViewer } from './PresentationViewer'
 
 interface Presentation {
   id: number
@@ -11,6 +13,8 @@ export function PresentationList() {
   const { data: presentations, loading, refetch } = useIpcData<Presentation[]>('video:getByType', 'presentation')
   const { mutate: deleteAsset } = useIpcMutation<boolean>('video:delete')
   const { mutate: importFile } = useIpcMutation('video:importFile')
+
+  const [viewing, setViewing] = useState<Presentation | null>(null)
 
   const getSlideCount = (metadata: string) => {
     try {
@@ -51,6 +55,7 @@ export function PresentationList() {
           {presentations?.map((ppt) => (
             <div
               key={ppt.id}
+              onClick={() => setViewing(ppt)}
               className="flex items-center gap-md p-md bg-surface-container-lowest rounded-xl border border-outline-variant/50 hover:bg-primary-fixed/10 transition-all cursor-pointer group"
             >
               <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
@@ -61,7 +66,7 @@ export function PresentationList() {
                 <p className="text-body-sm text-on-surface-variant">{getSlideCount(ppt.metadata)}</p>
               </div>
               <button
-                onClick={() => handleDelete(ppt.id)}
+                onClick={(e) => { e.stopPropagation(); handleDelete(ppt.id) }}
                 className="p-2 text-on-surface-variant hover:text-error transition-colors opacity-0 group-hover:opacity-100"
               >
                 <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -80,6 +85,15 @@ export function PresentationList() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Presentation Viewer */}
+      {viewing && (
+        <PresentationViewer
+          filePath={viewing.file_path}
+          title={viewing.title}
+          onClose={() => setViewing(null)}
+        />
       )}
     </div>
   )
