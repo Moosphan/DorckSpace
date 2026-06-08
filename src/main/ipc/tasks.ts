@@ -6,9 +6,12 @@ const TASKS_CHANNELS = {
   GET_ALL: 'tasks:getAll',
   GET_PENDING: 'tasks:getPending',
   GET_BY_ID: 'tasks:getById',
+  GET_BY_PROJECT: 'tasks:getByProject',
+  GET_BY_STATUS: 'tasks:getByStatus',
   CREATE: 'tasks:create',
   UPDATE: 'tasks:update',
   UPDATE_STATUS: 'tasks:updateStatus',
+  UPDATE_SORT_ORDER: 'tasks:updateSortOrder',
   DELETE: 'tasks:delete',
 } as const
 
@@ -74,6 +77,33 @@ export function registerTaskIpcHandlers(): void {
   ipcMain.handle(TASKS_CHANNELS.DELETE, (_event, id: number) => {
     try {
       const result = getRepo().deleteById(id)
+      return { success: true, data: result }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(TASKS_CHANNELS.GET_BY_PROJECT, (_event, projectId: number) => {
+    try {
+      const tasks = getRepo().findByProject(projectId)
+      return { success: true, data: tasks }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(TASKS_CHANNELS.GET_BY_STATUS, (_event, status: string) => {
+    try {
+      const tasks = getRepo().findByStatus(status as 'pending' | 'in_progress' | 'completed' | 'cancelled')
+      return { success: true, data: tasks }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(TASKS_CHANNELS.UPDATE_SORT_ORDER, (_event, id: number, sortOrder: number) => {
+    try {
+      const result = getRepo().updateSortOrder(id, sortOrder)
       return { success: true, data: result }
     } catch (err) {
       return { success: false, error: (err as Error).message }

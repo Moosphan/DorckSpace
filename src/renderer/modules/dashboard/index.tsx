@@ -7,19 +7,21 @@ import { ActivityHeatmap } from './components/ActivityHeatmap'
 import { IdeaCard, type IdeaCardHandle } from './components/IdeaCard'
 import { CreateIdeaDialog } from './components/CreateIdeaDialog'
 import { ManageIdeasDialog } from './components/ManageIdeasDialog'
+import { ProjectManagerDialog } from './components/ProjectManagerDialog'
 
 export default function Dashboard() {
   const [showCreate, setShowCreate] = useState(false)
   const [showManage, setShowManage] = useState(false)
+  const [showProjectManager, setShowProjectManager] = useState(false)
   const ideaCardRef = useRef<IdeaCardHandle>(null)
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col lg:flex-row gap-lg p-lg">
       {/* Left Stream: Focus + Tasks */}
       <div className="flex-1 flex flex-col gap-lg overflow-y-auto pr-sm">
-        <FocusProjectCard />
+        <FocusProjectCard onOpenManager={() => setShowProjectManager(true)} />
         {/* <CalendarWidget /> */}
-        <PriorityTaskList />
+        <PriorityTaskList onOpenBoard={() => setShowProjectManager(true)} />
       </div>
 
       {/* Right Sidebar: Weather + Activity + Ideas */}
@@ -43,6 +45,10 @@ export default function Dashboard() {
         onClose={() => setShowManage(false)}
         onCreateNew={() => setShowCreate(true)}
         onChanged={() => ideaCardRef.current?.refresh()}
+      />
+      <ProjectManagerDialog
+        open={showProjectManager}
+        onClose={() => setShowProjectManager(false)}
       />
     </div>
   )

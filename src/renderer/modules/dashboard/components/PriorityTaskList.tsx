@@ -116,7 +116,11 @@ function TaskActionMenu({
   )
 }
 
-export function PriorityTaskList() {
+interface PriorityTaskListProps {
+  onOpenBoard?: () => void
+}
+
+export function PriorityTaskList({ onOpenBoard }: PriorityTaskListProps) {
   const { data: tasks, loading, refetch } = useIpcData<Task[]>('tasks:getPending', 20)
   const { mutate: updateStatus } = useIpcMutation<boolean>('tasks:updateStatus')
   const { mutate: createTask } = useIpcMutation<number>('tasks:create')
@@ -154,12 +158,24 @@ export function PriorityTaskList() {
     <section>
       <div className="flex items-center justify-between mb-md">
         <h3 className="font-headline-md text-headline-md text-on-surface">Tasks</h3>
-        <button
-          onClick={() => setShowInput(!showInput)}
-          className="w-8 h-8 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-on-primary transition-all flex items-center justify-center"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-        </button>
+        <div className="flex items-center gap-xs">
+          {onOpenBoard && (
+            <button
+              onClick={onOpenBoard}
+              className="flex items-center gap-xs px-2 py-1 rounded-full text-[11px] font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
+              title="Open board view"
+            >
+              <span className="material-symbols-outlined text-[16px]">dashboard</span>
+              Board
+            </button>
+          )}
+          <button
+            onClick={() => setShowInput(!showInput)}
+            className="w-8 h-8 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-on-primary transition-all flex items-center justify-center"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+          </button>
+        </div>
       </div>
 
       {showInput && (
@@ -189,9 +205,7 @@ export function PriorityTaskList() {
       {loading ? (
         <div className="space-y-sm">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-surface-container-lowest rounded-lg p-sm border border-outline-variant/30 animate-pulse">
-              <div className="h-4 bg-surface-container-highest rounded w-48" />
-            </div>
+            <div key={i} className="bg-surface-container-lowest rounded-lg p-sm border border-outline-variant/30 animate-pulse h-12" />
           ))}
         </div>
       ) : !tasks || tasks.length === 0 ? (
@@ -212,7 +226,7 @@ export function PriorityTaskList() {
             return (
               <div
                 key={task.id}
-                className="bg-surface-container-lowest rounded-lg p-sm border border-outline-variant/30 flex items-center gap-md group hover:border-primary-container/50 transition-colors shadow-ambient"
+                className="bg-surface-container-lowest rounded-lg p-sm border border-outline-variant/30 flex items-center gap-md group hover:border-primary-container/50 transition-colors shadow-ambient h-12"
               >
                 <button
                   onClick={() => handleToggle(task)}
@@ -230,17 +244,12 @@ export function PriorityTaskList() {
                 <div className="flex-1 min-w-0">
                   <h4
                     className={cn(
-                      'font-headline-sm text-headline-sm text-on-surface truncate',
+                      'font-label-md text-on-surface truncate',
                       isCompleted && 'line-through text-on-surface-variant',
                     )}
                   >
                     {task.title}
                   </h4>
-                  {task.due_date && (
-                    <p className="font-body-sm text-body-sm text-on-surface-variant truncate">
-                      Due {task.due_date}
-                    </p>
-                  )}
                 </div>
                 <Badge variant={config.variant}>{config.label}</Badge>
                 <TaskActionMenu task={task} onAction={handleAction} />

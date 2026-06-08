@@ -10,6 +10,11 @@ export interface TaskRow {
   due_date: string | null
   project_id: number | null
   tags: string
+  estimated_hours: number | null
+  actual_hours: number | null
+  parent_id: number | null
+  sort_order: number
+  milestone_id: number | null
   created_at: string
   updated_at: string
 }
@@ -37,9 +42,40 @@ export class TaskRepository extends BaseRepository<TaskRow> {
 
   findByProject(projectId: number): TaskRow[] {
     return this.all<TaskRow>(
-      'SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at DESC',
+      'SELECT * FROM tasks WHERE project_id = ? ORDER BY sort_order, created_at DESC',
       projectId,
     )
+  }
+
+  findByProjectAndStatus(projectId: number, status: TaskRow['status']): TaskRow[] {
+    return this.all<TaskRow>(
+      'SELECT * FROM tasks WHERE project_id = ? AND status = ? ORDER BY sort_order, created_at DESC',
+      projectId,
+      status,
+    )
+  }
+
+  findByMilestone(milestoneId: number): TaskRow[] {
+    return this.all<TaskRow>(
+      'SELECT * FROM tasks WHERE milestone_id = ? ORDER BY sort_order, created_at DESC',
+      milestoneId,
+    )
+  }
+
+  findByParent(parentId: number): TaskRow[] {
+    return this.all<TaskRow>(
+      'SELECT * FROM tasks WHERE parent_id = ? ORDER BY sort_order, created_at',
+      parentId,
+    )
+  }
+
+  updateSortOrder(id: number, sortOrder: number): boolean {
+    const result = this.run(
+      'UPDATE tasks SET sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      sortOrder,
+      id,
+    )
+    return result.changes > 0
   }
 
   create(data: {

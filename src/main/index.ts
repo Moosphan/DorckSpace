@@ -23,6 +23,7 @@ import { registerProfileIpcHandlers } from './ipc/profile'
 import { registerMoodboardIpcHandlers } from './ipc/moodboard'
 import { registerCalendarIpcHandlers } from './ipc/calendar'
 import { registerPortfolioIpcHandlers } from './ipc/portfolio'
+import { registerMilestoneIpcHandlers } from './ipc/milestones'
 import { registerTtsHandlers } from './services/tts-service'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
@@ -103,6 +104,7 @@ app.whenReady().then(() => {
   registerMoodboardIpcHandlers()
   registerCalendarIpcHandlers()
   registerPortfolioIpcHandlers()
+  registerMilestoneIpcHandlers()
   registerTtsHandlers()
 
   // Load plugins

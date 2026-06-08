@@ -10,12 +10,16 @@ interface Project {
   status: string
 }
 
-export function FocusProjectCard() {
+interface FocusProjectCardProps {
+  onOpenManager?: () => void
+}
+
+export function FocusProjectCard({ onOpenManager }: FocusProjectCardProps) {
   const { data: project, loading } = useIpcData<Project | null>('projects:getFocus')
 
   if (loading) {
     return (
-      <div className="bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 shadow-ambient animate-pulse">
+      <div className="bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 shadow-ambient animate-pulse flex-1">
         <div className="h-4 bg-surface-container-highest rounded w-24 mb-sm" />
         <div className="h-6 bg-surface-container-highest rounded w-48 mb-xs" />
         <div className="h-4 bg-surface-container-highest rounded w-64" />
@@ -25,7 +29,7 @@ export function FocusProjectCard() {
 
   if (!project) {
     return (
-      <div className="bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 shadow-ambient">
+      <div className="bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 shadow-ambient flex-1">
         <span className="inline-flex items-center gap-xs px-2 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm mb-sm">
           <span className="material-symbols-outlined text-[14px]">star</span>
           Main Focus
@@ -36,12 +40,24 @@ export function FocusProjectCard() {
         <p className="font-body-md text-body-md text-on-surface-variant">
           Set a project as your main focus to see it here.
         </p>
+        {onOpenManager && (
+          <button
+            onClick={onOpenManager}
+            className="mt-md flex items-center gap-xs text-primary text-body-sm hover:underline"
+          >
+            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+            Open Project Manager
+          </button>
+        )}
       </div>
     )
   }
 
   return (
-    <div className="bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 shadow-ambient hover:-translate-y-1 transition-transform duration-300">
+    <div
+      className="bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 shadow-ambient hover:-translate-y-1 transition-transform duration-300 flex-1 cursor-pointer"
+      onClick={onOpenManager}
+    >
       <div className="flex items-start justify-between mb-md">
         <div>
           <span className="inline-flex items-center gap-xs px-2 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm mb-sm">

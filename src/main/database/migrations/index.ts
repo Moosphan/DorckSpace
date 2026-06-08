@@ -414,6 +414,41 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 14,
+    name: '014_project_milestones',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS project_milestones (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          title TEXT NOT NULL,
+          description TEXT,
+          due_date DATE,
+          status TEXT CHECK(status IN ('pending', 'reached', 'missed')) DEFAULT 'pending',
+          reached_at DATETIME,
+          sort_order INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      db.exec(`
+        ALTER TABLE tasks ADD COLUMN estimated_hours REAL
+      `)
+      db.exec(`
+        ALTER TABLE tasks ADD COLUMN actual_hours REAL
+      `)
+      db.exec(`
+        ALTER TABLE tasks ADD COLUMN parent_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL
+      `)
+      db.exec(`
+        ALTER TABLE tasks ADD COLUMN sort_order INTEGER DEFAULT 0
+      `)
+      db.exec(`
+        ALTER TABLE tasks ADD COLUMN milestone_id INTEGER REFERENCES project_milestones(id) ON DELETE SET NULL
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {
