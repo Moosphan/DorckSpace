@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -153,6 +153,7 @@ export function ProjectManagerDialog({ open, onClose }: ProjectManagerDialogProp
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const dragOriginalStatusRef = useRef<Task['status'] | null>(null)
 
   // Project form
   const [showProjectForm, setShowProjectForm] = useState(false)
@@ -227,7 +228,10 @@ export function ProjectManagerDialog({ open, onClose }: ProjectManagerDialogProp
 
   const handleDragStart = (event: DragStartEvent) => {
     const task = tasks.find(t => t.id === event.active.id)
-    if (task) setActiveTask(task)
+    if (task) {
+      setActiveTask(task)
+      dragOriginalStatusRef.current = task.status
+    }
   }
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -261,10 +265,11 @@ export function ProjectManagerDialog({ open, onClose }: ProjectManagerDialogProp
     if (!over) return
 
     const activeId = active.id as number
+    const originalStatus = dragOriginalStatusRef.current
     const task = tasks.find(t => t.id === activeId)
-    if (!task) return
+    if (!task || !originalStatus) return
 
-    // Determine the new status
+    // Determine the new status from the drop target
     let newStatus = task.status
 
     // Check if dropped on a column directly
@@ -279,16 +284,17 @@ export function ProjectManagerDialog({ open, onClose }: ProjectManagerDialogProp
       }
     }
 
-    // Only update if status changed
-    if (newStatus !== task.status) {
+    // Only persist if status actually changed from before the drag started
+    if (newStatus !== originalStatus) {
       setTasks(prev => prev.map(t => t.id === activeId ? { ...t, status: newStatus } : t))
       try {
         await updateTaskStatus(activeId, newStatus)
       } catch {
-        // Revert on failure
-        setTasks(prev => prev.map(t => t.id === activeId ? { ...t, status: task.status } : t))
+        // Revert to the original status on failure
+        setTasks(prev => prev.map(t => t.id === activeId ? { ...t, status: originalStatus } : t))
       }
     }
+    dragOriginalStatusRef.current = null
   }
 
   const getTasksByStatus = (status: string) => tasks.filter(t => t.status === status)
