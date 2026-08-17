@@ -19,6 +19,12 @@ export interface TaskRow {
   updated_at: string
 }
 
+export interface TaskWithProject extends TaskRow {
+  project_name: string | null
+  project_color: string | null
+  project_icon: string | null
+}
+
 export class TaskRepository extends BaseRepository<TaskRow> {
   constructor(db: Database.Database) {
     super(db, 'tasks')
@@ -31,10 +37,12 @@ export class TaskRepository extends BaseRepository<TaskRow> {
     )
   }
 
-  findPending(limit = 10): TaskRow[] {
-    return this.all<TaskRow>(
-      `SELECT * FROM tasks
-       ORDER BY created_at DESC
+  findPending(limit = 10): TaskWithProject[] {
+    return this.all<TaskWithProject>(
+      `SELECT t.*, p.name AS project_name, p.color AS project_color, p.icon AS project_icon
+       FROM tasks t
+       LEFT JOIN projects p ON p.id = t.project_id
+       ORDER BY t.created_at DESC
        LIMIT ?`,
       limit,
     )

@@ -11,6 +11,10 @@ interface Task {
   status: string
   due_date: string | null
   created_at: string
+  project_id: number | null
+  project_name: string | null
+  project_color: string | null
+  project_icon: string | null
 }
 
 const priorityConfig = {
@@ -251,6 +255,21 @@ export function PriorityTaskList({ onOpenBoard }: PriorityTaskListProps) {
                     {task.title}
                   </h4>
                 </div>
+                {task.project_name && (
+                  <span
+                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold shrink-0"
+                    title={task.project_name}
+                    style={{
+                      color: task.project_color || 'var(--color-primary)',
+                      backgroundColor: task.project_color ? `${task.project_color}20` : 'var(--color-primary-container)',
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-[10px]">
+                      {task.project_icon || 'folder'}
+                    </span>
+                    <span className="truncate max-w-[96px]">{task.project_name}</span>
+                  </span>
+                )}
                 <Badge variant={config.variant}>{config.label}</Badge>
                 <TaskActionMenu task={task} onAction={handleAction} />
               </div>
