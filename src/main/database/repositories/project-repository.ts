@@ -16,22 +16,59 @@ export interface ProjectRow {
   updated_at: string
 }
 
+interface ProjectTaskStats {
+  completed: number | null
+  total: number | null
+}
+
+type ProjectRowWithStats = ProjectRow & ProjectTaskStats
+
+/** Completed (excluding cancelled) as a percentage of all non-cancelled tasks. */
+function computeProgress({ completed, total }: ProjectTaskStats): number {
+  const denominator = total ?? 0
+  if (denominator <= 0) return 0
+  return Math.round((100 * (completed ?? 0)) / denominator)
+}
+
+/** Replace the static `progress` column with a value derived from its tasks. */
+function withProgress<T extends ProjectRowWithStats>(row: T): ProjectRow {
+  const { completed, total, ...rest } = row
+  return { ...rest, progress: computeProgress({ completed, total }) }
+}
+
+const PROJECT_TASK_STATS_JOIN = `
+LEFT JOIN (
+  SELECT project_id,
+    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+    SUM(CASE WHEN status != 'cancelled' THEN 1 ELSE 0 END) AS total
+  FROM tasks
+  GROUP BY project_id
+) stats ON stats.project_id = p.id`
+
 export class ProjectRepository extends BaseRepository<ProjectRow> {
   constructor(db: Database.Database) {
     super(db, 'projects')
   }
 
   findFocus(): ProjectRow | undefined {
-    return this.get<ProjectRow>(
-      'SELECT * FROM projects WHERE is_focus = 1 AND status = ? LIMIT 1',
-      'active',
+    const row = this.get<ProjectRowWithStats>(
+      `SELECT p.*, stats.completed, stats.total
+       FROM projects p
+       ${PROJECT_TASK_STATS_JOIN}
+       WHERE p.is_focus = 1 AND p.status = 'active'
+       LIMIT 1`,
     )
+    return row ? withProgress(row) : undefined
   }
 
   findActive(): ProjectRow[] {
-    return this.all<ProjectRow>(
-      "SELECT * FROM projects WHERE status = 'active' ORDER BY is_focus DESC, updated_at DESC",
-    )
+    return this.all<ProjectRowWithStats>(
+      `SELECT p.*, stats.completed, stats.total
+       FROM projects p
+       ${PROJECT_TASK_STATS_JOIN}
+       WHERE p.status = 'active'
+       ORDER BY p.is_focus DESC, p.updated_at DESC`,
+    ).map(withProgress)
   }
 
   create(data: {
