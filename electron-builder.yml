@@ -1,5 +1,5 @@
-appId: com.dorck.dashboard
-productName: DorckDashboard
+appId: com.dorck.mydashboard
+productName: MyDashboard
 copyright: Copyright © 2024-2026 Dorck
 
 directories:
@@ -54,7 +54,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: DorckDashboard
+  shortcutName: MyDashboard
 
 linux:
   target:
@@ -67,5 +67,5 @@ linux:
   icon: build/icon-1024.png
   category: Office
   synopsis: Local-first personal productivity workspace
-  description: DorckDashboard is an Electron desktop app that brings projects, writing, media assets, RSS reading, social insights, and AI tooling into one local-first workspace.
+  description: MyDashboard is an Electron desktop app that brings projects, writing, media assets, RSS reading, social insights, and AI tooling into one local-first workspace.
   maintainer: Moosphan <Moosphan@users.noreply.github.com>

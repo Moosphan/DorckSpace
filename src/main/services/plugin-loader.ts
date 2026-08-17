@@ -15,7 +15,7 @@ const loadedPlugins = new Map<string, LoadedPlugin>()
 const pluginChannels = new Map<string, Set<string>>()
 
 function getPluginsRoot(): string {
-  return join(app.getPath('home'), '.dorck-dashboard', 'plugins')
+  return join(app.getPath('home'), '.my-dashboard', 'plugins')
 }
 
 function validateManifest(data: unknown): PluginManifest | null {

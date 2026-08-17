@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./assets/app-logo.svg" alt="DorckDashboard" width="128" />
+  <img src="./assets/app-logo.svg" alt="MyDashboard" width="128" />
 </p>
 
-<h1 align="center">DorckDashboard</h1>
+<h1 align="center">MyDashboard</h1>
 
 <p align="center"><strong>A local-first desktop productivity workspace</strong></p>
 
@@ -24,7 +24,7 @@
 
 ## Overview
 
-DorckDashboard is an Electron desktop app that brings projects, writing, media
+MyDashboard is an Electron desktop app that brings projects, writing, media
 assets, RSS reading, social insights, and AI tooling into one local-first
 workspace. The app stores data on your machine with SQLite and file-based
 storage, so you can work without cloud accounts or external sync as a baseline.
@@ -36,7 +36,7 @@ means the product direction is shaped by real personal workflows first.
 
 Many personal workflows are split across separate apps for task tracking,
 writing, reference collection, media management, feed reading, and AI tools.
-DorckDashboard aims to make those workflows feel like one coherent desktop
+MyDashboard aims to make those workflows feel like one coherent desktop
 workspace instead of a loose collection of tabs and services.
 
 ## Key Capabilities
@@ -74,7 +74,7 @@ workspace instead of a loose collection of tabs and services.
 
 ## Current Architecture
 
-DorckDashboard currently ships as a modular Electron app with six built-in
+MyDashboard currently ships as a modular Electron app with six built-in
 feature modules:
 
 - `dashboard`
@@ -140,8 +140,8 @@ SQLite is initialized with WAL mode and foreign-key support enabled.
 ### Install
 
 ```bash
-git clone https://github.com/Moosphan/DorckSpace.git
-cd DorckSpace
+git clone https://github.com/Moosphan/MyDashboard.git
+cd MyDashboard
 pnpm install
 ```
 

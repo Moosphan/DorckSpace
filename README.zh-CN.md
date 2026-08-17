@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./assets/app-logo.svg" alt="DorckDashboard" width="128" />
+  <img src="./assets/app-logo.svg" alt="MyDashboard" width="128" />
 </p>
 
-<h1 align="center">DorckDashboard</h1>
+<h1 align="center">MyDashboard</h1>
 
 <p align="center"><strong>本地优先的桌面生产力工作空间</strong></p>
 
@@ -24,7 +24,7 @@
 
 ## 项目简介
 
-DorckDashboard 是一款基于 Electron 的桌面应用，试图把项目管理、写作、
+MyDashboard 是一款基于 Electron 的桌面应用，试图把项目管理、写作、
 媒体素材、RSS 阅读、社交洞察和 AI 工具整合进同一个本地优先工作空间。
 当前实现以 SQLite 和本地文件存储为基础，默认不依赖云端账户和同步服务。
 
@@ -34,7 +34,7 @@ DorckDashboard 是一款基于 Electron 的桌面应用，试图把项目管理�
 ## 这个项目解决什么问题
 
 很多个人工作流会分散在多个应用里：任务管理、写作、素材整理、信息订阅、
-社交数据查看，以及 AI 工具使用彼此割裂。DorckDashboard 想做的是一个统一的
+社交数据查看，以及 AI 工具使用彼此割裂。MyDashboard 想做的是一个统一的
 桌面工作台，而不是一组松散的网页标签页。
 
 ## 核心能力
@@ -72,7 +72,7 @@ DorckDashboard 是一款基于 Electron 的桌面应用，试图把项目管理�
 
 ## 当前架构
 
-DorckDashboard 当前是一个模块化 Electron 应用，内置 6 个功能模块：
+MyDashboard 当前是一个模块化 Electron 应用，内置 6 个功能模块：
 
 - `dashboard`
 - `writing`
@@ -134,8 +134,8 @@ SQLite 初始化时会启用 WAL 模式和外键约束。
 ### 安装
 
 ```bash
-git clone https://github.com/Moosphan/DorckSpace.git
-cd DorckSpace
+git clone https://github.com/Moosphan/MyDashboard.git
+cd MyDashboard
 pnpm install
 ```
 

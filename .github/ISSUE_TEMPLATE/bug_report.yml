@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug or unexpected behavior in DorckDashboard
+description: Report a bug or unexpected behavior in MyDashboard
 title: "[bug]: "
 labels: ["bug"]
 
@@ -10,7 +10,7 @@ body:
         Thanks for taking the time to report a bug! Please fill out the form below to help us diagnose and fix the issue.
 
         **Before submitting**, please:
-        - Search [existing issues](https://github.com/Moosphan/DorckSpace/issues) to avoid duplicates
+        - Search [existing issues](https://github.com/Moosphan/MyDashboard/issues) to avoid duplicates
         - Make sure you're running the latest version
 
   - type: checkboxes
@@ -18,16 +18,16 @@ body:
     attributes:
       label: Preflight Checklist
       options:
-        - label: I have searched the [existing issues](https://github.com/Moosphan/DorckSpace/issues) and this has not been reported before
+        - label: I have searched the [existing issues](https://github.com/Moosphan/MyDashboard/issues) and this has not been reported before
           required: true
-        - label: I am using the latest version of DorckDashboard
+        - label: I am using the latest version of MyDashboard
           required: true
 
   - type: input
     id: app-version
     attributes:
       label: App Version
-      description: The version of DorckDashboard you are using (e.g., 0.1.0)
+      description: The version of MyDashboard you are using (e.g., 0.1.0)
       placeholder: "0.1.0"
     validations:
       required: true

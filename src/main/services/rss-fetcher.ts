@@ -6,7 +6,7 @@ import { RSSFeedRepository, RSSArticleRepository } from '../database/repositorie
 const parser = new Parser({
   timeout: 10000,
   headers: {
-    'User-Agent': 'DorckDashboard/1.0 RSS Reader',
+    'User-Agent': 'MyDashboard/1.0 RSS Reader',
   },
 })
 

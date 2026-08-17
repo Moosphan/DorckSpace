@@ -10,18 +10,18 @@ body:
         Sorry to hear the app crashed! Please provide as much detail as possible so we can diagnose the issue.
 
         **Tip:** If you can reproduce the crash, try to capture the error message or stack trace from:
-        - **macOS**: Console.app or `~/Library/Logs/DorckDashboard/`
-        - **Windows**: Event Viewer or `%APPDATA%/DorckDashboard/logs/`
-        - **Linux**: `~/.config/DorckDashboard/logs/` or terminal output
+        - **macOS**: Console.app or `~/Library/Logs/MyDashboard/`
+        - **Windows**: Event Viewer or `%APPDATA%/MyDashboard/logs/`
+        - **Linux**: `~/.config/MyDashboard/logs/` or terminal output
 
   - type: checkboxes
     id: preflight
     attributes:
       label: Preflight Checklist
       options:
-        - label: I have searched the [existing issues](https://github.com/Moosphan/DorckSpace/issues) and this has not been reported before
+        - label: I have searched the [existing issues](https://github.com/Moosphan/MyDashboard/issues) and this has not been reported before
           required: true
-        - label: I am using the latest version of DorckDashboard
+        - label: I am using the latest version of MyDashboard
           required: true
 
   - type: input

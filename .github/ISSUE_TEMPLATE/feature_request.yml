@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or improvement for DorckDashboard
+description: Suggest a new feature or improvement for MyDashboard
 title: "[feat]: "
 labels: ["enhancement"]
 
@@ -10,7 +10,7 @@ body:
         Thanks for suggesting a feature! Please describe your idea clearly so we can evaluate and prioritize it.
 
         **Before submitting**, please:
-        - Search [existing issues](https://github.com/Moosphan/DorckSpace/issues) to avoid duplicates
+        - Search [existing issues](https://github.com/Moosphan/MyDashboard/issues) to avoid duplicates
         - Check if the feature already exists or is planned
 
   - type: checkboxes
@@ -18,7 +18,7 @@ body:
     attributes:
       label: Preflight Checklist
       options:
-        - label: I have searched the [existing issues](https://github.com/Moosphan/DorckSpace/issues) and this has not been requested before
+        - label: I have searched the [existing issues](https://github.com/Moosphan/MyDashboard/issues) and this has not been requested before
           required: true
 
   - type: textarea

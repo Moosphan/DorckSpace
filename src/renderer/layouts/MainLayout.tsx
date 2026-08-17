@@ -104,10 +104,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
         {/* Logo - pt-12 clears macOS traffic lights */}
         <div className="p-md pt-12 titlebar-drag">
           <div className="flex items-center gap-sm mb-lg">
-            <img src={appLogoUrl} alt="DorckDashboard logo" className="w-10 h-10 shrink-0" />
+            <img src={appLogoUrl} alt="MyDashboard logo" className="w-10 h-10 shrink-0" />
             <div>
               <h1 className="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
-                DorckDashboard
+                MyDashboard
               </h1>
               <p className="font-label-sm text-label-sm text-on-surface-variant opacity-70">
                 Productivity Engine

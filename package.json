@@ -1,7 +1,7 @@
 {
-  "name": "dorck-dashboard",
+  "name": "my-dashboard",
   "version": "0.1.0",
-  "description": "DorckDashboard - Local-first personal productivity workspace for macOS",
+  "description": "MyDashboard - Local-first personal productivity workspace for macOS",
   "main": "./out/main/index.js",
   "author": "Dorck",
   "license": "Apache-2.0",

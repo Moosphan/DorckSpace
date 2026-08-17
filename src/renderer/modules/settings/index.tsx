@@ -542,7 +542,7 @@ export default function Settings() {
         {/* Advanced */}
         {activeTab === 'advanced' && (
           <Section title="Advanced">
-            <SettingRow label="Start on boot" description="Launch DorckDashboard when macOS starts">
+            <SettingRow label="Start on boot" description="Launch MyDashboard when macOS starts">
               <Toggle pressed={general.startOnBoot} onPressedChange={(v) => setGeneral({ startOnBoot: v })} />
             </SettingRow>
             <SettingRow label="Minimize to tray" description="Keep running in the menu bar when closed">

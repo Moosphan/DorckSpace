@@ -2,7 +2,7 @@ import Parser from 'rss-parser'
 
 const parser = new Parser({
   timeout: 15000,
-  headers: { 'User-Agent': 'DorckDashboard/1.0' },
+  headers: { 'User-Agent': 'MyDashboard/1.0' },
 })
 
 const FEEDS = [
@@ -53,7 +53,7 @@ async function testFeed(expected: string, url: string): Promise<TestResult> {
   try {
     // Use fetch + parseString (same as ADD_FEED handler)
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'DorckDashboard/1.0' },
+      headers: { 'User-Agent': 'MyDashboard/1.0' },
       signal: AbortSignal.timeout(10000),
     })
     const xml = await res.text()
