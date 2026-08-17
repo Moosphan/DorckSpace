@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../database/connection'
 import { usageProviderRegistry } from './usage-provider-registry'
+import { decryptSecret } from './secret-crypto'
 
 interface UsageResult {
   balance: number
@@ -227,9 +228,12 @@ async function fetchUsage(subscription: { provider: string; api_key: string | nu
 
 async function trackAllSubscriptions(): Promise<{ success: boolean; updated: number; errors: string[] }> {
   const db = getDatabase()
-  const subs = db.prepare(
+  const subs = (db.prepare(
     "SELECT * FROM ai_subscriptions WHERE is_active = 1 AND api_key IS NOT NULL AND api_key != ''",
-  ).all() as Array<{ id: number; provider: string; api_key: string | null; base_url?: string | null }>
+  ).all() as Array<{ id: number; provider: string; api_key: string | null; base_url?: string | null }>).map((sub) => ({
+    ...sub,
+    api_key: decryptSecret(sub.api_key),
+  }))
 
   console.log(`[AI Usage] Tracking ${subs.length} subscriptions...`)
   const errors: string[] = []

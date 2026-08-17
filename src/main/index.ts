@@ -28,6 +28,7 @@ import { registerTtsHandlers } from './services/tts-service'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
+import { AISubscriptionRepository } from './database/repositories/ai-repository'
 import { seedSocialData } from './database/seeds/social-seeds'
 
 const isDev = !app.isPackaged
@@ -79,6 +80,12 @@ app.whenReady().then(() => {
   // Initialize database and run migrations
   const db = getDatabase()
   runMigrations(db)
+
+  // Encrypt any legacy plaintext API keys at rest (safeStorage)
+  const migratedKeys = new AISubscriptionRepository(db).encryptLegacyApiKeys()
+  if (migratedKeys > 0) {
+    console.log(`[Security] Encrypted ${migratedKeys} legacy API key(s) with safeStorage`)
+  }
 
   // Register all IPC handlers
   registerAllIpcHandlers()

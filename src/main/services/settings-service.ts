@@ -1,7 +1,8 @@
-import { ipcMain, safeStorage } from 'electron'
+import { ipcMain } from 'electron'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { IPC_CHANNELS, DEFAULT_SETTINGS } from '@shared/constants'
 import { getAbsolutePath } from './file-service'
+import { encryptSecret, decryptSecret } from './secret-crypto'
 
 const SENSITIVE_FIELDS = [
   'integrations.githubToken',
@@ -9,42 +10,36 @@ const SENSITIVE_FIELDS = [
   'integrations.claudeApiKey',
 ]
 
-function encryptValue(value: string): string {
-  if (!safeStorage.isEncryptionAvailable()) return value
-  return safeStorage.encryptString(value).toString('base64')
+function getSettingsPath(): string {
+  return getAbsolutePath('config/settings.json')
 }
 
-function decryptValue(value: string): string {
-  if (!safeStorage.isEncryptionAvailable()) return value
-  try {
-    return safeStorage.decryptString(Buffer.from(value, 'base64'))
-  } catch {
-    return value
-  }
-}
-
-function processFields(
+/**
+ * Walk each `SENSITIVE_FIELDS` dotted path and apply `transform` to the leaf
+ * value when present and non-empty. Returns a shallow copy; the input is never
+ * mutated.
+ */
+function transformSensitiveFields(
   settings: Record<string, unknown>,
-  fn: (val: string) => string,
+  transform: (value: string) => string,
 ): Record<string, unknown> {
   const result = { ...settings }
   for (const field of SENSITIVE_FIELDS) {
-    const keys = field.split('.')
+    const segments = field.split('.')
     let obj: Record<string, unknown> = result
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!obj[keys[i]] || typeof obj[keys[i]] !== 'object') obj[keys[i]] = {}
-      obj = obj[keys[i]] as Record<string, unknown>
+    for (let i = 0; i < segments.length - 1; i++) {
+      const segment = segments[i]
+      if (typeof obj[segment] !== 'object' || obj[segment] === null) {
+        obj[segment] = {}
+      }
+      obj = obj[segment] as Record<string, unknown>
     }
-    const lastKey = keys[keys.length - 1]
-    if (typeof obj[lastKey] === 'string' && obj[lastKey]) {
-      obj[lastKey] = fn(obj[lastKey] as string)
+    const leaf = segments[segments.length - 1]
+    if (typeof obj[leaf] === 'string' && obj[leaf]) {
+      obj[leaf] = transform(obj[leaf])
     }
   }
   return result
-}
-
-function getSettingsPath(): string {
-  return getAbsolutePath('config/settings.json')
 }
 
 function readSettingsFile(): Record<string, unknown> {
@@ -55,7 +50,8 @@ function readSettingsFile(): Record<string, unknown> {
   try {
     const content = readFileSync(path, 'utf-8')
     const settings = JSON.parse(content)
-    return processFields(settings, decryptValue)
+    // `?? value` only narrows the type — a non-empty string never decrypts to null.
+    return transformSensitiveFields(settings, (value) => decryptSecret(value) ?? value)
   } catch {
     return { ...DEFAULT_SETTINGS }
   }
@@ -63,7 +59,7 @@ function readSettingsFile(): Record<string, unknown> {
 
 function writeSettingsFile(settings: Record<string, unknown>): void {
   const path = getSettingsPath()
-  const encrypted = processFields(settings, encryptValue)
+  const encrypted = transformSensitiveFields(settings, encryptSecret)
   writeFileSync(path, JSON.stringify(encrypted, null, 2), 'utf-8')
 }
 

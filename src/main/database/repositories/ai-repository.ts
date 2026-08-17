@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3'
 import { BaseRepository } from './base'
+import { encryptSecret, decryptSecret, isEncryptionAvailable, isEncryptedSecret } from '../../services/secret-crypto'
 
 export interface AISubscriptionRow {
   id: number
@@ -32,6 +33,10 @@ export interface AIToolRow {
   created_at: string
 }
 
+function decryptApiKey(row: AISubscriptionRow): AISubscriptionRow {
+  return { ...row, api_key: decryptSecret(row.api_key) }
+}
+
 export class AISubscriptionRepository extends BaseRepository<AISubscriptionRow> {
   constructor(db: Database.Database) {
     super(db, 'ai_subscriptions')
@@ -40,7 +45,7 @@ export class AISubscriptionRepository extends BaseRepository<AISubscriptionRow> 
   findActive(): AISubscriptionRow[] {
     return this.all<AISubscriptionRow>(
       'SELECT * FROM ai_subscriptions WHERE is_active = 1 ORDER BY created_at DESC',
-    )
+    ).map(decryptApiKey)
   }
 
   create(data: {
@@ -58,7 +63,7 @@ export class AISubscriptionRepository extends BaseRepository<AISubscriptionRow> 
       data.provider,
       data.plan_name,
       data.base_url ?? null,
-      data.api_key ?? null,
+      data.api_key ? encryptSecret(data.api_key) : null,
       data.monthly_cost ?? null,
       data.token_limit ?? null,
       data.metadata ?? '{}',
@@ -69,17 +74,20 @@ export class AISubscriptionRepository extends BaseRepository<AISubscriptionRow> 
   findAll(): AISubscriptionRow[] {
     return this.all<AISubscriptionRow>(
       'SELECT * FROM ai_subscriptions ORDER BY is_active DESC, created_at DESC',
-    )
+    ).map(decryptApiKey)
   }
 
   update(id: number, data: Partial<Omit<AISubscriptionRow, 'id' | 'created_at'>>): boolean {
     const fields: string[] = []
     const values: unknown[] = []
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
-        fields.push(`${key} = ?`)
-        values.push(value)
+      if (value === undefined) continue
+      let fieldValue: unknown = value
+      if (key === 'api_key' && typeof value === 'string') {
+        fieldValue = value ? encryptSecret(value) : null
       }
+      fields.push(`${key} = ?`)
+      values.push(fieldValue)
     }
     if (fields.length === 0) return false
     fields.push('updated_at = CURRENT_TIMESTAMP')
@@ -103,6 +111,24 @@ export class AISubscriptionRepository extends BaseRepository<AISubscriptionRow> 
       id,
     )
     return result.changes > 0
+  }
+
+  /**
+   * One-time migration of legacy plaintext `api_key` values to safeStorage
+   * ciphertext. Idempotent: values that already decrypt are left untouched.
+   */
+  encryptLegacyApiKeys(): number {
+    if (!isEncryptionAvailable()) return 0
+    const rows = this.all<{ id: number; api_key: string | null }>(
+      "SELECT id, api_key FROM ai_subscriptions WHERE api_key IS NOT NULL AND api_key != ''",
+    )
+    let migrated = 0
+    for (const row of rows) {
+      if (!row.api_key || isEncryptedSecret(row.api_key)) continue
+      this.run('UPDATE ai_subscriptions SET api_key = ? WHERE id = ?', encryptSecret(row.api_key), row.id)
+      migrated++
+    }
+    return migrated
   }
 }
 

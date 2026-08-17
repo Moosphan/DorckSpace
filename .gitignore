@@ -4,6 +4,9 @@ dist/
 docs/
 data/db/*.db
 data/cache/
+*.db
+*.db-wal
+*.db-shm
 *.log
 .DS_Store
 .env
