@@ -16,7 +16,7 @@ export function TokenUsage() {
   const percentage = totalLimit > 0 ? Math.round((totalUsed / totalLimit) * 100) : 0
 
   return (
-    <div className="col-span-12 lg:col-span-5 bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 flex flex-col justify-between">
+    <div className="h-full bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-md">
           <h3 className="font-headline-sm text-headline-sm">Token Usage</h3>

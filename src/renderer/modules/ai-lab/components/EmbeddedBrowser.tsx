@@ -5,6 +5,10 @@ import { cn } from '@/lib/utils'
 interface EmbeddedBrowserProps {
   initialUrl?: string
   onClose: () => void
+  partition?: string
+  onSessionActivity?: () => void
+  onAccountUsage?: (payload: { usage: unknown; credits: unknown | null }) => void
+  onAccountUsageError?: (message: string) => void
 }
 
 const presetTools = [
@@ -16,7 +20,7 @@ const presetTools = [
   { name: 'GitHub Copilot', url: 'https://github.com/features/copilot', color: 'bg-gray-800' },
 ]
 
-export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClose }: EmbeddedBrowserProps) {
+export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClose, partition = 'persist:ai-browser', onSessionActivity, onAccountUsage, onAccountUsageError }: EmbeddedBrowserProps) {
   const [inputUrl, setInputUrl] = useState(initialUrl)
   const [loading, setLoading] = useState(true)
   const [showOverlay, setShowOverlay] = useState(true)
@@ -49,6 +53,7 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
       setLoading(false)
       setShowOverlay(false)
       try { setInputUrl(wv.getURL()) } catch { /* ignore */ }
+      if (partition === 'persist:chatgpt-session') onSessionActivity?.()
     }
 
     const onDidStartLoading = () => {
@@ -57,10 +62,60 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
       scheduleHide()
     }
 
+    const captureAccountUsage = async () => {
+      if (partition !== 'persist:chatgpt-session') return
+      let lastError = 'ChatGPT 用量接口暂不可用'
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        let currentUrl = ''
+        try { currentUrl = wv.getURL() } catch { return }
+        if (!/^https:\/\/(chatgpt\.com|chat\.openai\.com)\//.test(currentUrl)) return
+
+        try {
+          const result = await wv.executeJavaScript(`(async () => {
+            try {
+              const bootstrap = document.getElementById('client-bootstrap')
+              let token = null
+              try {
+                const bootstrapData = bootstrap?.textContent ? JSON.parse(bootstrap.textContent) : null
+                token = bootstrapData?.session?.accessToken || bootstrapData?.session?.access_token || null
+              } catch {}
+              const request = async (path) => {
+                const headers = { accept: 'application/json', 'oai-language': navigator.language || 'zh-CN' }
+                if (token) headers.authorization = 'Bearer ' + token
+                const response = await fetch(path, { credentials: 'include', headers, redirect: 'error' })
+                if (!response.ok) throw new Error('HTTP ' + response.status)
+                return response.json()
+              }
+              const usage = await request('/backend-api/wham/usage')
+              let credits = null
+              try { credits = await request('/backend-api/wham/rate-limit-reset-credits') } catch {}
+              return { ok: true, usage, credits }
+            } catch (error) {
+              return { ok: false, error: error instanceof Error ? error.message : String(error) }
+            }
+          })()`) as unknown as { ok?: boolean; usage?: unknown; credits?: unknown | null; error?: string }
+          if (result?.ok && result.usage) {
+            onAccountUsage?.({ usage: result.usage, credits: result.credits ?? null })
+            return
+          }
+          lastError = result?.error || lastError
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : lastError
+        }
+
+        if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1200))
+      }
+
+      onAccountUsageError?.(lastError)
+    }
+
     const onDidStopLoading = () => {
       setLoading(false)
       setShowOverlay(false)
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null }
+      if (partition === 'persist:chatgpt-session') onSessionActivity?.()
+      void captureAccountUsage()
     }
 
     wv.addEventListener('dom-ready', onDomReady)
@@ -76,7 +131,7 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
       if (hideTimer) clearTimeout(hideTimer)
       listenersAttached.current = false
     }
-  }, [])
+  }, [onAccountUsage, onAccountUsageError, onSessionActivity, partition])
 
   const handleNavigate = useCallback((targetUrl: string) => {
     let finalUrl = targetUrl.trim()
@@ -190,7 +245,7 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
           src={initialUrl}
           className="w-full h-full"
           allowpopups={'true' as unknown as boolean}
-          partition="persist:ai-browser"
+          partition={partition}
           style={{ display: 'flex', flex: '1' }}
         />
 

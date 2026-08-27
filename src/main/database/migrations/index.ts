@@ -554,6 +554,37 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 18,
+    name: '018_reset_radar_history',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS reset_radar_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          kind TEXT NOT NULL CHECK(kind IN ('reset')),
+          occurred_at DATETIME NOT NULL,
+          title TEXT NOT NULL,
+          detail TEXT NOT NULL,
+          source TEXT NOT NULL,
+          metadata TEXT DEFAULT '{}',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_reset_radar_history_occurred_at
+        ON reset_radar_history(occurred_at DESC);
+
+        CREATE TABLE IF NOT EXISTS reset_radar_account_snapshot (
+          id INTEGER PRIMARY KEY CHECK(id = 1),
+          plan TEXT,
+          limit_reached INTEGER,
+          quota_windows TEXT NOT NULL DEFAULT '[]',
+          reset_credits TEXT,
+          fetched_at DATETIME NOT NULL,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

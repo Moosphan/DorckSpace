@@ -27,6 +27,7 @@ import { registerPortfolioIpcHandlers } from './ipc/portfolio'
 import { registerMilestoneIpcHandlers } from './ipc/milestones'
 import { registerTrendingIpcHandlers, startTrendingRefreshScheduler, stopTrendingRefreshScheduler } from './ipc/trending'
 import { registerTtsHandlers } from './services/tts-service'
+import { registerResetRadarIpcHandlers } from './ipc/reset-radar'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
@@ -221,6 +222,7 @@ app.whenReady().then(() => {
   registerMilestoneIpcHandlers()
   registerTrendingIpcHandlers()
   registerTtsHandlers()
+  registerResetRadarIpcHandlers()
 
   // Load plugins
   const loadedPluginInfos = loadPlugins()

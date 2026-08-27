@@ -1,0 +1,112 @@
+export type ResetRadarAccountStatus = 'signed_out' | 'connected' | 'stale' | 'error'
+export type ResetRadarConfidence = 'low' | 'medium' | 'high'
+export type ResetRadarTone = 'quiet' | 'watch' | 'active'
+
+export interface ResetRadarSourceHealth {
+  id: string
+  label: string
+  status: 'ok' | 'warn' | 'stale' | 'error'
+  detail: string
+}
+
+export interface ResetRadarSnapshot {
+  generatedAt: string
+  account: {
+    status: ResetRadarAccountStatus
+    fetchedAt: string | null
+    plan: string | null
+    limitReached: boolean | null
+    lastResetAt: string | null
+  }
+  quotaWindows: Array<{
+    kind: 'five_hour' | 'weekly' | 'generic'
+    remainingPercent: number | null
+    resetAt: string | null
+    durationSeconds: number | null
+  }>
+  resetCredits: {
+    availableCount: number | null
+    nearestExpiry: string | null
+  } | null
+  activeSignal: {
+    title: string
+    detail: string
+    source: string
+    url: string
+    observedAt: string
+    confidence: ResetRadarConfidence
+  } | null
+  forecast: {
+    windowHours: number
+    confidence: ResetRadarConfidence
+    peakProbability: number
+    nextWindowAt: string | null
+    label: string
+  }
+  advice: {
+    kind: 'hold' | 'wait' | 'check_account' | 'none'
+    title: string
+    detail: string
+  }
+  sources: ResetRadarSourceHealth[]
+}
+
+export interface ResetRadarHistoryEntry {
+  id: number
+  kind: 'reset'
+  occurredAt: string
+  title: string
+  detail: string
+  source: string
+}
+
+export function createGuestResetRadarSnapshot(generatedAt = new Date().toISOString()): ResetRadarSnapshot {
+  return {
+    generatedAt,
+    account: {
+      status: 'signed_out',
+      fetchedAt: null,
+      plan: null,
+      limitReached: null,
+      lastResetAt: null,
+    },
+    quotaWindows: [],
+    resetCredits: null,
+    activeSignal: null,
+    forecast: {
+      windowHours: 72,
+      confidence: 'low',
+      peakProbability: 0.12,
+      nextWindowAt: null,
+      label: '暂无高置信公开信号',
+    },
+    advice: {
+      kind: 'check_account',
+      title: '外部浏览器登录后可手动刷新',
+      detail: '登录态不会自动回传，访客模式不读取或推断账户配额。',
+    },
+    sources: [
+      {
+        id: 'openai-status',
+        label: 'OpenAI Status',
+        status: 'warn',
+        detail: '等待首次刷新',
+      },
+      {
+        id: 'community-history',
+        label: 'Community history',
+        status: 'stale',
+        detail: '历史信号接入准备中',
+      },
+    ],
+  }
+}
+
+export function getResetRadarTone(
+  confidence: ResetRadarConfidence,
+  hasActiveSignal: boolean,
+): ResetRadarTone {
+  if (hasActiveSignal && confidence === 'high') return 'active'
+  if (hasActiveSignal || confidence === 'medium') return 'watch'
+  return 'quiet'
+}

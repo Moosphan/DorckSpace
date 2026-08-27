@@ -22,6 +22,7 @@
     "dist:linux": "electron-vite build && electron-builder --linux",
     "test:trending": "electron scripts/run-trending-test.cjs",
     "test:projects": "electron scripts/run-project-focus-test.cjs",
+    "test:reset-radar": "tsx scripts/test-reset-radar.ts",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {

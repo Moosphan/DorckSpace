@@ -1,39 +1,63 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { SubscriptionsPanel } from './components/SubscriptionsPanel'
 import { TokenUsage } from './components/TokenUsage'
 import { ToolDirectory } from './components/ToolDirectory'
 import { EmbeddedBrowser } from './components/EmbeddedBrowser'
+import { ResetRadarCard } from './components/ResetRadarCard'
+import { ResetRadarHistoryModal } from './components/ResetRadarHistoryModal'
 
 export default function AILab() {
   const [showBrowser, setShowBrowser] = useState(false)
   const [browserUrl, setBrowserUrl] = useState('https://chat.openai.com')
+  const [browserPartition, setBrowserPartition] = useState('persist:ai-browser')
+  const [accountRefreshKey, setAccountRefreshKey] = useState(0)
+  const [showResetHistory, setShowResetHistory] = useState(false)
+  const [accountSyncError, setAccountSyncError] = useState<string | null>(null)
+
+  const handleAccountSessionActivity = useCallback(() => {
+    setAccountRefreshKey((value) => value + 1)
+  }, [])
+
+  const handleAccountUsage = useCallback(async (payload: { usage: unknown; credits: unknown | null }) => {
+    const response = await window.electronAPI.invoke('reset-radar:updateAccountUsage', payload)
+    if (response.success) {
+      setAccountSyncError(null)
+      handleAccountSessionActivity()
+    } else {
+      setAccountSyncError(response.error ?? 'ChatGPT 用量数据解析失败')
+    }
+  }, [handleAccountSessionActivity])
+
+  const handleAccountUsageError = useCallback((message: string) => {
+    setAccountSyncError(`用量同步失败：${message}`)
+  }, [])
 
   const handleOpenTool = (url: string) => {
     setBrowserUrl(url)
+    setBrowserPartition('persist:ai-browser')
+    setShowBrowser(true)
+  }
+
+  const handleOpenAccount = () => {
+    setBrowserUrl('https://chatgpt.com')
+    setBrowserPartition('persist:chatgpt-session')
     setShowBrowser(true)
   }
 
   return (
     <div className="p-lg space-y-md animate-fade-in max-w-[1280px] mx-auto w-full">
-      {/* Hero + Token Usage */}
+      {/* Radar + Token Usage */}
       <div className="grid grid-cols-12 gap-gutter items-stretch">
-        <div className="col-span-12 lg:col-span-8">
-          <div className="bg-[#5528A8] text-on-primary rounded-lg px-md py-sm relative overflow-hidden flex flex-col justify-center h-full">
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#7C4EE0] dark:bg-primary/15 rounded-full opacity-20 blur-2xl" />
-            <div className="relative z-10">
-              <h1 className="font-headline-sm text-headline-sm text-white dark:text-primary-fixed-dim">AI Lab</h1>
-              <p className="text-body-sm text-white/80 dark:text-on-surface-variant mt-xs">Manage subscriptions, monitor usage, and explore AI tools.</p>
-              <button
-                onClick={() => setShowBrowser(true)}
-                className="mt-md px-md py-1.5 bg-white/15 dark:bg-primary/15 backdrop-blur-sm text-white dark:text-primary rounded-full font-label-md hover:bg-white/25 dark:hover:bg-primary/25 transition-colors flex items-center gap-xs"
-              >
-                <span className="material-symbols-outlined text-[16px]">language</span>
-                Open Browser
-              </button>
-            </div>
-          </div>
+        <div className="col-span-12 lg:col-span-5">
+          <ResetRadarCard
+            onOpenStatus={handleOpenTool}
+            onOpenAccount={handleOpenAccount}
+            onOpenHistory={() => setShowResetHistory(true)}
+            accountSyncError={accountSyncError}
+            refreshKey={accountRefreshKey}
+          />
         </div>
-        <div className="col-span-12 lg:col-span-4">
+        <div className="col-span-12 lg:col-span-7">
           <TokenUsage />
         </div>
       </div>
@@ -48,9 +72,17 @@ export default function AILab() {
       {showBrowser && (
         <EmbeddedBrowser
           initialUrl={browserUrl}
-          onClose={() => setShowBrowser(false)}
+          partition={browserPartition}
+          onSessionActivity={browserPartition === 'persist:chatgpt-session' ? handleAccountSessionActivity : undefined}
+          onAccountUsage={browserPartition === 'persist:chatgpt-session' ? handleAccountUsage : undefined}
+          onAccountUsageError={browserPartition === 'persist:chatgpt-session' ? handleAccountUsageError : undefined}
+          onClose={() => {
+            setShowBrowser(false)
+            handleAccountSessionActivity()
+          }}
         />
       )}
+      {showResetHistory && <ResetRadarHistoryModal onClose={() => setShowResetHistory(false)} />}
     </div>
   )
 }
