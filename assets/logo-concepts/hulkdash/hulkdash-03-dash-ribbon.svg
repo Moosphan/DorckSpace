@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash dash ribbon logo concept 3">
+  <defs>
+    <filter id="shadow03" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#25124F" flood-opacity="0.13"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow03)">
+    <path fill="#8457FF" d="M96 152C96 116 124 88 160 88H210C246 88 274 116 274 152V360C274 396 246 424 210 424H160C124 424 96 396 96 360V152Z"/>
+    <path fill="#9167FF" d="M212 108H318C372 108 414 150 414 204V204C414 258 372 300 318 300H212V108Z"/>
+    <path fill="#F5BF2F" d="M166 300H324C376 300 416 340 416 392V392H212C162 392 126 356 126 318V318C126 308 136 300 166 300Z"/>
+    <path d="M148 250C188 224 230 214 276 220C318 226 348 212 382 182" fill="none" stroke="#F4F0FF" stroke-width="28" stroke-linecap="round" opacity="0.9"/>
+    <path d="M150 310C204 276 250 264 288 274C324 284 356 274 386 246" fill="none" stroke="#25124F" stroke-width="18" stroke-linecap="round" opacity="0.18"/>
+  </g>
+</svg>

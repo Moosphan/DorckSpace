@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash rounded shoulder dashboard logo concept 12">
+  <defs>
+    <filter id="shadow12" x="-22%" y="-22%" width="144%" height="144%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#25124F" flood-opacity="0.13"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow12)">
+    <circle cx="206" cy="158" r="70" fill="#9167FF"/>
+    <circle cx="306" cy="158" r="70" fill="#8457FF"/>
+    <rect x="142" y="198" width="228" height="118" rx="59" fill="#7F52FF"/>
+    <rect x="102" y="292" width="308" height="120" rx="60" fill="#9167FF"/>
+    <rect x="282" y="292" width="128" height="120" rx="60" fill="#F5BF2F"/>
+    <rect x="138" y="338" width="104" height="16" rx="8" fill="#F4F0FF" opacity="0.48"/>
+    <rect x="138" y="370" width="64" height="16" rx="8" fill="#F4F0FF" opacity="0.30"/>
+    <rect x="224" y="220" width="64" height="22" rx="11" fill="#F4F0FF" opacity="0.22"/>
+  </g>
+</svg>

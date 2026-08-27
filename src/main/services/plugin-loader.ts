@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { app } from 'electron'
+import { createRequire } from 'module'
+import { app, ipcMain } from 'electron'
 import type { PluginManifest, PluginInfo } from '@shared/types/plugin'
 import { createPluginHostContext, type PluginHostContext } from './plugin-host-context'
 
@@ -13,6 +14,7 @@ interface LoadedPlugin {
 
 const loadedPlugins = new Map<string, LoadedPlugin>()
 const pluginChannels = new Map<string, Set<string>>()
+const requirePluginModule = createRequire(import.meta.url)
 
 function getPluginsRoot(): string {
   return join(app.getPath('home'), '.my-dashboard', 'plugins')
@@ -63,7 +65,7 @@ function loadSinglePlugin(pluginDir: string): LoadedPlugin | null {
     }
 
     try {
-      const pluginModule = require(mainPath)
+      const pluginModule = requirePluginModule(mainPath)
       if (typeof pluginModule.activate === 'function') {
         deactivate = pluginModule.activate(context) ?? undefined
         if (deactivate && typeof deactivate !== 'function') {
@@ -132,7 +134,6 @@ export async function unloadPlugin(pluginId: string): Promise<boolean> {
   if (channels) {
     for (const channel of channels) {
       try {
-        const { ipcMain } = require('electron')
         ipcMain.removeHandler(channel)
       } catch { /* ignore */ }
     }

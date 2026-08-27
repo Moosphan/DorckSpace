@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash cushion mask logo concept 10">
+  <defs>
+    <filter id="shadow10" x="-22%" y="-22%" width="144%" height="144%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#25124F" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow10)">
+    <rect x="134" y="82" width="244" height="246" rx="98" fill="#8457FF"/>
+    <ellipse cx="256" cy="154" rx="88" ry="38" fill="#25124F" opacity="0.12"/>
+    <rect x="174" y="196" width="74" height="28" rx="14" fill="#F4F0FF" opacity="0.88"/>
+    <rect x="264" y="196" width="74" height="28" rx="14" fill="#F4F0FF" opacity="0.88"/>
+    <rect x="218" y="254" width="76" height="18" rx="9" fill="#25124F" opacity="0.24"/>
+    <rect x="104" y="286" width="152" height="132" rx="66" fill="#9167FF"/>
+    <rect x="230" y="286" width="178" height="132" rx="66" fill="#F5BF2F"/>
+    <rect x="138" y="340" width="82" height="16" rx="8" fill="#F4F0FF" opacity="0.46"/>
+  </g>
+</svg>

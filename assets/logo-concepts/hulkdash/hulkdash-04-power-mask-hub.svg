@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash abstract power mask hub logo concept 4">
+  <defs>
+    <filter id="shadow04" x="-22%" y="-22%" width="144%" height="144%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#25124F" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow04)">
+    <path fill="#8457FF" d="M142 158C142 108 186 76 256 76C326 76 370 108 370 158V236C370 292 326 332 256 332C186 332 142 292 142 236V158Z"/>
+    <path fill="#25124F" opacity="0.16" d="M162 150C184 112 214 96 256 96C298 96 328 112 350 150C318 140 286 136 256 136C226 136 194 140 162 150Z"/>
+    <path fill="#F4F0FF" opacity="0.92" d="M176 200L238 188L246 216L184 230Z"/>
+    <path fill="#F4F0FF" opacity="0.92" d="M336 200L274 188L266 216L328 230Z"/>
+    <rect x="212" y="250" width="88" height="18" rx="9" fill="#25124F" opacity="0.32"/>
+    <path fill="#9167FF" d="M104 292C104 256 132 228 168 228H198C234 228 262 256 262 292V382C262 418 234 446 198 446H168C132 446 104 418 104 382V292Z"/>
+    <path fill="#F5BF2F" d="M236 266H314C366 266 406 306 406 358V358C406 410 366 446 314 446H236V266Z"/>
+    <rect x="138" y="326" width="78" height="14" rx="7" fill="#F4F0FF" opacity="0.52"/>
+  </g>
+</svg>

@@ -449,6 +449,111 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 15,
+    name: '015_social_trending_items',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS social_trending_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          platform TEXT NOT NULL,
+          period TEXT NOT NULL CHECK(period IN ('day', 'week', 'month')),
+          external_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          url TEXT NOT NULL,
+          author TEXT,
+          published_at DATETIME,
+          heat_score REAL NOT NULL DEFAULT 0,
+          heat_label TEXT,
+          tags TEXT DEFAULT '[]',
+          category TEXT,
+          summary TEXT,
+          raw_metrics TEXT DEFAULT '{}',
+          source TEXT NOT NULL,
+          fetched_at DATETIME NOT NULL,
+          expires_at DATETIME NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(platform, period, external_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_social_trending_lookup
+        ON social_trending_items(platform, period, heat_score DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_social_trending_expiry
+        ON social_trending_items(platform, period, expires_at);
+
+        CREATE TABLE IF NOT EXISTS social_trending_refresh_state (
+          platform TEXT NOT NULL,
+          period TEXT NOT NULL CHECK(period IN ('day', 'week', 'month')),
+          status TEXT NOT NULL,
+          message TEXT,
+          active_backend TEXT,
+          last_fetched_at DATETIME,
+          next_refresh_at DATETIME,
+          updated_count INTEGER DEFAULT 0,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY(platform, period)
+        );
+      `)
+    },
+  },
+  {
+    version: 16,
+    name: '016_social_trending_v2ex_platform',
+    up: (db) => {
+      db.exec(`
+        UPDATE social_trending_items
+        SET platform = 'v2ex',
+            source = CASE
+              WHEN source LIKE 'linuxdo:%' THEN 'v2ex:migrated'
+              ELSE source
+            END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE platform = 'linuxdo';
+
+        UPDATE social_trending_refresh_state
+        SET platform = 'v2ex',
+            message = 'V2EX hot topics provider is configured.',
+            active_backend = 'v2ex-hot',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE platform = 'linuxdo'
+          AND NOT EXISTS (
+            SELECT 1 FROM social_trending_refresh_state existing
+            WHERE existing.platform = 'v2ex'
+              AND existing.period = social_trending_refresh_state.period
+          );
+
+        DELETE FROM social_trending_refresh_state WHERE platform = 'linuxdo';
+        DELETE FROM social_trending_items WHERE platform = 'v2ex' AND source = 'v2ex:migrated';
+      `)
+    },
+  },
+  {
+    version: 17,
+    name: '017_one_active_focus_project',
+    up: (db) => {
+      db.exec(`
+        UPDATE projects
+        SET is_focus = 0
+        WHERE status != 'active';
+
+        UPDATE projects
+        SET is_focus = 0
+        WHERE is_focus = 1
+          AND id != COALESCE((
+            SELECT id FROM projects
+            WHERE status = 'active' AND is_focus = 1
+            ORDER BY updated_at DESC, id DESC
+            LIMIT 1
+          ), -1);
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_focus_project
+        ON projects(is_focus)
+        WHERE is_focus = 1 AND status = 'active';
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

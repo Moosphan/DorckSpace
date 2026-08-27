@@ -265,18 +265,25 @@ async function trackAllSubscriptions(): Promise<{ success: boolean; updated: num
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
+let trackingPromise: Promise<{ success: boolean; updated: number; errors: string[] }> | null = null
 
 function startPolling(intervalMs: number) {
   if (pollTimer) clearInterval(pollTimer)
   if (intervalMs <= 0) return
-  pollTimer = setInterval(() => { trackAllSubscriptions().catch(() => {}) }, intervalMs)
+  pollTimer = setInterval(() => {
+    if (trackingPromise) return
+    trackingPromise = trackAllSubscriptions().finally(() => { trackingPromise = null })
+  }, intervalMs)
 }
 
 export function registerAiUsageHandlers(): void {
   ipcMain.handle('ai:trackUsage', async () => {
     console.log('[AI Usage] IPC handler called: ai:trackUsage')
     try {
-      const result = await trackAllSubscriptions()
+      if (!trackingPromise) {
+        trackingPromise = trackAllSubscriptions().finally(() => { trackingPromise = null })
+      }
+      const result = await trackingPromise
       console.log('[AI Usage] IPC result:', JSON.stringify(result))
       return { success: true, data: result }
     } catch (err) {
@@ -310,10 +317,4 @@ export function registerAiUsageHandlers(): void {
   ipcMain.handle('ai:getRegisteredProviders', () => {
     return { success: true, data: usageProviderRegistry.list() }
   })
-
-  // Start default polling (2 minutes) on app launch
-  setTimeout(() => {
-    trackAllSubscriptions().catch(() => {})
-    startPolling(2 * 60 * 1000)
-  }, 10000)
 }

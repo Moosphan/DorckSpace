@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="DorckDashboard logo concept 2">
+  <defs>
+    <linearGradient id="bg2" x1="56" y1="60" x2="456" y2="456" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#11141c"/>
+      <stop offset="1" stop-color="#05070b"/>
+    </linearGradient>
+    <linearGradient id="violet2" x1="104" y1="108" x2="330" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a06fff"/>
+      <stop offset="1" stop-color="#7f52ff"/>
+    </linearGradient>
+    <linearGradient id="amber2" x1="304" y1="126" x2="416" y2="236" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd655"/>
+      <stop offset="1" stop-color="#ffbf00"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg2)"/>
+  <rect x="106" y="116" width="222" height="222" rx="56" transform="rotate(-4 217 227)" fill="url(#violet2)"/>
+  <circle cx="364" cy="174" r="84" fill="url(#amber2)"/>
+  <rect x="279" y="288" width="82" height="82" rx="24" transform="rotate(14 320 329)" fill="url(#violet2)"/>
+  <path d="M128 380C159 336 191 312 226 312C269 312 286 356 316 390C337 415 358 423 382 423C404 423 423 412 442 390" fill="none" stroke="#8b5cf6" stroke-width="32" stroke-linecap="round"/>
+  <circle cx="138" cy="136" r="16" fill="#ffffff" opacity="0.95"/>
+  <circle cx="402" cy="390" r="24" fill="#ffbf0f"/>
+</svg>

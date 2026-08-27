@@ -1,4 +1,5 @@
-import { useIpcData } from '@/hooks/useIpc'
+import { useEffect } from 'react'
+import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 import { Progress } from '@/components/ui/progress'
 
 interface Project {
@@ -12,10 +13,28 @@ interface Project {
 
 interface FocusProjectCardProps {
   onOpenManager?: () => void
+  onProjectChanged?: () => void
+  refreshKey?: number
 }
 
-export function FocusProjectCard({ onOpenManager }: FocusProjectCardProps) {
-  const { data: project, loading } = useIpcData<Project | null>('projects:getFocus')
+export function FocusProjectCard({ onOpenManager, onProjectChanged, refreshKey = 0 }: FocusProjectCardProps) {
+  const { data: project, loading, refetch: refetchFocus } = useIpcData<Project | null>('projects:getFocus')
+  const { data: activeProjects, refetch: refetchActive } = useIpcData<Project[]>('projects:getActive')
+  const { mutate: setFocus } = useIpcMutation<unknown>('projects:setFocus')
+
+  useEffect(() => {
+    if (refreshKey > 0) {
+      refetchFocus()
+      refetchActive()
+    }
+  }, [refreshKey, refetchActive, refetchFocus])
+
+  const handleSetFocus = async (projectId: number) => {
+    const result = await setFocus(projectId)
+    if (result === null) return
+    await Promise.all([refetchFocus(), refetchActive()])
+    onProjectChanged?.()
+  }
 
   if (loading) {
     return (
@@ -38,15 +57,33 @@ export function FocusProjectCard({ onOpenManager }: FocusProjectCardProps) {
           No focus project set
         </h3>
         <p className="font-body-md text-body-md text-on-surface-variant">
-          Set a project as your main focus to see it here.
+          Choose an active project to make your current work visible here.
         </p>
+        {activeProjects && activeProjects.length > 0 && (
+          <div className="mt-md space-y-xs">
+            {activeProjects.slice(0, 3).map((candidate) => (
+              <div key={candidate.id} className="flex items-center gap-sm rounded-xl bg-surface-container-low px-sm py-xs">
+                <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[17px]">{candidate.icon || 'rocket_launch'}</span>
+                </div>
+                <span className="flex-1 min-w-0 text-body-sm font-semibold text-on-surface truncate">{candidate.name}</span>
+                <button
+                  onClick={() => handleSetFocus(candidate.id)}
+                  className="shrink-0 rounded-full px-sm py-1 text-[11px] font-bold text-primary hover:bg-primary/10 transition-colors"
+                >
+                  Set focus
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         {onOpenManager && (
           <button
             onClick={onOpenManager}
             className="mt-md flex items-center gap-xs text-primary text-body-sm hover:underline"
           >
             <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-            Open Project Manager
+            {activeProjects && activeProjects.length > 0 ? 'View all projects' : 'Open Project Manager'}
           </button>
         )}
       </div>

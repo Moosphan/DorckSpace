@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash loop console logo concept 11">
+  <defs>
+    <filter id="shadow11" x="-22%" y="-22%" width="144%" height="144%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#25124F" flood-opacity="0.13"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow11)">
+    <rect x="102" y="104" width="308" height="224" rx="112" fill="#8457FF"/>
+    <rect x="166" y="162" width="180" height="108" rx="54" fill="#F4F0FF" opacity="0.16"/>
+    <rect x="108" y="282" width="196" height="118" rx="59" fill="#9167FF"/>
+    <rect x="276" y="282" width="128" height="118" rx="59" fill="#F5BF2F"/>
+    <rect x="144" y="330" width="94" height="16" rx="8" fill="#F4F0FF" opacity="0.48"/>
+    <rect x="144" y="362" width="62" height="16" rx="8" fill="#F4F0FF" opacity="0.28"/>
+    <circle cx="342" cy="342" r="18" fill="#FFF5CE" opacity="0.36"/>
+  </g>
+</svg>

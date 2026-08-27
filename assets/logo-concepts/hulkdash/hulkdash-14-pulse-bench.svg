@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash pulse bench logo concept 14">
+  <defs>
+    <filter id="shadow14" x="-22%" y="-22%" width="144%" height="144%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#25124F" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow14)">
+    <rect x="96" y="126" width="320" height="132" rx="66" fill="#8457FF"/>
+    <rect x="96" y="284" width="320" height="102" rx="51" fill="#9167FF"/>
+    <circle cx="342" cy="335" r="78" fill="#F5BF2F"/>
+    <rect x="136" y="177" width="72" height="18" rx="9" fill="#F4F0FF" opacity="0.44"/>
+    <rect x="136" y="212" width="126" height="18" rx="9" fill="#F4F0FF" opacity="0.28"/>
+    <rect x="196" y="306" width="44" height="58" rx="22" fill="#F4F0FF" opacity="0.18"/>
+    <rect x="252" y="292" width="44" height="86" rx="22" fill="#F4F0FF" opacity="0.18"/>
+    <rect x="308" y="270" width="44" height="118" rx="22" fill="#FFF5CE" opacity="0.30"/>
+  </g>
+</svg>

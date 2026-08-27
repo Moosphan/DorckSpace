@@ -77,25 +77,63 @@ export class ProjectRepository extends BaseRepository<ProjectRow> {
     icon?: string
     color?: string
     is_focus?: boolean
+    start_date?: string
     target_date?: string
   }): number {
-    const result = this.run(
-      `INSERT INTO projects (name, description, icon, color, is_focus, target_date)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      data.name,
-      data.description ?? null,
-      data.icon ?? null,
-      data.color ?? null,
-      data.is_focus ? 1 : 0,
-      data.target_date ?? null,
-    )
-    return Number(result.lastInsertRowid)
+    return this.db.transaction(() => {
+      const hasFocus = this.get<{ id: number }>(
+        "SELECT id FROM projects WHERE status = 'active' AND is_focus = 1 LIMIT 1",
+      )
+      const isFocus = data.is_focus ?? !hasFocus
+      if (isFocus) this.run("UPDATE projects SET is_focus = 0 WHERE status = 'active'")
+
+      const result = this.run(
+        `INSERT INTO projects (name, description, icon, color, is_focus, start_date, target_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        data.name,
+        data.description ?? null,
+        data.icon ?? null,
+        data.color ?? null,
+        isFocus ? 1 : 0,
+        data.start_date ?? null,
+        data.target_date ?? null,
+      )
+      return Number(result.lastInsertRowid)
+    })()
   }
 
   setFocus(id: number): void {
+    const project = this.get<{ id: number }>(
+      "SELECT id FROM projects WHERE id = ? AND status = 'active'",
+      id,
+    )
+    if (!project) throw new Error('Only an active project can be set as the main focus.')
+
     this.db.transaction(() => {
       this.run('UPDATE projects SET is_focus = 0')
-      this.run('UPDATE projects SET is_focus = 1 WHERE id = ?', id)
+      this.run("UPDATE projects SET is_focus = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?", id)
+    })()
+  }
+
+  deleteById(id: number): boolean {
+    return this.db.transaction(() => {
+      const wasFocus = Boolean(this.get<{ id: number }>(
+        'SELECT id FROM projects WHERE id = ? AND is_focus = 1',
+        id,
+      ))
+      const result = this.run('DELETE FROM projects WHERE id = ?', id)
+      if (result.changes === 0) return false
+
+      if (wasFocus) {
+        const nextProject = this.get<{ id: number }>(
+          "SELECT id FROM projects WHERE status = 'active' ORDER BY updated_at DESC, id DESC LIMIT 1",
+        )
+        if (nextProject) {
+          this.run('UPDATE projects SET is_focus = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', nextProject.id)
+        }
+      }
+
+      return true
     })()
   }
 

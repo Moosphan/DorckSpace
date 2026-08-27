@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash theme color impact ring console logo concept 18">
+  <defs>
+    <filter id="shadow18" x="-22%" y="-22%" width="144%" height="144%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#25124F" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow18)">
+    <circle cx="256" cy="218" r="150" fill="#8457FF"/>
+    <circle cx="256" cy="218" r="106" fill="#9167FF"/>
+    <circle cx="256" cy="218" r="62" fill="#7F52FF"/>
+    <rect x="222" y="162" width="68" height="112" rx="34" fill="#F4F0FF" opacity="0.24"/>
+    <rect x="190" y="196" width="132" height="44" rx="22" fill="#F4F0FF" opacity="0.18"/>
+    <rect x="106" y="302" width="300" height="110" rx="55" fill="#9167FF"/>
+    <rect x="278" y="302" width="128" height="110" rx="55" fill="#F5BF2F"/>
+    <rect x="142" y="344" width="96" height="16" rx="8" fill="#F4F0FF" opacity="0.54"/>
+    <rect x="142" y="376" width="62" height="16" rx="8" fill="#F4F0FF" opacity="0.32"/>
+  </g>
+</svg>

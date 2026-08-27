@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="DorckDashboard logo concept 1">
+  <defs>
+    <linearGradient id="bg1" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#12151d"/>
+      <stop offset="1" stop-color="#07090d"/>
+    </linearGradient>
+    <linearGradient id="violet1" x1="140" y1="120" x2="340" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9b6bff"/>
+      <stop offset="1" stop-color="#7c4dff"/>
+    </linearGradient>
+    <linearGradient id="amber1" x1="292" y1="252" x2="398" y2="390" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd24d"/>
+      <stop offset="1" stop-color="#ffbf0f"/>
+    </linearGradient>
+    <filter id="shadow1" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg1)"/>
+  <g filter="url(#shadow1)">
+    <rect x="112" y="92" width="132" height="328" rx="66" fill="url(#violet1)"/>
+    <rect x="278" y="92" width="122" height="122" rx="44" fill="url(#violet1)"/>
+    <rect x="278" y="244" width="122" height="122" rx="44" fill="url(#amber1)"/>
+  </g>
+  <circle cx="156" cy="128" r="10" fill="#efe8ff" opacity="0.85"/>
+</svg>

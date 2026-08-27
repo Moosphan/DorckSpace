@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="DorckDashboard rounded geometric logo concept 15">
+  <rect x="96" y="112" width="232" height="176" rx="60" fill="#8B5CF6"/>
+  <circle cx="356" cy="180" r="80" fill="#FBBF24"/>
+  <path d="M126 340C164 304 200 286 236 286C291 286 307 364 352 364C376 364 397 355 418 334" fill="none" stroke="#8B5CF6" stroke-width="34" stroke-linecap="round"/>
+  <rect x="124" y="140" width="98" height="16" rx="8" fill="#F3E8FF"/>
+  <rect x="124" y="174" width="132" height="16" rx="8" fill="#C4B5FD"/>
+</svg>

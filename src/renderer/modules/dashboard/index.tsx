@@ -13,13 +13,18 @@ export default function Dashboard() {
   const [showCreate, setShowCreate] = useState(false)
   const [showManage, setShowManage] = useState(false)
   const [showProjectManager, setShowProjectManager] = useState(false)
+  const [projectRevision, setProjectRevision] = useState(0)
   const ideaCardRef = useRef<IdeaCardHandle>(null)
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col lg:flex-row gap-lg p-lg">
       {/* Left Stream: Focus + Tasks */}
       <div className="flex-1 flex flex-col gap-lg overflow-y-auto pr-sm">
-        <FocusProjectCard onOpenManager={() => setShowProjectManager(true)} />
+        <FocusProjectCard
+          refreshKey={projectRevision}
+          onOpenManager={() => setShowProjectManager(true)}
+          onProjectChanged={() => setProjectRevision(value => value + 1)}
+        />
         {/* <CalendarWidget /> */}
         <PriorityTaskList onOpenBoard={() => setShowProjectManager(true)} />
       </div>
@@ -49,6 +54,7 @@ export default function Dashboard() {
       <ProjectManagerDialog
         open={showProjectManager}
         onClose={() => setShowProjectManager(false)}
+        onChanged={() => setProjectRevision(value => value + 1)}
       />
     </div>
   )

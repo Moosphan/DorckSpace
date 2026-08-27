@@ -1,5 +1,6 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
+import { appendFileSync, mkdirSync } from 'fs'
 import { registerAllIpcHandlers } from './ipc'
 import { initFileStorage, registerFileIpcHandlers } from './services/file-service'
 import { registerSettingsIpcHandlers } from './services/settings-service'
@@ -24,6 +25,7 @@ import { registerMoodboardIpcHandlers } from './ipc/moodboard'
 import { registerCalendarIpcHandlers } from './ipc/calendar'
 import { registerPortfolioIpcHandlers } from './ipc/portfolio'
 import { registerMilestoneIpcHandlers } from './ipc/milestones'
+import { registerTrendingIpcHandlers, startTrendingRefreshScheduler, stopTrendingRefreshScheduler } from './ipc/trending'
 import { registerTtsHandlers } from './services/tts-service'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
@@ -32,15 +34,76 @@ import { AISubscriptionRepository } from './database/repositories/ai-repository'
 import { seedSocialData } from './database/seeds/social-seeds'
 
 const isDev = !app.isPackaged
+let mainWindow: BrowserWindow | null = null
+
+function logLifecycle(event: string, details: Record<string, unknown> = {}): void {
+  const line = `[Lifecycle] ${new Date().toISOString()} ${event} ${JSON.stringify(details)}`
+  console.log(line)
+
+  try {
+    if (!app.isReady()) return
+    const logDir = join(app.getPath('userData'), 'logs')
+    mkdirSync(logDir, { recursive: true })
+    appendFileSync(join(logDir, 'lifecycle.log'), `${line}\n`)
+  } catch {
+    // Lifecycle logging must never affect the app itself.
+  }
+}
 
 // Suppress EPIPE errors in dev mode (harmless stdout disconnect)
 process.on('uncaughtException', (err) => {
   if ((err as NodeJS.ErrnoException).code === 'EPIPE') return
+  logLifecycle('process:uncaughtException', {
+    message: err.message,
+    stack: err.stack,
+  })
   console.error('Uncaught Exception:', err)
 })
 
+process.on('unhandledRejection', (reason) => {
+  logLifecycle('process:unhandledRejection', {
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  })
+})
+
+process.on('beforeExit', (code) => {
+  logLifecycle('process:beforeExit', { code })
+})
+
+process.on('exit', (code) => {
+  logLifecycle('process:exit', { code })
+})
+
+process.once('SIGTERM', () => {
+  logLifecycle('process:SIGTERM')
+  app.quit()
+  setTimeout(() => process.exit(0), 1000).unref()
+})
+
+process.once('SIGINT', () => {
+  logLifecycle('process:SIGINT')
+  app.quit()
+  setTimeout(() => process.exit(0), 1000).unref()
+})
+
+process.on('SIGHUP', () => {
+  logLifecycle('process:SIGHUP', {
+    ignored: isDev,
+    reason: isDev ? 'Keep Electron alive when the launching terminal/PTY is detached.' : 'Quit packaged app on hangup.',
+  })
+  if (!isDev) app.quit()
+})
+
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show()
+    mainWindow.focus()
+    return
+  }
+
+  logLifecycle('window:create')
+  const window = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 1024,
@@ -56,24 +119,68 @@ function createWindow(): void {
       nodeIntegration: false,
     },
   })
+  mainWindow = window
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  window.on('ready-to-show', () => {
+    logLifecycle('window:ready-to-show')
+    window.show()
+    if (isDev && process.platform === 'darwin') {
+      app.focus({ steal: true })
+      window.focus()
+    }
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  window.on('close', () => {
+    logLifecycle('window:close')
+  })
+
+  window.on('closed', () => {
+    logLifecycle('window:closed')
+    if (mainWindow === window) mainWindow = null
+  })
+
+  window.on('unresponsive', () => {
+    logLifecycle('window:unresponsive')
+  })
+
+  window.on('responsive', () => {
+    logLifecycle('window:responsive')
+  })
+
+  window.webContents.on('render-process-gone', (_event, details) => {
+    logLifecycle('renderer:gone', details)
+    if (window.isDestroyed()) return
+    if (details.reason !== 'clean-exit') {
+      window.reload()
+    }
+  })
+
+  window.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    logLifecycle('renderer:did-fail-load', { errorCode, errorDescription, validatedURL })
+  })
+
+  window.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    window.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    window.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
 
 app.whenReady().then(() => {
+  logLifecycle('app:ready', {
+    platform: process.platform,
+    arch: process.arch,
+    isPackaged: app.isPackaged,
+    electron: process.versions.electron,
+    chrome: process.versions.chrome,
+    node: process.versions.node,
+  })
+
   // Initialize file storage directories
   initFileStorage()
 
@@ -112,6 +219,7 @@ app.whenReady().then(() => {
   registerCalendarIpcHandlers()
   registerPortfolioIpcHandlers()
   registerMilestoneIpcHandlers()
+  registerTrendingIpcHandlers()
   registerTtsHandlers()
 
   // Load plugins
@@ -130,6 +238,7 @@ app.whenReady().then(() => {
 
   // Seed initial data
   seedSocialData(db)
+  startTrendingRefreshScheduler()
 
   createWindow()
 
@@ -139,11 +248,30 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  logLifecycle('app:window-all-closed', { platform: process.platform })
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
 
 app.on('before-quit', () => {
+  logLifecycle('app:before-quit')
+  stopTrendingRefreshScheduler()
   closeDatabase()
+})
+
+app.on('will-quit', () => {
+  logLifecycle('app:will-quit')
+})
+
+app.on('quit', (_event, exitCode) => {
+  logLifecycle('app:quit', { exitCode })
+})
+
+app.on('browser-window-created', () => {
+  logLifecycle('app:browser-window-created')
+})
+
+app.on('child-process-gone', (_event, details) => {
+  logLifecycle('app:child-process-gone', details)
 })

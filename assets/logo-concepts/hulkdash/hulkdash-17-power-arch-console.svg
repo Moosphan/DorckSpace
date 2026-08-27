@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash theme color power arch console logo concept 17">
+  <defs>
+    <filter id="shadow17" x="-22%" y="-22%" width="144%" height="144%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#25124F" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow17)">
+    <rect x="98" y="112" width="316" height="178" rx="89" fill="#8457FF"/>
+    <rect x="142" y="86" width="228" height="164" rx="82" fill="#9167FF"/>
+    <rect x="174" y="162" width="74" height="26" rx="13" fill="#F4F0FF" opacity="0.78"/>
+    <rect x="264" y="162" width="74" height="26" rx="13" fill="#F4F0FF" opacity="0.78"/>
+    <rect x="218" y="222" width="76" height="18" rx="9" fill="#25124F" opacity="0.25"/>
+    <rect x="104" y="292" width="304" height="122" rx="61" fill="#7F52FF"/>
+    <rect x="278" y="292" width="130" height="122" rx="61" fill="#F5BF2F"/>
+    <rect x="138" y="340" width="96" height="16" rx="8" fill="#F4F0FF" opacity="0.48"/>
+  </g>
+</svg>

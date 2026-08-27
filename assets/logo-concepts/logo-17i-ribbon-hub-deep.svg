@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="DorckDashboard ribbon hub deep refinement">
+  <defs>
+    <filter id="softShadowI" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#1a0f3f" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadowI)">
+    <path fill="#7448F2" d="M116 148C116 110 146 80 184 80H202C240 80 270 110 270 148V364C270 402 240 432 202 432H184C146 432 116 402 116 364V148Z"/>
+    <path fill="#8457FF" d="M242 112H312C362 112 400 150 400 200V204C400 254 362 292 312 292H242V112Z"/>
+    <path fill="#EFB71D" d="M242 220H314C361 220 400 259 400 306V312C400 359 361 398 314 398H242V220Z"/>
+  </g>
+</svg>

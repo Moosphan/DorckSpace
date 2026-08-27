@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash soft bento logo concept 6">
+  <defs>
+    <filter id="shadow06" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#25124F" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow06)">
+    <rect x="92" y="112" width="148" height="148" rx="64" fill="#8457FF"/>
+    <rect x="272" y="112" width="148" height="148" rx="64" fill="#9167FF"/>
+    <rect x="92" y="292" width="148" height="108" rx="54" fill="#9167FF"/>
+    <rect x="272" y="292" width="148" height="108" rx="54" fill="#F5BF2F"/>
+    <rect x="158" y="224" width="196" height="64" rx="32" fill="#7F52FF"/>
+    <rect x="126" y="160" width="82" height="16" rx="8" fill="#F4F0FF" opacity="0.48"/>
+    <rect x="126" y="194" width="54" height="16" rx="8" fill="#F4F0FF" opacity="0.30"/>
+  </g>
+</svg>

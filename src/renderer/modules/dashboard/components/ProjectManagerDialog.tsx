@@ -36,6 +36,7 @@ interface Task {
 interface ProjectManagerDialogProps {
   open: boolean
   onClose: () => void
+  onChanged?: () => void
 }
 
 const STATUS_COLUMNS = [
@@ -140,11 +141,12 @@ function DroppableColumn({ column, tasks, onDelete }: { column: typeof STATUS_CO
   )
 }
 
-export function ProjectManagerDialog({ open, onClose }: ProjectManagerDialogProps) {
+export function ProjectManagerDialog({ open, onClose, onChanged }: ProjectManagerDialogProps) {
   const { toast } = useToast()
   const { data: projects, refetch: refetchProjects } = useIpcData<Project[]>('projects:getActive')
   const { mutate: createProject } = useIpcMutation<number>('projects:create')
   const { mutate: deleteProject } = useIpcMutation<boolean>('projects:delete')
+  const { mutate: setFocus } = useIpcMutation<unknown>('projects:setFocus')
   const { mutate: createTask } = useIpcMutation<number>('tasks:create')
   const { mutate: updateTaskStatus } = useIpcMutation<boolean>('tasks:updateStatus')
   const { mutate: deleteTask } = useIpcMutation<boolean>('tasks:delete')
@@ -191,21 +193,36 @@ export function ProjectManagerDialog({ open, onClose }: ProjectManagerDialogProp
   const handleCreateProject = async () => {
     if (!projectForm.name.trim()) { toast({ title: 'Project name is required', variant: 'error' }); return }
     try {
-      await createProject({ name: projectForm.name.trim(), description: projectForm.description.trim() || undefined, icon: projectForm.icon, color: projectForm.color, start_date: projectForm.start_date || undefined, target_date: projectForm.target_date || undefined })
+      const projectId = await createProject({ name: projectForm.name.trim(), description: projectForm.description.trim() || undefined, icon: projectForm.icon, color: projectForm.color, start_date: projectForm.start_date || undefined, target_date: projectForm.target_date || undefined })
+      if (projectId === null) throw new Error('Failed to create project')
       toast({ title: 'Project created', variant: 'success' })
       setShowProjectForm(false)
       setProjectForm({ name: '', description: '', icon: 'rocket_launch', color: PROJECT_COLORS[0], start_date: '', target_date: '' })
-      refetchProjects()
+      await refetchProjects()
+      onChanged?.()
     } catch { toast({ title: 'Failed to create project', variant: 'error' }) }
   }
 
   const handleDeleteProject = async (id: number) => {
     try {
-      await deleteProject(id)
+      const deleted = await deleteProject(id)
+      if (deleted === null) throw new Error('Failed to delete project')
       toast({ title: 'Project deleted', variant: 'success' })
-      refetchProjects()
+      await refetchProjects()
+      onChanged?.()
       if (selectedProject?.id === id) { setSelectedProject(null); setView('dashboard') }
     } catch { toast({ title: 'Failed to delete project', variant: 'error' }) }
+  }
+
+  const handleSetFocus = async (id: number) => {
+    const result = await setFocus(id)
+    if (result === null) {
+      toast({ title: 'Only active projects can be the main focus', variant: 'error' })
+      return
+    }
+    await refetchProjects()
+    onChanged?.()
+    toast({ title: 'Main project updated', variant: 'success' })
   }
 
   const handleCreateTask = async () => {
@@ -373,9 +390,24 @@ export function ProjectManagerDialog({ open, onClose }: ProjectManagerDialogProp
                             {project.description && <p className="text-[11px] text-on-surface-variant truncate max-w-[200px]">{project.description}</p>}
                           </div>
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id) }} className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-all">
-                          <span className="material-symbols-outlined text-[16px]">delete</span>
-                        </button>
+                        <div className="flex items-center gap-xs">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleSetFocus(project.id) }}
+                            className={cn(
+                              'h-6 rounded-full px-2 flex items-center gap-0.5 text-[10px] font-bold transition-colors',
+                              project.is_focus
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-on-surface-variant hover:bg-primary/10 hover:text-primary',
+                            )}
+                            aria-label={project.is_focus ? 'Current main project' : `Set ${project.name} as main project`}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">{project.is_focus ? 'star' : 'star_outline'}</span>
+                            {project.is_focus ? 'Main focus' : 'Set focus'}
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id) }} className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error opacity-0 group-hover:opacity-100 transition-all">
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </button>
+                        </div>
                       </div>
                       <div className="flex items-center gap-sm mb-xs">
                         <Progress value={project.progress} className="flex-1" />

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash orbit workbench logo concept 8">
+  <defs>
+    <filter id="shadow08" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#25124F" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow08)">
+    <circle cx="186" cy="180" r="86" fill="#8457FF"/>
+    <circle cx="326" cy="180" r="86" fill="#9167FF"/>
+    <rect x="108" y="244" width="296" height="112" rx="56" fill="#7F52FF"/>
+    <circle cx="334" cy="318" r="78" fill="#F5BF2F"/>
+    <rect x="130" y="290" width="102" height="18" rx="9" fill="#F4F0FF" opacity="0.52"/>
+    <rect x="130" y="324" width="64" height="18" rx="9" fill="#F4F0FF" opacity="0.32"/>
+    <circle cx="260" cy="180" r="24" fill="#F4F0FF" opacity="0.18"/>
+  </g>
+</svg>

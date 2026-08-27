@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="DorckDashboard logo concept 5">
+  <defs>
+    <linearGradient id="bg5" x1="44" y1="58" x2="470" y2="458" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#131720"/>
+      <stop offset="1" stop-color="#06080d"/>
+    </linearGradient>
+    <linearGradient id="violet5" x1="114" y1="126" x2="356" y2="310" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a06fff"/>
+      <stop offset="1" stop-color="#7a4dff"/>
+    </linearGradient>
+    <linearGradient id="amber5" x1="284" y1="184" x2="404" y2="286" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd85d"/>
+      <stop offset="1" stop-color="#ffbe0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg5)"/>
+  <rect x="104" y="114" width="226" height="170" rx="52" fill="url(#violet5)"/>
+  <circle cx="354" cy="192" r="68" fill="url(#amber5)"/>
+  <path d="M120 362C156 327 190 309 224 309C282 309 293 395 346 395C368 395 389 382 408 359" fill="none" stroke="url(#violet5)" stroke-width="30" stroke-linecap="round"/>
+  <rect x="118" y="140" width="104" height="14" rx="7" fill="#f1eaff" opacity="0.92"/>
+  <rect x="118" y="172" width="140" height="14" rx="7" fill="#f1eaff" opacity="0.55"/>
+  <rect x="118" y="204" width="90" height="14" rx="7" fill="#f1eaff" opacity="0.42"/>
+  <rect x="290" y="312" width="62" height="62" rx="20" transform="rotate(10 321 343)" fill="#8b5cf6"/>
+  <circle cx="382" cy="340" r="12" fill="#ffffff" opacity="0.9"/>
+</svg>

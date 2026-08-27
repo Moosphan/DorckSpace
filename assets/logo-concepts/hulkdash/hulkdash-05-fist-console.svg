@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="HulkDash abstract fist console logo concept 5">
+  <defs>
+    <filter id="shadow05" x="-22%" y="-22%" width="144%" height="144%">
+      <feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#25124F" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow05)">
+    <rect x="112" y="112" width="72" height="126" rx="30" fill="#9167FF"/>
+    <rect x="176" y="88" width="72" height="150" rx="32" fill="#A17CFF"/>
+    <rect x="240" y="104" width="72" height="134" rx="32" fill="#8457FF"/>
+    <rect x="304" y="134" width="72" height="106" rx="30" fill="#7F52FF"/>
+    <path fill="#8457FF" d="M106 214H348C388 214 418 244 418 284V292C418 332 388 362 348 362H188C140 362 106 328 106 282V214Z"/>
+    <path fill="#25124F" opacity="0.20" d="M244 252H352C376 252 394 270 394 294V294C394 318 376 336 352 336H244V252Z"/>
+    <path fill="#F5BF2F" d="M104 330H236C278 330 310 362 310 404V416H168C132 416 104 388 104 352V330Z"/>
+    <path fill="#9167FF" d="M278 330H344C386 330 418 362 418 404V416H278V330Z"/>
+    <rect x="142" y="366" width="76" height="14" rx="7" fill="#FFF5CE" opacity="0.72"/>
+    <rect x="142" y="392" width="112" height="14" rx="7" fill="#FFF5CE" opacity="0.42"/>
+  </g>
+</svg>

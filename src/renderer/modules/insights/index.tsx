@@ -3,6 +3,7 @@ import { ArticleFeed } from './components/ArticleFeed'
 import { SocialCards } from './components/SocialCards'
 import { FeedManager } from './components/FeedManager'
 import { ArticleViewer } from './components/ArticleViewer'
+import { TrendingModal } from './components/trending/TrendingModal'
 
 interface SelectedArticle {
   id: number
@@ -12,6 +13,7 @@ interface SelectedArticle {
 
 export default function Insights() {
   const [showFeedManager, setShowFeedManager] = useState(false)
+  const [showTrending, setShowTrending] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [viewingArticle, setViewingArticle] = useState<SelectedArticle | null>(null)
 
@@ -39,13 +41,22 @@ export default function Insights() {
             RSS feeds, social analytics, and content performance across platforms.
           </p>
         </div>
-        <button
-          onClick={() => setShowFeedManager(true)}
-          className="h-10 px-5 bg-primary text-on-primary rounded-full font-label-md hover:brightness-110 active:scale-95 transition-all flex items-center gap-xs"
-        >
-          <span className="material-symbols-outlined text-[18px]">rss_feed</span>
-          Manage Feeds
-        </button>
+        <div className="flex items-center gap-sm">
+          <button
+            onClick={() => setShowTrending(true)}
+            className="h-10 px-5 bg-secondary-container text-on-secondary-container rounded-full font-label-md hover:brightness-105 active:scale-95 transition-all flex items-center gap-xs shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[18px]">monitoring</span>
+            Hot Signals
+          </button>
+          <button
+            onClick={() => setShowFeedManager(true)}
+            className="h-10 px-5 bg-primary text-on-primary rounded-full font-label-md hover:brightness-110 active:scale-95 transition-all flex items-center gap-xs"
+          >
+            <span className="material-symbols-outlined text-[18px]">rss_feed</span>
+            Manage Feeds
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-12 gap-gutter items-stretch">
@@ -58,6 +69,10 @@ export default function Insights() {
           onClose={() => setShowFeedManager(false)}
           onFeedAdded={handleFeedAdded}
         />
+      )}
+
+      {showTrending && (
+        <TrendingModal onClose={() => setShowTrending(false)} />
       )}
 
       {viewingArticle && (
