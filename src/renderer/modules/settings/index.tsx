@@ -44,6 +44,58 @@ function SettingRow({ label, description, children }: { label: string; descripti
   )
 }
 
+function BackupSection() {
+  const [message, setMessage] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [needsRestart, setNeedsRestart] = useState(false)
+
+  const handleBackup = async () => {
+    setBusy(true)
+    setMessage(null)
+    const result = await window.electronAPI.invoke('backup:create')
+    setBusy(false)
+    if (result.success) setMessage('Backup created successfully.')
+    else if (result.error !== 'Canceled') setMessage(result.error || 'Backup failed.')
+  }
+
+  const handleRestore = async () => {
+    setBusy(true)
+    setMessage(null)
+    const result = await window.electronAPI.invoke('backup:restore')
+    setBusy(false)
+    if (result.success) {
+      setNeedsRestart(true)
+      setMessage('Backup restored. Restart the app to load it.')
+    } else if (result.error !== 'Canceled') setMessage(result.error || 'Restore failed.')
+  }
+
+  return (
+    <Section title="Backup & Restore">
+      <p className="text-body-sm text-on-surface-variant">
+        Create a local copy of your workspace data or restore a verified backup. Encrypted credentials remain encrypted in the backup.
+      </p>
+      <div className="flex flex-wrap gap-sm">
+        <button disabled={busy} onClick={handleBackup} className="px-4 py-1.5 bg-primary text-on-primary rounded-full font-label-md text-body-sm disabled:opacity-50 hover:brightness-110 transition-all">
+          {busy ? 'Working...' : 'Create backup'}
+        </button>
+        <button disabled={busy} onClick={handleRestore} className="px-4 py-1.5 border border-outline-variant text-on-surface-variant rounded-full font-label-md text-body-sm disabled:opacity-50 hover:bg-surface-container transition-colors">
+          Restore backup
+        </button>
+        {needsRestart && (
+          <button
+            disabled={busy}
+            onClick={() => window.electronAPI.invoke('backup:restart')}
+            className="px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full font-label-md text-body-sm disabled:opacity-50 hover:brightness-105 transition-all"
+          >
+            Restart app
+          </button>
+        )}
+      </div>
+      {message && <p className="text-body-sm text-on-surface-variant">{message}</p>}
+    </Section>
+  )
+}
+
 const PLATFORM_OPTIONS = [
   { value: 'bilibili', label: 'Bilibili', placeholder: 'https://space.bilibili.com/...', color: 'bg-[#FB7299]' },
   { value: 'youtube', label: 'YouTube', placeholder: 'https://www.youtube.com/@...', color: 'bg-[#FF0000]' },
@@ -541,6 +593,7 @@ export default function Settings() {
 
         {/* Advanced */}
         {activeTab === 'advanced' && (
+          <>
           <Section title="Advanced">
             <SettingRow label="Start on boot" description="Launch MyDashboard when macOS starts">
               <Toggle pressed={general.startOnBoot} onPressedChange={(v) => setGeneral({ startOnBoot: v })} />
@@ -559,6 +612,8 @@ export default function Settings() {
               </button>
             </SettingRow>
           </Section>
+          <BackupSection />
+          </>
         )}
 
         {/* Save */}
