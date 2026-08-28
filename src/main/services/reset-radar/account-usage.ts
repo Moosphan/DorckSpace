@@ -13,6 +13,7 @@ export interface NormalizedChatGPTWindow {
 export interface NormalizedChatGPTUsage {
   windows: NormalizedChatGPTWindow[]
   plan: string | null
+  subscriptionExpiresAt: string | null
   limitReached: boolean
   fetchedAt: string
 }
@@ -24,6 +25,31 @@ export interface NormalizedResetCredits {
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' ? value as Record<string, unknown> : {}
+}
+
+function asSubscriptionRecord(value: unknown): Record<string, unknown> {
+  let current: unknown = value
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (Array.isArray(current)) {
+      current = current[0]
+      continue
+    }
+    const root = asRecord(current)
+    if (root.subscription && typeof root.subscription === 'object') {
+      current = root.subscription
+      continue
+    }
+    if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
+      current = root.data
+      continue
+    }
+    if (root.subscriptions && Array.isArray(root.subscriptions)) {
+      current = root.subscriptions[0]
+      continue
+    }
+    return root
+  }
+  return asRecord(current)
 }
 
 function asNumber(value: unknown): number | null {
@@ -82,8 +108,15 @@ function normalizeWindow(rawValue: unknown, observedAt: string): NormalizedChatG
   }
 }
 
-export function normalizeChatGPTUsage(payload: unknown, observedAt = new Date().toISOString()): NormalizedChatGPTUsage | null {
+export function normalizeChatGPTUsage(payload: unknown, observedAt = new Date().toISOString(), subscriptionPayload?: unknown): NormalizedChatGPTUsage | null {
   const root = asRecord(payload)
+  const subscription = asSubscriptionRecord(subscriptionPayload ?? root.subscription ?? root.subscription_info ?? root.account)
+  const billingPeriod = asRecord(
+    subscription.billing_period
+    ?? subscription.billingPeriod
+    ?? subscription.current_period
+    ?? subscription.currentPeriod,
+  )
   const rateLimit = asRecord(root.rate_limit ?? root.rateLimits)
   const candidates = [
     normalizeWindow(rateLimit.primary_window ?? rateLimit.primary, observedAt),
@@ -98,7 +131,28 @@ export function normalizeChatGPTUsage(payload: unknown, observedAt = new Date().
       if (window.kind === 'generic' || !all.slice(0, index).some((previous) => previous.kind === window.kind)) return window
       return { ...window, kind: 'generic' }
     }),
-    plan: typeof root.plan_type === 'string' ? root.plan_type : typeof root.planType === 'string' ? root.planType : null,
+    plan: typeof root.plan_type === 'string'
+      ? root.plan_type
+      : typeof root.planType === 'string'
+        ? root.planType
+        : typeof subscription.plan_type === 'string'
+          ? subscription.plan_type
+          : typeof subscription.plan === 'string' ? subscription.plan : null,
+    subscriptionExpiresAt: asIsoDate(
+      root.subscription_end
+      ?? root.subscription_end_date
+      ?? root.subscriptionExpiresAt
+      ?? root.expires_at
+      ?? root.billing_period_end
+      ?? root.billingPeriodEnd
+      ?? subscription.subscription_end
+      ?? subscription.subscription_end_date
+      ?? subscription.expires_at
+      ?? subscription.billing_period_end
+      ?? subscription.current_period_end
+      ?? billingPeriod.end
+      ?? billingPeriod.end_at,
+    ),
     limitReached,
     fetchedAt: observedAt,
   }

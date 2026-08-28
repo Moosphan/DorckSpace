@@ -10,7 +10,6 @@ interface ResetRadarCardProps {
   onOpenStatus: (url: string) => void
   onOpenAccount: () => void
   onOpenHistory: () => void
-  accountSyncError?: string | null
   refreshKey?: number
 }
 
@@ -49,13 +48,7 @@ function formatDateTime(value: string | null): string {
   }).format(new Date(value))
 }
 
-function getWindowLabel(kind: ResetRadarSnapshot['quotaWindows'][number]['kind']): string {
-  if (kind === 'five_hour') return '5 小时窗口'
-  if (kind === 'weekly') return '周窗口'
-  return '用量窗口'
-}
-
-export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, accountSyncError, refreshKey = 0 }: ResetRadarCardProps) {
+export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, refreshKey = 0 }: ResetRadarCardProps) {
   const [snapshot, setSnapshot] = useState<ResetRadarSnapshot>(() => createGuestResetRadarSnapshot())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -94,7 +87,7 @@ export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, acc
   const accountConnected = snapshot.account.status === 'connected'
 
   return (
-    <article className="h-full min-h-[232px] rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex flex-col gap-sm">
+    <article className="h-full min-h-[232px] flex-1 rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex flex-col gap-sm">
       <header className="flex items-start justify-between gap-sm">
         <div className="flex items-center gap-sm">
           <div className="w-9 h-9 rounded-2xl bg-primary-fixed flex items-center justify-center text-primary">
@@ -146,42 +139,18 @@ export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, acc
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-sm">
-        <div className="rounded-xl border border-outline-variant/25 bg-surface-container-low px-sm py-xs">
-          <p className="text-[10px] text-on-surface-variant">估算概率</p>
-          <p className="mt-0.5 text-[22px] font-bold leading-none text-primary">{Math.round(snapshot.forecast.peakProbability * 100)}%</p>
+      <div className="grid min-h-[84px] grid-cols-2 gap-sm">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-outline-variant/25 bg-surface-container-low px-sm py-sm text-center">
+          <p className="text-[12px] font-semibold text-on-surface-variant">估算概率</p>
+          <p className="mt-1 text-[26px] font-bold leading-none text-primary">{Math.round(snapshot.forecast.peakProbability * 100)}%</p>
         </div>
-        <div className="rounded-xl border border-outline-variant/25 bg-surface-container-low px-sm py-xs">
-          <p className="text-[10px] text-on-surface-variant">估算时间</p>
-          <p className="mt-1 text-[13px] font-semibold leading-tight text-on-surface">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-outline-variant/25 bg-surface-container-low px-sm py-sm text-center">
+          <p className="text-[12px] font-semibold text-on-surface-variant">估算时间</p>
+          <p className="mt-1 text-[15px] font-semibold leading-tight text-on-surface">
             {snapshot.forecast.nextWindowAt ? formatDateTime(snapshot.forecast.nextWindowAt) : `未来 ${snapshot.forecast.windowHours} 小时`}
           </p>
         </div>
       </div>
-
-      {accountConnected && snapshot.quotaWindows.length > 0 ? (
-        <div className="grid grid-cols-2 gap-xs pb-sm">
-          {snapshot.quotaWindows.slice(0, 2).map((window, index) => (
-            <div key={`${window.kind}-${index}`} className="rounded-lg bg-surface-container-low px-sm py-xs">
-              <div className="flex items-center justify-between gap-xs text-[10px] text-on-surface-variant">
-                <span>{getWindowLabel(window.kind)}</span>
-                <span className="font-bold text-on-surface">{window.remainingPercent}% 剩余</span>
-              </div>
-              <div className="mt-xs h-1 overflow-hidden rounded-full bg-surface-container-highest">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${window.remainingPercent}%` }} />
-              </div>
-            </div>
-          ))}
-          {snapshot.resetCredits && (
-            <div className="col-span-2 flex items-center justify-between rounded-lg bg-primary-fixed/40 px-sm py-xs text-[10px]">
-              <span className="text-on-surface-variant">可用重置 credits</span>
-              <span className="font-bold text-primary">{snapshot.resetCredits.availableCount}</span>
-            </div>
-          )}
-        </div>
-      ) : accountConnected ? (
-        <p className="text-[11px] text-on-surface-variant">{accountSyncError ?? '已连接，等待 ChatGPT 用量数据同步...'}</p>
-      ) : null}
 
       <div className="mt-auto border-t border-outline-variant/30 pt-sm">
         <div className="mb-sm flex items-center justify-between gap-sm text-[11px]">

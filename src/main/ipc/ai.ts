@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../database/connection'
 import { AISubscriptionRepository, AIToolRepository } from '../database/repositories/ai-repository'
+import { getCodexUsageDashboard } from '../services/codex-usage-service'
 
 const AI_CHANNELS = {
   GET_SUBSCRIPTIONS: 'ai:getSubscriptions',
@@ -23,6 +24,15 @@ function getToolRepo(): AIToolRepository {
 }
 
 export function registerAiIpcHandlers(): void {
+  ipcMain.handle('ai:getCodexUsageDashboard', async (_event, options?: unknown) => {
+    try {
+      const forceRefresh = Boolean(options && typeof options === 'object' && (options as { forceRefresh?: unknown }).forceRefresh === true)
+      return { success: true, data: await getCodexUsageDashboard(forceRefresh) }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
   ipcMain.handle(AI_CHANNELS.GET_SUBSCRIPTIONS, () => {
     try {
       return { success: true, data: getSubRepo().findActive() }

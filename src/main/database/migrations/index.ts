@@ -631,6 +631,15 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 22,
+    name: '022_reset_radar_subscription_expiry',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE reset_radar_account_snapshot ADD COLUMN subscription_expires_at DATETIME
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

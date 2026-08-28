@@ -27,6 +27,7 @@ export interface ResetRadarSnapshot {
     status: ResetRadarAccountStatus
     fetchedAt: string | null
     plan: string | null
+    subscriptionExpiresAt: string | null
     limitReached: boolean | null
     lastResetAt: string | null
   }
@@ -84,6 +85,7 @@ export function createGuestResetRadarSnapshot(generatedAt = new Date().toISOStri
       status: 'signed_out',
       fetchedAt: null,
       plan: null,
+      subscriptionExpiresAt: null,
       limitReached: null,
       lastResetAt: null,
     },

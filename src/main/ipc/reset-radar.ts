@@ -27,8 +27,8 @@ export function registerResetRadarIpcHandlers(): void {
 
   ipcMain.handle('reset-radar:updateAccountUsage', (_event, payload?: unknown) => {
     try {
-      const data = payload && typeof payload === 'object' ? payload as { usage?: unknown; credits?: unknown } : {}
-      return { success: true, data: ingestChatGPTAccountUsage(data.usage, data.credits) }
+      const data = payload && typeof payload === 'object' ? payload as { usage?: unknown; credits?: unknown; subscription?: unknown } : {}
+      return { success: true, data: ingestChatGPTAccountUsage(data.usage, data.credits, data.subscription) }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'ChatGPT usage unavailable' }
     }

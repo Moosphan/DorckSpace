@@ -69,6 +69,7 @@ async function addAccountStatus(snapshot: ResetRadarSnapshot, waitForSession = f
       ...snapshot.account,
       ...(keepAccountData && accountData ? {
         plan: accountData.plan,
+        subscriptionExpiresAt: accountData.subscriptionExpiresAt,
         limitReached: accountData.limitReached,
         fetchedAt: accountData.fetchedAt,
       } : {}),
@@ -106,9 +107,9 @@ function hasQuotaReset(previous: ResetRadarSnapshot | null, nextWindows: ResetRa
   )))
 }
 
-export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown): ResetRadarSnapshot {
+export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown, rawSubscription?: unknown): ResetRadarSnapshot {
   const observedAt = new Date().toISOString()
-  const usage = normalizeChatGPTUsage(rawUsage, observedAt)
+  const usage = normalizeChatGPTUsage(rawUsage, observedAt, rawSubscription)
   if (!usage) throw new Error('ChatGPT usage response did not contain rate-limit windows')
 
   const historyRepository = getHistoryRepository()
@@ -120,6 +121,7 @@ export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown
       status: 'connected' as const,
       fetchedAt: persistedAccountSnapshot.fetchedAt,
       plan: persistedAccountSnapshot.plan,
+      subscriptionExpiresAt: persistedAccountSnapshot.subscriptionExpiresAt,
       limitReached: persistedAccountSnapshot.limitReached,
     },
     quotaWindows: persistedAccountSnapshot.quotaWindows,
@@ -147,6 +149,7 @@ export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown
       status: 'connected',
       fetchedAt: usage.fetchedAt,
       plan: usage.plan,
+      subscriptionExpiresAt: usage.subscriptionExpiresAt ?? previous?.account.subscriptionExpiresAt ?? null,
       limitReached: usage.limitReached,
       lastResetAt,
     },
@@ -165,6 +168,7 @@ export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown
   cachedAt = Date.now()
   historyRepository.saveAccountSnapshot({
     plan: nextSnapshot.account.plan,
+    subscriptionExpiresAt: nextSnapshot.account.subscriptionExpiresAt,
     limitReached: nextSnapshot.account.limitReached,
     quotaWindows: nextSnapshot.quotaWindows,
     resetCredits: nextSnapshot.resetCredits,

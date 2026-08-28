@@ -16,6 +16,7 @@ interface ResetRadarHistoryRow {
 
 export interface ResetRadarAccountSnapshotData {
   plan: string | null
+  subscriptionExpiresAt: string | null
   limitReached: boolean | null
   quotaWindows: ResetRadarSnapshot['quotaWindows']
   resetCredits: ResetRadarSnapshot['resetCredits']
@@ -88,10 +89,11 @@ export class ResetRadarRepository {
 
   getAccountSnapshot(): ResetRadarAccountSnapshotData | null {
     const row = this.db.prepare(
-      `SELECT plan, limit_reached, quota_windows, reset_credits, fetched_at
+      `SELECT plan, subscription_expires_at, limit_reached, quota_windows, reset_credits, fetched_at
        FROM reset_radar_account_snapshot WHERE id = 1`,
     ).get() as {
       plan: string | null
+      subscription_expires_at: string | null
       limit_reached: number | null
       quota_windows: string
       reset_credits: string | null
@@ -102,6 +104,7 @@ export class ResetRadarRepository {
     try {
       return {
         plan: row.plan,
+        subscriptionExpiresAt: row.subscription_expires_at,
         limitReached: row.limit_reached === null ? null : row.limit_reached === 1,
         quotaWindows: JSON.parse(row.quota_windows) as ResetRadarSnapshot['quotaWindows'],
         resetCredits: row.reset_credits ? JSON.parse(row.reset_credits) as ResetRadarSnapshot['resetCredits'] : null,
@@ -115,10 +118,11 @@ export class ResetRadarRepository {
   saveAccountSnapshot(snapshot: ResetRadarAccountSnapshotData): void {
     this.db.prepare(
       `INSERT INTO reset_radar_account_snapshot (
-        id, plan, limit_reached, quota_windows, reset_credits, fetched_at, updated_at
-      ) VALUES (1, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        id, plan, subscription_expires_at, limit_reached, quota_windows, reset_credits, fetched_at, updated_at
+      ) VALUES (1, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(id) DO UPDATE SET
         plan = excluded.plan,
+        subscription_expires_at = excluded.subscription_expires_at,
         limit_reached = excluded.limit_reached,
         quota_windows = excluded.quota_windows,
         reset_credits = excluded.reset_credits,
@@ -126,6 +130,7 @@ export class ResetRadarRepository {
         updated_at = CURRENT_TIMESTAMP`,
     ).run(
       snapshot.plan,
+      snapshot.subscriptionExpiresAt,
       snapshot.limitReached === null ? null : snapshot.limitReached ? 1 : 0,
       JSON.stringify(snapshot.quotaWindows),
       snapshot.resetCredits ? JSON.stringify(snapshot.resetCredits) : null,

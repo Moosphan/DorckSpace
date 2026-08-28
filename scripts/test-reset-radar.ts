@@ -170,9 +170,17 @@ test('normalizes ChatGPT usage windows and reset credits', () => {
         reset_at: '2026-08-28T06:00:00.000Z',
       },
     },
-  }, '2026-08-28T05:00:00.000Z')
+  }, '2026-08-28T05:00:00.000Z', {
+    data: {
+      plan: 'plus',
+      subscription: {
+        billing_period: { end: '2026-09-01T00:00:00.000Z' },
+      },
+    },
+  })
 
   assert.equal(usage?.plan, 'pro')
+  assert.equal(usage?.subscriptionExpiresAt, '2026-09-01T00:00:00.000Z')
   assert.equal(usage?.windows[0].kind, 'five_hour')
   assert.equal(usage?.windows[0].remainingPercent, 28)
   assert.equal(usage?.windows[1].kind, 'weekly')

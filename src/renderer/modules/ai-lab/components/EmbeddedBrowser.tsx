@@ -7,7 +7,7 @@ interface EmbeddedBrowserProps {
   onClose: () => void
   partition?: string
   onSessionActivity?: () => void
-  onAccountUsage?: (payload: { usage: unknown; credits: unknown | null }) => void
+  onAccountUsage?: (payload: { usage: unknown; credits: unknown | null; subscription: unknown | null }) => void
   onAccountUsageError?: (message: string) => void
 }
 
@@ -90,13 +90,20 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
               const usage = await request('/backend-api/wham/usage')
               let credits = null
               try { credits = await request('/backend-api/wham/rate-limit-reset-credits') } catch {}
-              return { ok: true, usage, credits }
+              let subscription = null
+              for (const path of ['/backend-api/subscriptions', '/backend-api/subscription', '/backend-api/accounts/check', '/backend-api/accounts/check/v4-2023-04-27']) {
+                try {
+                  subscription = await request(path)
+                  if (subscription) break
+                } catch {}
+              }
+              return { ok: true, usage, credits, subscription }
             } catch (error) {
               return { ok: false, error: error instanceof Error ? error.message : String(error) }
             }
           })()`) as unknown as { ok?: boolean; usage?: unknown; credits?: unknown | null; error?: string }
           if (result?.ok && result.usage) {
-            onAccountUsage?.({ usage: result.usage, credits: result.credits ?? null })
+          onAccountUsage?.({ usage: result.usage, credits: result.credits ?? null, subscription: result.subscription ?? null })
             return
           }
           lastError = result?.error || lastError
