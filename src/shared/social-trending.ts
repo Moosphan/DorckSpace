@@ -2,7 +2,7 @@ export const TRENDING_PLATFORMS = ['xiaohongshu', 'douyin', 'producthunt', 'v2ex
 
 export type TrendingPlatform = (typeof TRENDING_PLATFORMS)[number]
 export type TrendingPeriod = 'day' | 'week' | 'month'
-export type TrendingProviderStatus = 'ok' | 'warn' | 'off' | 'error'
+export type TrendingProviderStatus = 'ok' | 'warn' | 'stale' | 'fixture' | 'off' | 'error'
 
 export interface TrendingPlatformConfig {
   id: TrendingPlatform

@@ -350,6 +350,10 @@ function HealthBadge({ health }: { health: TrendingProviderHealth }) {
     ? 'bg-primary/10 text-primary'
     : health.status === 'warn'
       ? 'bg-secondary-container text-on-secondary-container'
+      : health.status === 'fixture'
+        ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant'
+        : health.status === 'stale'
+          ? 'bg-secondary-container text-on-secondary-container'
       : health.status === 'off'
         ? 'bg-surface-container-high text-on-surface-variant'
         : 'bg-error/10 text-error'
@@ -377,6 +381,12 @@ function EmptyColumn({ health, homepage }: { health: TrendingProviderHealth; hom
 }
 
 function friendlyHealthMessage(health: TrendingProviderHealth): string {
+  if (health.status === 'fixture') {
+    return '当前没有可用的实时来源，展示的是开发验证数据。'
+  }
+  if (health.status === 'stale') {
+    return '本地缓存已过期，刷新后会重新尝试读取公开来源。'
+  }
   if (health.platform === 'v2ex' && health.status === 'error') {
     return 'V2EX 公开接口暂时不可达，刷新后将尝试使用本地独立开发者主题兜底。'
   }

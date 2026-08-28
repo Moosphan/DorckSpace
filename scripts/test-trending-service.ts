@@ -102,7 +102,7 @@ async function runV2exFallbackProviderTest() {
     const service = new SocialTrendingService(repo)
     const result = await service.refresh('v2ex', 'day', 10)
     const items = repo.getItems('v2ex', 'day', 10)
-    assert('v2ex-fallback: refresh status warn', result.status === 'warn', result.message)
+    assert('v2ex-fallback: refresh status fixture', result.status === 'fixture', result.message)
     assert('v2ex-fallback: at least 10 items', items.length >= 10, `count=${items.length}`)
     assert('v2ex-fallback: source is local fallback', items.every((item) => item.source === 'v2ex:local-fallback'))
     assert('v2ex-fallback: tags are meaningful', items.every((item) => item.tags.length > 0 && !item.tags.includes('V2EX')))
@@ -149,7 +149,7 @@ async function runFixtureLoopTest() {
 
   const doctor = await service.doctor()
   assert('doctor: all providers reported', doctor.length === TRENDING_PLATFORMS.length)
-  assert('doctor: known statuses only', doctor.every((item) => ['ok', 'warn', 'off', 'error'].includes(item.status)))
+  assert('doctor: known statuses only', doctor.every((item) => ['ok', 'warn', 'stale', 'fixture', 'off', 'error'].includes(item.status)))
 
   db.close()
 }

@@ -14,6 +14,8 @@ import { SocialTrendingRepository } from '../../database/repositories/social-tre
 import type { TrendingProvider } from './providers/types'
 import { createTrendingProviders } from './providers'
 import { nowHealth } from './providers/utils'
+import { resolveProviderHealth } from '../provider-health'
+import { sendDedupedNotification } from '../notification-service'
 
 interface GetDashboardOptions {
   period: TrendingPeriod
@@ -44,14 +46,23 @@ export class SocialTrendingService {
         const provider = this.providers.get(platform)
         const state = this.repo.getRefreshState(platform, options.period)
         const health = state
-          ? {
+          ? (() => {
+            const resolved = resolveProviderHealth({
+              status: state.status,
+              activeBackend: state.activeBackend,
+              checkedAt: state.lastFetchedAt,
+              expiresAt: state.nextRefreshAt,
+              error: state.status === 'error' ? state.message : null,
+            })
+            return {
             platform,
-            status: state.status,
-            message: state.message,
+            status: resolved.status,
+            message: state.message || resolved.message,
             activeBackend: state.activeBackend,
             checkedAt: state.lastFetchedAt ?? new Date().toISOString(),
             backends: provider?.backends ?? [],
-          } satisfies TrendingProviderHealth
+            } satisfies TrendingProviderHealth
+          })()
           : provider
             ? await provider.check()
             : nowHealth(platform, [], 'off', 'No provider registered.')
@@ -90,6 +101,7 @@ export class SocialTrendingService {
     }
 
     try {
+      const previousItems = this.repo.getItems(platform, period, Math.max(limit, 10))
       const response = await provider.fetchTrending({
         period,
         limit: Math.max(limit, 10),
@@ -101,25 +113,42 @@ export class SocialTrendingService {
       const result: TrendingRefreshResult = {
         platform,
         period,
-        status: response.activeBackend === 'fixture' ? 'warn' : 'ok',
+        status: response.activeBackend === 'fixture' ? 'fixture' : 'ok',
         updated: items.length,
         message: response.message,
         activeBackend: response.activeBackend,
         fetchedAt,
       }
       this.saveState(result, expiresAt)
+      const newItemCount = items.filter((item) => !previousItems.some((previous) => previous.externalId === item.externalId)).length
+      if (newItemCount > 0) {
+        sendDedupedNotification(`trending-new:${platform}:${period}:${items[0]?.fetchedAt ?? fetchedAt}`, {
+          title: `${platform} 热门内容已更新`,
+          body: `新增 ${newItemCount} 条可关注内容。`,
+          silent: true,
+        })
+      }
       return result
     } catch (err) {
       const cachedCount = this.repo.getItems(platform, period, Math.max(limit, 10)).length
       const result: TrendingRefreshResult = {
         platform,
         period,
-        status: cachedCount > 0 ? 'warn' : 'error',
+        status: cachedCount > 0
+          ? (this.repo.getFreshItemCount(platform, period) > 0 ? 'warn' : 'stale')
+          : 'error',
         updated: 0,
         message: `${(err as Error).message}${cachedCount > 0 ? ' Showing cached data.' : ''}`,
         fetchedAt,
       }
       this.saveState(result, expiresAt)
+      if (result.status === 'error' || result.status === 'stale') {
+        sendDedupedNotification(`trending-health:${platform}:${period}:${result.status}`, {
+          title: `${platform} 热门内容来源异常`,
+          body: result.message,
+          silent: true,
+        })
+      }
       return result
     }
   }

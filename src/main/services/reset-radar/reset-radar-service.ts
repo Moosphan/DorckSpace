@@ -5,6 +5,7 @@ import { normalizeChatGPTUsage, normalizeResetCredits } from './account-usage'
 import { getDatabase } from '../../database/connection'
 import { ResetRadarRepository, type ResetRadarAccountSnapshotData } from '../../database/repositories/reset-radar-repository'
 import { fetchPublicResetRadarSnapshot } from './public-signal'
+import { sendDedupedNotification } from '../notification-service'
 
 const CACHE_DURATION_MS = 10 * 60 * 1000
 const REQUEST_TIMEOUT_MS = 10_000
@@ -202,6 +203,13 @@ export async function getResetRadarSnapshot(forceRefresh = false): Promise<Reset
   try {
     const publicSnapshot = await fetchPublicResetRadarSnapshot(controller.signal)
     persistPublicSignals(publicSnapshot)
+    if (publicSnapshot.activeSignal?.confidence === 'high') {
+      sendDedupedNotification(`reset-radar:${publicSnapshot.activeSignal.id}`, {
+        title: 'AI Reset Radar 检测到高置信信号',
+        body: publicSnapshot.activeSignal.title,
+        silent: true,
+      })
+    }
     const snapshot = await addAccountStatus(publicSnapshot, forceRefresh)
     cachedSnapshot = snapshot
     cachedAt = Date.now()

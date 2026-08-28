@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import Parser from 'rss-parser'
 import { getDatabase } from '../database/connection'
 import { RSSFeedRepository, RSSArticleRepository } from '../database/repositories/rss-repository'
+import { sendDedupedNotification } from '../services/notification-service'
 
 const rssParser = new Parser({ timeout: 10000, headers: { 'User-Agent': 'MyDashboard/1.0' } })
 
@@ -11,6 +12,7 @@ async function storeArticles(feedId: number, parsed: Awaited<ReturnType<typeof r
   let count = 0
   for (const item of parsed.items ?? []) {
     if (!item.title || !item.link) continue
+    const existing = db.prepare('SELECT 1 FROM rss_articles WHERE url = ? LIMIT 1').get(item.link)
     const result = articleRepo.create({
       feed_id: feedId,
       title: item.title,
@@ -19,10 +21,17 @@ async function storeArticles(feedId: number, parsed: Awaited<ReturnType<typeof r
       summary: item.contentSnippet || item.content?.substring(0, 300) || undefined,
       published_at: item.isoDate || item.pubDate || undefined,
     })
-    if (result > 0) count++
+    if (result > 0 && !existing) count++
   }
   const feedRepo = new RSSFeedRepository(db)
   feedRepo.updateLastFetched(feedId)
+  if (count > 0) {
+    sendDedupedNotification(`rss-new:${feedId}:${new Date().toISOString().slice(0, 10)}`, {
+      title: 'RSS 有新文章',
+      body: `新增 ${count} 篇文章。`,
+      silent: true,
+    })
+  }
   return count
 }
 

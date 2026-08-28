@@ -12,7 +12,7 @@ import { registerVideoAssetIpcHandlers } from './ipc/video-assets'
 import { registerRssIpcHandlers } from './ipc/rss'
 import { registerWeatherIpcHandlers } from './services/weather-service'
 import { registerSearchIpcHandlers } from './ipc/search'
-import { registerNotificationIpcHandlers } from './services/notification-service'
+import { registerNotificationIpcHandlers, startTaskReminderScheduler, stopTaskReminderScheduler } from './services/notification-service'
 import { registerRssFetcherHandlers } from './services/rss-fetcher'
 import { registerSocialIpcHandlers } from './ipc/social'
 import { registerSocialFetcherHandlers } from './services/social-fetcher'
@@ -246,6 +246,7 @@ app.whenReady().then(() => {
 
   // Seed initial data
   seedSocialData(db)
+  startTaskReminderScheduler(db)
   startTrendingRefreshScheduler()
 
   createWindow()
@@ -265,6 +266,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   logLifecycle('app:before-quit')
   stopTrendingRefreshScheduler()
+  stopTaskReminderScheduler()
   closeDatabase()
 })
 
