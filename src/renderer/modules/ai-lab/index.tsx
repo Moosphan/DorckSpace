@@ -5,6 +5,7 @@ import { ToolDirectory } from './components/ToolDirectory'
 import { EmbeddedBrowser } from './components/EmbeddedBrowser'
 import { ResetRadarCard } from './components/ResetRadarCard'
 import { ResetRadarHistoryModal } from './components/ResetRadarHistoryModal'
+import { AILabOverviewCard } from './components/AILabOverviewCard'
 
 export default function AILab() {
   const [showBrowser, setShowBrowser] = useState(false)
@@ -47,7 +48,7 @@ export default function AILab() {
   return (
     <div className="p-lg space-y-md animate-fade-in max-w-[1280px] mx-auto w-full">
       {/* Radar + Token Usage */}
-      <div className="grid grid-cols-12 gap-gutter items-stretch">
+      <div className="grid grid-cols-12 gap-gutter items-stretch lg:min-h-[420px]">
         <div className="col-span-12 lg:col-span-5">
           <ResetRadarCard
             onOpenStatus={handleOpenTool}
@@ -57,8 +58,13 @@ export default function AILab() {
             refreshKey={accountRefreshKey}
           />
         </div>
-        <div className="col-span-12 lg:col-span-7">
-          <TokenUsage />
+        <div className="col-span-12 grid gap-gutter lg:col-span-7 lg:grid-rows-2">
+          <div className="min-h-0">
+            <AILabOverviewCard onOpenBrowser={() => handleOpenTool('https://chat.openai.com')} />
+          </div>
+          <div className="min-h-0">
+            <TokenUsage />
+          </div>
         </div>
       </div>
 
