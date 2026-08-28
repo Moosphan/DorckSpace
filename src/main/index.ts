@@ -33,6 +33,7 @@ import { registerResetRadarIpcHandlers } from './ipc/reset-radar'
 import { registerBackupIpcHandlers } from './ipc/backup'
 import { registerResearchMaterialIpcHandlers } from './ipc/research-materials'
 import { registerResearchAssistantIpcHandlers } from './ipc/research-assistant'
+import { registerContentVariantIpcHandlers } from './ipc/content-variants'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
@@ -232,6 +233,7 @@ app.whenReady().then(() => {
   registerResetRadarIpcHandlers()
   registerResearchMaterialIpcHandlers()
   registerResearchAssistantIpcHandlers()
+  registerContentVariantIpcHandlers()
   registerBackupIpcHandlers()
 
   // Load plugins

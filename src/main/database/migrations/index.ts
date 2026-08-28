@@ -692,6 +692,43 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 25,
+    name: '025_article_content_variants_and_receipts',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS article_content_variants (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+          platform TEXT NOT NULL,
+          title TEXT NOT NULL,
+          content TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(article_id, platform)
+        );
+
+        CREATE TABLE IF NOT EXISTS article_publish_receipts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+          variant_id INTEGER REFERENCES article_content_variants(id) ON DELETE SET NULL,
+          platform TEXT NOT NULL,
+          status TEXT NOT NULL CHECK(status IN ('prepared', 'published', 'failed')) DEFAULT 'prepared',
+          destination_url TEXT,
+          note TEXT,
+          prepared_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          published_at DATETIME,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_article_content_variants_article_id
+        ON article_content_variants(article_id, updated_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_article_publish_receipts_article_id
+        ON article_publish_receipts(article_id, prepared_at DESC);
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {
