@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
 import { useToast } from '@/components/ui/toast'
+import { ResearchAssistantModal } from './ResearchAssistantModal'
 
 interface ResearchMaterial {
   id: number
@@ -51,6 +52,8 @@ export function ResearchLibraryModal({ open, onClose, highlightedMaterialId }: R
   const [tags, setTags] = useState('')
   const [projectId, setProjectId] = useState('')
   const [articleId, setArticleId] = useState('')
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([])
+  const [showAssistant, setShowAssistant] = useState(false)
 
   useEffect(() => {
     if (open) refetch()
@@ -99,6 +102,12 @@ export function ResearchLibraryModal({ open, onClose, highlightedMaterialId }: R
     }
   }
 
+  const toggleMaterialSelection = (id: number) => {
+    setSelectedMaterialIds((ids) => ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id])
+  }
+
+  const selectedMaterials = materials?.filter((material) => selectedMaterialIds.includes(material.id)) ?? []
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-md" onClick={onClose}>
       <div className="bg-surface-container-lowest w-full max-w-4xl max-h-[82vh] rounded-2xl shadow-2xl border border-outline-variant/30 flex flex-col overflow-hidden" onClick={(event) => event.stopPropagation()}>
@@ -111,6 +120,10 @@ export function ResearchLibraryModal({ open, onClose, highlightedMaterialId }: R
             </div>
           </div>
           <div className="flex items-center gap-xs">
+            <button onClick={() => setShowAssistant(true)} disabled={selectedMaterials.length === 0} className="h-8 px-3 rounded-lg border border-primary/35 text-primary text-label-sm font-bold flex items-center gap-xs hover:bg-primary/10 disabled:opacity-40 disabled:cursor-not-allowed">
+              <span className="material-symbols-outlined text-[16px]">psychology</span>
+              Research {selectedMaterials.length > 0 ? `(${selectedMaterials.length})` : ''}
+            </button>
             <button onClick={() => setShowComposer((value) => !value)} className="h-8 px-3 rounded-lg bg-primary text-on-primary text-label-sm font-bold flex items-center gap-xs hover:brightness-110">
               <span className="material-symbols-outlined text-[16px]">add</span>
               Add note
@@ -153,8 +166,11 @@ export function ResearchLibraryModal({ open, onClose, highlightedMaterialId }: R
           ) : (
             <div className="space-y-sm">
               {materials.map((material) => (
-                <article key={material.id} className={`group rounded-xl border p-md transition-colors ${highlightedMaterialId === material.id ? 'border-primary bg-primary/5' : 'border-outline-variant/30 bg-surface-container-lowest hover:border-outline-variant/60'}`}>
+                <article key={material.id} className={`group rounded-xl border p-md transition-colors ${highlightedMaterialId === material.id ? 'border-primary bg-primary/5' : selectedMaterialIds.includes(material.id) ? 'border-primary/60 bg-primary/5' : 'border-outline-variant/30 bg-surface-container-lowest hover:border-outline-variant/60'}`}>
                   <div className="flex gap-md">
+                    <button onClick={() => toggleMaterialSelection(material.id)} className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${selectedMaterialIds.includes(material.id) ? 'border-primary bg-primary text-on-primary' : 'border-outline-variant/60 text-transparent hover:border-primary'}`} aria-label={`Select ${material.title}`}>
+                      <span className="material-symbols-outlined text-[14px]">check</span>
+                    </button>
                     <div className="w-8 h-8 shrink-0 rounded-lg bg-primary-fixed text-primary flex items-center justify-center">
                       <span className="material-symbols-outlined text-[17px]">{material.sourceType === 'highlight' ? 'format_quote' : material.sourceType === 'rss_article' ? 'rss_feed' : 'edit_note'}</span>
                     </div>
@@ -196,6 +212,7 @@ export function ResearchLibraryModal({ open, onClose, highlightedMaterialId }: R
           )}
         </div>
       </div>
+      <ResearchAssistantModal open={showAssistant} materials={selectedMaterials} onClose={() => setShowAssistant(false)} />
     </div>
   )
 }

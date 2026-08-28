@@ -672,6 +672,26 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 24,
+    name: '024_research_briefs',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS research_briefs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          objective TEXT NOT NULL,
+          content TEXT NOT NULL,
+          material_ids TEXT NOT NULL,
+          provider TEXT,
+          model TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_briefs_created_at
+        ON research_briefs(created_at DESC);
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

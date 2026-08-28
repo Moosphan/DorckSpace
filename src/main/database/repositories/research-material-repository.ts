@@ -179,6 +179,39 @@ export class ResearchMaterialRepository extends BaseRepository<Record<string, un
       articleTitle: row.article_title,
     }))
   }
+
+  findByIds(ids: number[]): ResearchMaterial[] {
+    if (ids.length === 0) return []
+    const placeholders = ids.map(() => '?').join(', ')
+    const materials = this.all<ResearchMaterialRow>(
+      `SELECT material.id, material.source_type, material.source_id, material.title, material.excerpt,
+        material.url, material.author, material.tags, material.project_id, project.name AS project_name,
+        material.article_id, article.title AS article_title
+       FROM research_materials material
+       LEFT JOIN projects project ON project.id = material.project_id
+       LEFT JOIN articles article ON article.id = material.article_id
+       WHERE material.id IN (${placeholders})`,
+      ...ids,
+    ).map((row) => ({
+      id: row.id,
+      sourceType: row.source_type,
+      sourceId: row.source_id,
+      title: row.title,
+      excerpt: row.excerpt,
+      url: row.url,
+      author: row.author,
+      tags: parseTags(row.tags),
+      projectId: row.project_id,
+      projectName: row.project_name,
+      articleId: row.article_id,
+      articleTitle: row.article_title,
+    }))
+    const byId = new Map(materials.map((material) => [material.id, material]))
+    return ids.flatMap((id) => {
+      const material = byId.get(id)
+      return material ? [material] : []
+    })
+  }
 }
 
 function parseTags(value: string): string[] {
