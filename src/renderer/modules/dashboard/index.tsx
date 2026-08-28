@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { TodayOverview } from './components/TodayOverview'
 import { PriorityTaskList } from './components/PriorityTaskList'
 import { WeatherClockWidget } from './components/WeatherClockWidget'
@@ -9,8 +10,17 @@ import { CreateIdeaDialog } from './components/CreateIdeaDialog'
 import { ManageIdeasDialog } from './components/ManageIdeasDialog'
 import { ProjectManagerDialog } from './components/ProjectManagerDialog'
 import { ArticleDetailDialog } from './components/ArticleDetailDialog'
+import { useIpcData } from '@/hooks/useIpc'
+
+interface TaskContext {
+  project_id: number | null
+}
 
 export default function Dashboard() {
+  const [searchParams] = useSearchParams()
+  const taskId = Number(searchParams.get('taskId'))
+  const hasTaskId = Number.isInteger(taskId) && taskId > 0
+  const { data: linkedTask } = useIpcData<TaskContext | null>(hasTaskId ? 'tasks:getById' : '', taskId)
   const [showCreate, setShowCreate] = useState(false)
   const [showManage, setShowManage] = useState(false)
   const [showProjectManager, setShowProjectManager] = useState(false)
@@ -18,6 +28,20 @@ export default function Dashboard() {
   const [articleDetailId, setArticleDetailId] = useState<number | null>(null)
   const [projectRevision, setProjectRevision] = useState(0)
   const ideaCardRef = useRef<IdeaCardHandle>(null)
+
+  useEffect(() => {
+    const projectId = Number(searchParams.get('projectId'))
+    if (Number.isInteger(projectId) && projectId > 0) {
+      setProjectDetailId(projectId)
+      setShowProjectManager(true)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!hasTaskId || !linkedTask) return
+    setProjectDetailId(linkedTask.project_id)
+    setShowProjectManager(true)
+  }, [hasTaskId, linkedTask])
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col lg:flex-row gap-lg p-lg">

@@ -4,24 +4,45 @@ import { cn } from '@/lib/utils'
 
 interface SearchResult {
   id: number
-  type: 'article' | 'task' | 'note' | 'draft'
+  type: string
   title: string
   subtitle: string
   icon: string
+  route: string
+  updatedAt: string | null
+  url?: string | null
 }
 
-const typeRoutes: Record<string, string> = {
-  article: '/writing',
-  task: '/dashboard',
-  note: '/writing',
-  draft: '/writing',
+const typeLabels: Record<string, string> = {
+  project: 'Project',
+  task: 'Task',
+  article: 'Article',
+  rss_article: 'RSS Article',
+  feed: 'Feed',
+  note: 'Note',
+  draft: 'Draft',
+  idea: 'Idea',
+  highlight: 'Highlight',
+  video: 'Video',
+  portfolio: 'Portfolio',
+  moodboard: 'Moodboard',
+  trending: 'Trending',
 }
 
 const typeColors: Record<string, string> = {
   article: 'bg-primary-fixed text-primary',
   task: 'bg-secondary-container text-secondary',
+  project: 'bg-primary-container text-on-primary-container',
+  rss_article: 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
   note: 'bg-primary-fixed text-primary',
   draft: 'bg-surface-variant text-on-surface-variant',
+}
+
+function formatUpdatedAt(value: string | null): string {
+  if (!value) return ''
+  const date = new Date(value.replace(' ', 'T'))
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 export function SearchPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -66,7 +87,7 @@ export function SearchPanel({ open, onClose }: { open: boolean; onClose: () => v
 
   const handleSelect = useCallback((result: SearchResult) => {
     onClose()
-    navigate(typeRoutes[result.type] || '/dashboard')
+    navigate(result.route || '/dashboard')
   }, [onClose, navigate])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -100,7 +121,7 @@ export function SearchPanel({ open, onClose }: { open: boolean; onClose: () => v
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search articles, tasks, notes..."
+            placeholder="Search your workspace..."
             className="flex-1 bg-transparent outline-none text-body-md text-on-surface placeholder-on-surface-variant/50"
           />
           <kbd className="text-[10px] font-bold text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded">ESC</kbd>
@@ -133,9 +154,12 @@ export function SearchPanel({ open, onClose }: { open: boolean; onClose: () => v
                 <p className="font-label-md text-on-surface truncate">{result.title}</p>
                 <p className="text-body-sm text-on-surface-variant truncate">{result.subtitle}</p>
               </div>
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase px-2 py-0.5 rounded-full bg-surface-container">
-                {result.type}
-              </span>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase px-2 py-0.5 rounded-full bg-surface-container">
+                  {typeLabels[result.type] || result.type}
+                </span>
+                {result.updatedAt && <span className="text-[10px] text-on-surface-variant/70">{formatUpdatedAt(result.updatedAt)}</span>}
+              </div>
             </div>
           ))}
         </div>

@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { ArticleFeed } from './components/ArticleFeed'
 import { SocialCards } from './components/SocialCards'
 import { FeedManager } from './components/FeedManager'
 import { ArticleViewer } from './components/ArticleViewer'
 import { TrendingModal } from './components/trending/TrendingModal'
+import { useIpcData } from '@/hooks/useIpc'
 
 interface SelectedArticle {
   id: number
@@ -12,11 +14,36 @@ interface SelectedArticle {
   isStarred: boolean
 }
 
+interface RSSArticle {
+  id: number
+  url: string
+  title: string
+  is_starred: number
+}
+
 export default function Insights() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [showFeedManager, setShowFeedManager] = useState(false)
   const [showTrending, setShowTrending] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [viewingArticle, setViewingArticle] = useState<SelectedArticle | null>(null)
+  const articleId = Number(searchParams.get('articleId'))
+  const { data: linkedArticle } = useIpcData<RSSArticle | null>(
+    Number.isInteger(articleId) && articleId > 0 ? 'rss:getArticleById' : '',
+    articleId,
+  )
+
+  useEffect(() => {
+    if (linkedArticle) {
+      setViewingArticle({
+        id: linkedArticle.id,
+        url: linkedArticle.url,
+        title: linkedArticle.title,
+        isStarred: linkedArticle.is_starred === 1,
+      })
+    }
+  }, [linkedArticle])
 
   // Fetch all RSS feeds on page load
   useEffect(() => {
@@ -83,7 +110,10 @@ export default function Insights() {
           articleTitle={viewingArticle.title}
           isStarred={viewingArticle.isStarred}
           onFavoriteChange={(isStarred) => setViewingArticle((article) => article ? { ...article, isStarred } : article)}
-          onClose={() => setViewingArticle(null)}
+          onClose={() => {
+            setViewingArticle(null)
+            navigate('/insights', { replace: true })
+          }}
         />
       )}
     </div>

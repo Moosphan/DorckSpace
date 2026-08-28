@@ -34,6 +34,7 @@ const RSS_CHANNELS = {
   DELETE_FEED: 'rss:deleteFeed',
   TOGGLE_FEED_ACTIVE: 'rss:toggleFeedActive',
   GET_ARTICLES: 'rss:getArticles',
+  GET_ARTICLE_BY_ID: 'rss:getArticleById',
   GET_FILTERED_ARTICLES: 'rss:getFilteredArticles',
   GET_ARTICLE_CATEGORIES: 'rss:getArticleCategories',
   GET_UNREAD: 'rss:getUnread',
@@ -165,6 +166,14 @@ export function registerRssIpcHandlers(): void {
   ipcMain.handle(RSS_CHANNELS.GET_ARTICLES, (_event, limit?: number) => {
     try {
       return { success: true, data: getArticleRepo().findRecent(limit) }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle(RSS_CHANNELS.GET_ARTICLE_BY_ID, (_event, id: number) => {
+    try {
+      return { success: true, data: getArticleRepo().findById(id) }
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }

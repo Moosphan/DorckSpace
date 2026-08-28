@@ -1,98 +1,182 @@
 import { ipcMain } from 'electron'
+import type Database from 'better-sqlite3'
 import { getDatabase } from '../database/connection'
 
-interface SearchResult {
+export type SearchResultType =
+  | 'project'
+  | 'task'
+  | 'article'
+  | 'rss_article'
+  | 'feed'
+  | 'note'
+  | 'draft'
+  | 'idea'
+  | 'highlight'
+  | 'video'
+  | 'portfolio'
+  | 'moodboard'
+  | 'trending'
+
+export interface SearchResult {
   id: number
-  type: 'article' | 'task' | 'note' | 'draft'
+  type: SearchResultType
   title: string
   subtitle: string
   icon: string
+  route: string
+  updatedAt: string | null
+  url?: string | null
 }
 
-function searchAll(query: string): SearchResult[] {
-  const db = getDatabase()
-  const pattern = `%${query}%`
+interface SearchRow {
+  id: number
+  title: string | null
+  subtitle: string | null
+  updated_at: string | null
+  route: string
+  icon: string
+  type: SearchResultType
+  url?: string | null
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&')
+}
+
+function toResult(row: SearchRow): SearchResult {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title?.trim() || '未命名内容',
+    subtitle: row.subtitle?.trim() || row.type,
+    icon: row.icon,
+    route: row.route,
+    updatedAt: row.updated_at,
+    url: row.url,
+  }
+}
+
+function relevance(result: SearchResult, query: string): number {
+  const title = result.title.toLocaleLowerCase()
+  const normalizedQuery = query.toLocaleLowerCase()
+  if (title === normalizedQuery) return 3
+  if (title.startsWith(normalizedQuery)) return 2
+  if (title.includes(normalizedQuery)) return 1
+  return 0
+}
+
+export function searchAll(db: Database.Database, query: string): SearchResult[] {
+  const normalizedQuery = query.trim()
+  if (normalizedQuery.length < 2) return []
+  const pattern = `%${escapeLike(normalizedQuery)}%`
   const results: SearchResult[] = []
+  const add = (rows: SearchRow[]) => results.push(...rows.map(toResult))
 
-  // Search articles
-  const articles = db.prepare(
-    `SELECT id, title, category, status FROM articles
-     WHERE title LIKE ? OR content LIKE ? OR category LIKE ?
-     ORDER BY updated_at DESC LIMIT 5`
-  ).all(pattern, pattern, pattern) as Array<{ id: number; title: string; category: string | null; status: string }>
+  add(db.prepare(
+    `SELECT id, name AS title, description AS subtitle, updated_at,
+      '/dashboard?projectId=' || id AS route, 'folder_open' AS icon, 'project' AS type
+     FROM projects WHERE name LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\'
+     ORDER BY updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern) as SearchRow[])
 
-  for (const a of articles) {
-    results.push({
-      id: a.id,
-      type: 'article',
-      title: a.title,
-      subtitle: `${a.status}${a.category ? ` · ${a.category}` : ''}`,
-      icon: 'article',
-    })
-  }
+  add(db.prepare(
+    `SELECT id, title, priority || ' · ' || status AS subtitle, updated_at,
+      '/dashboard?taskId=' || id AS route, 'task_alt' AS icon, 'task' AS type
+     FROM tasks WHERE title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+     ORDER BY updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern) as SearchRow[])
 
-  // Search tasks
-  const tasks = db.prepare(
-    `SELECT id, title, status, priority FROM tasks
-     WHERE title LIKE ? OR description LIKE ?
-     ORDER BY created_at DESC LIMIT 5`
-  ).all(pattern, pattern) as Array<{ id: number; title: string; status: string; priority: string }>
+  add(db.prepare(
+    `SELECT id, title, status || CASE WHEN category IS NOT NULL THEN ' · ' || category ELSE '' END AS subtitle,
+      updated_at, '/writing?articleId=' || id AS route, 'article' AS icon, 'article' AS type
+     FROM articles WHERE title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+     ORDER BY updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern, pattern) as SearchRow[])
 
-  for (const t of tasks) {
-    results.push({
-      id: t.id,
-      type: 'task',
-      title: t.title,
-      subtitle: `${t.priority} · ${t.status}`,
-      icon: 'task_alt',
-    })
-  }
+  add(db.prepare(
+    `SELECT a.id, a.title, f.title || CASE WHEN f.category IS NOT NULL THEN ' · ' || f.category ELSE '' END AS subtitle,
+      COALESCE(a.published_at, a.created_at) AS updated_at, '/insights?articleId=' || a.id AS route,
+      'rss_feed' AS icon, 'rss_article' AS type, a.url
+     FROM rss_articles a JOIN rss_feeds f ON f.id = a.feed_id
+     WHERE f.is_active = 1 AND (a.title LIKE ? ESCAPE '\\' OR a.summary LIKE ? ESCAPE '\\' OR a.content LIKE ? ESCAPE '\\' OR a.author LIKE ? ESCAPE '\\')
+     ORDER BY COALESCE(a.published_at, a.created_at) DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern, pattern) as SearchRow[])
 
-  // Search notes
-  const notes = db.prepare(
-    `SELECT id, title, category FROM notes
-     WHERE title LIKE ? OR content LIKE ?
-     ORDER BY updated_at DESC LIMIT 5`
-  ).all(pattern, pattern) as Array<{ id: number; title: string | null; category: string | null }>
+  add(db.prepare(
+    `SELECT id, title, category AS subtitle, created_at AS updated_at, '/insights' AS route,
+      'rss_feed' AS icon, 'feed' AS type, url FROM rss_feeds
+     WHERE is_active = 1 AND (title LIKE ? ESCAPE '\\' OR url LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\')
+     ORDER BY created_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern) as SearchRow[])
 
-  for (const n of notes) {
-    results.push({
-      id: n.id,
-      type: 'note',
-      title: n.title || 'Untitled Note',
-      subtitle: n.category || 'note',
-      icon: 'sticky_note_2',
-    })
-  }
+  add(db.prepare(
+    `SELECT id, title, category AS subtitle, updated_at, '/writing' AS route,
+      'sticky_note_2' AS icon, 'note' AS type FROM notes
+     WHERE title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\'
+     ORDER BY updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern) as SearchRow[])
 
-  // Search drafts
-  const drafts = db.prepare(
-    `SELECT id, title, type FROM drafts
-     WHERE title LIKE ? OR content LIKE ?
-     ORDER BY created_at DESC LIMIT 5`
-  ).all(pattern, pattern) as Array<{ id: number; title: string | null; type: string }>
+  add(db.prepare(
+    `SELECT id, title, type AS subtitle, updated_at, '/writing' AS route,
+      'snippet_folder' AS icon, 'draft' AS type FROM drafts
+     WHERE title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+     ORDER BY updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern) as SearchRow[])
 
-  for (const d of drafts) {
-    results.push({
-      id: d.id,
-      type: 'draft',
-      title: d.title || 'Untitled Draft',
-      subtitle: d.type,
-      icon: 'snippet_folder',
-    })
-  }
+  add(db.prepare(
+    `SELECT id, substr(content, 1, 100) AS title, category AS subtitle, updated_at, '/dashboard' AS route,
+      'lightbulb' AS icon, 'idea' AS type FROM ideas
+     WHERE content LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\'
+     ORDER BY is_pinned DESC, updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern) as SearchRow[])
+
+  add(db.prepare(
+    `SELECT h.id, substr(h.selected_text, 1, 100) AS title, a.title AS subtitle, h.created_at AS updated_at,
+      '/writing' AS route, 'format_quote' AS icon, 'highlight' AS type
+     FROM article_highlights h JOIN rss_articles a ON a.id = h.article_id
+     WHERE h.selected_text LIKE ? ESCAPE '\\' OR h.note LIKE ? ESCAPE '\\' OR a.title LIKE ? ESCAPE '\\'
+     ORDER BY h.created_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern) as SearchRow[])
+
+  add(db.prepare(
+    `SELECT id, title, type AS subtitle, updated_at, '/video' AS route,
+      'perm_media' AS icon, 'video' AS type FROM video_assets
+     WHERE title LIKE ? ESCAPE '\\' OR metadata LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+     ORDER BY updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern) as SearchRow[])
+
+  add(db.prepare(
+    `SELECT id, title, category AS subtitle, created_at AS updated_at, '/dashboard' AS route,
+      'collections' AS icon, 'portfolio' AS type, url FROM portfolio_items
+     WHERE title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+     ORDER BY created_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern, pattern) as SearchRow[])
+
+  add(db.prepare(
+    `SELECT id, title, category AS subtitle, updated_at, '/writing?moodboardId=' || id AS route,
+      'mood' AS icon, 'moodboard' AS type, url FROM moodboard_items
+     WHERE title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+     ORDER BY is_pinned DESC, updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern, pattern) as SearchRow[])
+
+  add(db.prepare(
+    `SELECT id, title, platform || ' · ' || COALESCE(category, '热门内容') AS subtitle, fetched_at AS updated_at,
+      '/insights' AS route, 'local_fire_department' AS icon, 'trending' AS type, url FROM social_trending_items
+     WHERE title LIKE ? ESCAPE '\\' OR author LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\' OR summary LIKE ? ESCAPE '\\'
+     ORDER BY heat_score DESC, fetched_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern, pattern, pattern) as SearchRow[])
 
   return results
+    .sort((left, right) => relevance(right, normalizedQuery) - relevance(left, normalizedQuery)
+      || (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
+    .slice(0, 40)
 }
 
 export function registerSearchIpcHandlers(): void {
-  ipcMain.handle('search:all', (_event, query: string) => {
+  ipcMain.handle('search:all', (_event, query: unknown) => {
     try {
-      if (!query || query.trim().length < 2) {
-        return { success: true, data: [] }
-      }
-      const results = searchAll(query.trim())
-      return { success: true, data: results }
+      const normalizedQuery = typeof query === 'string' ? query.trim() : ''
+      return { success: true, data: searchAll(getDatabase(), normalizedQuery) }
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }

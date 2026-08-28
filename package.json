@@ -24,6 +24,7 @@
     "test:projects": "electron scripts/run-project-focus-test.cjs",
     "test:activity": "electron scripts/run-activity-test.cjs",
     "test:dashboard-overview": "electron scripts/run-dashboard-overview-test.cjs",
+    "test:search": "electron scripts/run-unified-search-test.cjs",
     "test:project-progress": "electron scripts/run-project-progress-test.cjs",
     "test:codex-usage": "electron scripts/run-codex-usage-test.cjs",
     "test:reset-radar": "tsx scripts/test-reset-radar.ts",

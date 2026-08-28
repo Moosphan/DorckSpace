@@ -8,6 +8,7 @@ import { ResearchModal } from './components/ResearchModal'
 import { MoodboardModal } from './components/MoodboardModal'
 import { ArticleViewer } from '@/modules/insights/components/ArticleViewer'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 interface Article {
   id: number
@@ -19,6 +20,8 @@ interface Article {
 }
 
 export default function Writing() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [editingId, setEditingId] = useState<number | null>(null)
   const [newTitle, setNewTitle] = useState('Untitled')
   const [newCategory, setNewCategory] = useState<string | null>(null)
@@ -28,6 +31,23 @@ export default function Writing() {
   const [showMoodboard, setShowMoodboard] = useState(false)
   const [viewingArticle, setViewingArticle] = useState<{ id: number; url: string; title: string } | null>(null)
   const createdIdRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const articleId = Number(searchParams.get('articleId'))
+    if (Number.isInteger(articleId) && articleId > 0 && editingId !== articleId) {
+      setEditingId(articleId)
+      setNewTitle('Untitled')
+      setNewCategory(null)
+      createdIdRef.current = articleId
+    }
+  }, [searchParams, editingId])
+
+  useEffect(() => {
+    const moodboardId = Number(searchParams.get('moodboardId'))
+    if (Number.isInteger(moodboardId) && moodboardId > 0) {
+      setShowMoodboard(true)
+    }
+  }, [searchParams])
 
   const { data: article, refetch } = useIpcData<Article | null>(
     editingId && editingId > 0 ? 'articles:getById' : '',
@@ -81,7 +101,8 @@ export default function Writing() {
     setEditingId(null)
     setNewCategory(null)
     createdIdRef.current = null
-  }, [editingId, newTitle, newCategory, ensureArticle, updateArticle])
+    navigate('/writing', { replace: true })
+  }, [editingId, newTitle, newCategory, ensureArticle, updateArticle, navigate])
 
   const handleUpdateContent = useCallback(
     async (content: string) => {
@@ -247,7 +268,10 @@ export default function Writing() {
 
       <MoodboardModal
         open={showMoodboard}
-        onClose={() => setShowMoodboard(false)}
+        onClose={() => {
+          setShowMoodboard(false)
+          navigate('/writing', { replace: true })
+        }}
       />
 
       {viewingArticle && (
