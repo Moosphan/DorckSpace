@@ -52,3 +52,20 @@ test('returns no database results for blank or short search terms', () => {
     db.close()
   }
 })
+
+test('searches research materials and routes to the research library', () => {
+  const db = createDatabase()
+  try {
+    const materialId = Number(db.prepare(
+      "INSERT INTO research_materials (title, excerpt, tags) VALUES ('Durable notes', 'Keep source context close to the work.', '[\"writing\"]')",
+    ).run().lastInsertRowid)
+
+    const result = searchAll(db, 'Durable').find((item) => item.type === 'research_material')
+
+    assert.equal(result?.id, materialId)
+    assert.equal(result?.route, `/writing?researchMaterialId=${materialId}`)
+    assert.equal(result?.subtitle, '手动素材')
+  } finally {
+    db.close()
+  }
+})

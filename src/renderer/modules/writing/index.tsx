@@ -5,6 +5,7 @@ import { CategorySelector } from './components/CategorySelector'
 import { PublishPanel } from './components/PublishPanel'
 import { HighlightsModal } from './components/HighlightsModal'
 import { ResearchModal } from './components/ResearchModal'
+import { ResearchLibraryModal } from './components/ResearchLibraryModal'
 import { MoodboardModal } from './components/MoodboardModal'
 import { ArticleViewer } from '@/modules/insights/components/ArticleViewer'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
@@ -29,6 +30,7 @@ export default function Writing() {
   const [showHighlights, setShowHighlights] = useState(false)
   const [showResearch, setShowResearch] = useState(false)
   const [showMoodboard, setShowMoodboard] = useState(false)
+  const [showResearchLibrary, setShowResearchLibrary] = useState(false)
   const [viewingArticle, setViewingArticle] = useState<{ id: number; url: string; title: string } | null>(null)
   const createdIdRef = useRef<number | null>(null)
 
@@ -48,6 +50,14 @@ export default function Writing() {
       setShowMoodboard(true)
     }
   }, [searchParams])
+
+  const highlightedResearchMaterialId = Number(searchParams.get('researchMaterialId'))
+
+  useEffect(() => {
+    if (Number.isInteger(highlightedResearchMaterialId) && highlightedResearchMaterialId > 0) {
+      setShowResearchLibrary(true)
+    }
+  }, [highlightedResearchMaterialId])
 
   const { data: article, refetch } = useIpcData<Article | null>(
     editingId && editingId > 0 ? 'articles:getById' : '',
@@ -212,7 +222,17 @@ export default function Writing() {
             Material Box
           </h3>
         </div>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-6">
+          <div
+            onClick={() => setShowResearchLibrary(true)}
+            className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-ambient h-48 flex flex-col cursor-pointer hover:-translate-y-1 transition-transform"
+          >
+            <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary mb-4">
+              <span className="material-symbols-outlined fill">auto_stories</span>
+            </div>
+            <h4 className="font-headline-sm text-headline-sm text-on-surface mb-1">Research Library</h4>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mt-auto">Sources linked to active work</p>
+          </div>
           <div
             onClick={() => setShowResearch(true)}
             className="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-ambient h-48 flex flex-col cursor-pointer hover:-translate-y-1 transition-transform"
@@ -263,6 +283,15 @@ export default function Writing() {
         onOpenArticle={(article) => {
           setShowResearch(false)
           setViewingArticle({ id: article.id, url: article.url, title: article.title })
+        }}
+      />
+
+      <ResearchLibraryModal
+        open={showResearchLibrary}
+        highlightedMaterialId={Number.isInteger(highlightedResearchMaterialId) && highlightedResearchMaterialId > 0 ? highlightedResearchMaterialId : null}
+        onClose={() => {
+          setShowResearchLibrary(false)
+          if (searchParams.has('researchMaterialId')) navigate('/writing', { replace: true })
         }}
       />
 

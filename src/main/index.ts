@@ -31,6 +31,7 @@ import { registerTrendingIpcHandlers, startTrendingRefreshScheduler, stopTrendin
 import { registerTtsHandlers } from './services/tts-service'
 import { registerResetRadarIpcHandlers } from './ipc/reset-radar'
 import { registerBackupIpcHandlers } from './ipc/backup'
+import { registerResearchMaterialIpcHandlers } from './ipc/research-materials'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
@@ -228,6 +229,7 @@ app.whenReady().then(() => {
   registerTrendingIpcHandlers()
   registerTtsHandlers()
   registerResetRadarIpcHandlers()
+  registerResearchMaterialIpcHandlers()
   registerBackupIpcHandlers()
 
   // Load plugins

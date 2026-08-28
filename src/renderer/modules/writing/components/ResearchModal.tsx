@@ -60,6 +60,16 @@ export function ResearchModal({ open, onClose, onOpenArticle }: ResearchModalPro
     window.electronAPI.openExternal(url)
   }
 
+  const handleAddToLibrary = async (id: number) => {
+    try {
+      const res = await window.electronAPI.invoke('research-materials:createFromRss', id)
+      if (!res.success) throw new Error(res.error)
+      toast({ title: 'Added to research library', variant: 'success' })
+    } catch {
+      toast({ title: 'Could not add to research library', variant: 'error' })
+    }
+  }
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return ''
     return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -134,6 +144,13 @@ export function ResearchModal({ open, onClose, onOpenArticle }: ResearchModalPro
                           {article.title}
                         </h4>
                         <div className="flex items-center gap-xs shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleAddToLibrary(article.id)}
+                            className="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+                            title="Add to research library"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">library_add</span>
+                          </button>
                           <button
                             onClick={() => handleOpenExternal(article.url)}
                             className="w-6 h-6 rounded flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"

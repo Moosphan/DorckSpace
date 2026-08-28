@@ -16,6 +16,7 @@ export type SearchResultType =
   | 'portfolio'
   | 'moodboard'
   | 'trending'
+  | 'research_material'
 
 export interface SearchResult {
   id: number
@@ -165,6 +166,20 @@ export function searchAll(db: Database.Database, query: string): SearchResult[] 
      WHERE title LIKE ? ESCAPE '\\' OR author LIKE ? ESCAPE '\\' OR category LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\' OR summary LIKE ? ESCAPE '\\'
      ORDER BY heat_score DESC, fetched_at DESC LIMIT 10`,
   ).all(pattern, pattern, pattern, pattern, pattern) as SearchRow[])
+
+  add(db.prepare(
+    `SELECT id, title,
+      CASE source_type
+        WHEN 'rss_article' THEN 'RSS 收藏'
+        WHEN 'highlight' THEN '书摘'
+        ELSE '手动素材'
+      END AS subtitle,
+      updated_at, '/writing?researchMaterialId=' || id AS route,
+      'auto_stories' AS icon, 'research_material' AS type, url
+     FROM research_materials
+     WHERE title LIKE ? ESCAPE '\\' OR excerpt LIKE ? ESCAPE '\\' OR author LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+     ORDER BY updated_at DESC LIMIT 10`,
+  ).all(pattern, pattern, pattern, pattern) as SearchRow[])
 
   return results
     .sort((left, right) => relevance(right, normalizedQuery) - relevance(left, normalizedQuery)

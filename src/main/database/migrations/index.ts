@@ -640,6 +640,38 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 23,
+    name: '023_research_materials',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS research_materials (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          source_type TEXT,
+          source_id INTEGER,
+          title TEXT NOT NULL,
+          excerpt TEXT,
+          url TEXT,
+          author TEXT,
+          tags TEXT NOT NULL DEFAULT '[]',
+          project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+          article_id INTEGER REFERENCES articles(id) ON DELETE SET NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_research_materials_source
+        ON research_materials(source_type, source_id)
+        WHERE source_type IS NOT NULL AND source_id IS NOT NULL;
+
+        CREATE INDEX IF NOT EXISTS idx_research_materials_project_id
+        ON research_materials(project_id);
+
+        CREATE INDEX IF NOT EXISTS idx_research_materials_article_id
+        ON research_materials(article_id);
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

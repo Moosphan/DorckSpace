@@ -26,6 +26,7 @@ export function HighlightsModal({ open, onClose, onOpenArticle }: HighlightsModa
   const { data: highlights, loading, refetch } = useIpcData<HighlightWithArticle[]>('highlights:getAll', 200)
   const { mutate: deleteHighlight } = useIpcMutation<boolean>('highlights:delete')
   const { mutate: updateNote } = useIpcMutation<boolean>('highlights:updateNote')
+  const { mutate: addToResearchLibrary } = useIpcMutation<number>('research-materials:createFromHighlight')
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null)
   const [noteText, setNoteText] = useState('')
 
@@ -54,6 +55,14 @@ export function HighlightsModal({ open, onClose, onOpenArticle }: HighlightsModa
     } else {
       window.electronAPI.openExternal(url)
     }
+  }
+
+  const handleAddToLibrary = async (id: number) => {
+    const materialId = await addToResearchLibrary(id)
+    toast({
+      title: materialId ? 'Added to research library' : 'Could not add to research library',
+      variant: materialId ? 'success' : 'error',
+    })
   }
 
   const buildMarkdown = () => {
@@ -213,6 +222,13 @@ export function HighlightsModal({ open, onClose, onOpenArticle }: HighlightsModa
                           {new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                         <div className="flex gap-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleAddToLibrary(h.id)}
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
+                            title="Add to research library"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">library_add</span>
+                          </button>
                           <button
                             onClick={() => handleStartEdit(h.id, h.note)}
                             className="w-6 h-6 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors"
