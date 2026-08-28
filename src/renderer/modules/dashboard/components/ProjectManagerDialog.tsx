@@ -37,6 +37,7 @@ interface ProjectManagerDialogProps {
   open: boolean
   onClose: () => void
   onChanged?: () => void
+  initialProjectId?: number | null
 }
 
 const STATUS_COLUMNS = [
@@ -141,7 +142,7 @@ function DroppableColumn({ column, tasks, onDelete }: { column: typeof STATUS_CO
   )
 }
 
-export function ProjectManagerDialog({ open, onClose, onChanged }: ProjectManagerDialogProps) {
+export function ProjectManagerDialog({ open, onClose, onChanged, initialProjectId = null }: ProjectManagerDialogProps) {
   const { toast } = useToast()
   const { data: projects, refetch: refetchProjects } = useIpcData<Project[]>('projects:getActive')
   const { mutate: createProject } = useIpcMutation<number>('projects:create')
@@ -175,8 +176,18 @@ export function ProjectManagerDialog({ open, onClose, onChanged }: ProjectManage
   )
 
   useEffect(() => {
-    if (open) { setView('dashboard'); setSelectedProject(null) }
-  }, [open])
+    if (!open) return
+    if (initialProjectId === null) {
+      setView('dashboard')
+      setSelectedProject(null)
+      return
+    }
+    const project = projects?.find((item) => item.id === initialProjectId)
+    if (project) {
+      setSelectedProject(project)
+      setView('board')
+    }
+  }, [open, initialProjectId, projects])
 
   useEffect(() => {
     if (selectedProject) fetchTasks()
