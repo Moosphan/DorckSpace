@@ -88,7 +88,12 @@ export default function AILab() {
           }}
         />
       )}
-      {showResetHistory && <ResetRadarHistoryModal onClose={() => setShowResetHistory(false)} />}
+      {showResetHistory && (
+        <ResetRadarHistoryModal
+          onClose={() => setShowResetHistory(false)}
+          onOpenUrl={handleOpenTool}
+        />
+      )}
     </div>
   )
 }

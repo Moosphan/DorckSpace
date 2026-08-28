@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { ResetRadarHistoryEntry } from '../../../shared/reset-radar'
+import type { ResetRadarHistoryEntry, ResetRadarResetType } from '../../../shared/reset-radar'
 import type { ResetRadarSnapshot } from '../../../shared/reset-radar'
 
 interface ResetRadarHistoryRow {
@@ -9,6 +9,9 @@ interface ResetRadarHistoryRow {
   title: string
   detail: string
   source: string
+  external_id: string | null
+  source_url: string | null
+  reset_type: ResetRadarResetType
 }
 
 export interface ResetRadarAccountSnapshotData {
@@ -28,7 +31,7 @@ export class ResetRadarRepository {
 
   getRecent(limit = 20): ResetRadarHistoryEntry[] {
     const rows = this.db.prepare(
-      `SELECT id, kind, occurred_at, title, detail, source
+      `SELECT id, kind, occurred_at, title, detail, source, external_id, source_url, reset_type
        FROM reset_radar_history
        ORDER BY occurred_at DESC, id DESC
        LIMIT ?`,
@@ -41,14 +44,22 @@ export class ResetRadarRepository {
       title: row.title,
       detail: row.detail,
       source: row.source,
+      url: row.source_url,
+      resetType: row.reset_type,
     }))
   }
 
-  addReset(occurredAt: string, title: string, detail: string, source: string): ResetRadarHistoryEntry {
+  addReset(
+    occurredAt: string,
+    title: string,
+    detail: string,
+    source: string,
+    metadata: { externalId?: string; url?: string; resetType?: ResetRadarResetType } = {},
+  ): ResetRadarHistoryEntry {
     const result = this.db.prepare(
-      `INSERT INTO reset_radar_history (kind, occurred_at, title, detail, source)
-       VALUES ('reset', ?, ?, ?, ?)`,
-    ).run(occurredAt, title, detail, source)
+      `INSERT INTO reset_radar_history (kind, occurred_at, title, detail, source, external_id, source_url, reset_type)
+       VALUES ('reset', ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(occurredAt, title, detail, source, metadata.externalId ?? null, metadata.url ?? null, metadata.resetType ?? 'unknown')
 
     return {
       id: Number(result.lastInsertRowid),
@@ -57,7 +68,22 @@ export class ResetRadarRepository {
       title,
       detail,
       source,
+      url: metadata.url ?? null,
+      resetType: metadata.resetType ?? 'unknown',
     }
+  }
+
+  hasExternalId(externalId: string): boolean {
+    const row = this.db.prepare(
+      'SELECT 1 AS present FROM reset_radar_history WHERE external_id = ? LIMIT 1',
+    ).get(externalId) as { present: number } | undefined
+    return Boolean(row?.present)
+  }
+
+  updateResetType(externalId: string, resetType: ResetRadarResetType): void {
+    this.db.prepare(
+      'UPDATE reset_radar_history SET reset_type = ? WHERE external_id = ?',
+    ).run(resetType, externalId)
   }
 
   getAccountSnapshot(): ResetRadarAccountSnapshotData | null {

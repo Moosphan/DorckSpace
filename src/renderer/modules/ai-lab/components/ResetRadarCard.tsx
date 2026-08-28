@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   createGuestResetRadarSnapshot,
   getResetRadarTone,
+  getResetTypeLabel,
   type ResetRadarSnapshot,
 } from '@shared/reset-radar'
 
@@ -86,19 +87,21 @@ export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, acc
     loadSnapshot(refreshKey > 0).catch(() => {})
   }, [refreshKey])
 
-  const source = snapshot.sources[0]
-  const signalLabel = snapshot.activeSignal?.title ?? snapshot.forecast.label
+  const source = snapshot.sources.find((item) => item.label === snapshot.activeSignal?.source) ?? snapshot.sources[0]
+  const signalResult = snapshot.activeSignal
+    ? snapshot.activeSignal.source.startsWith('X') ? '已发现官方重置公告' : '检测到公开服务信号'
+    : '暂无明确重置信号'
   const accountConnected = snapshot.account.status === 'connected'
 
   return (
-    <article className="h-full min-h-[232px] rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex flex-col justify-between">
+    <article className="h-full min-h-[232px] rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex flex-col gap-sm">
       <header className="flex items-start justify-between gap-sm">
         <div className="flex items-center gap-sm">
           <div className="w-9 h-9 rounded-2xl bg-primary-fixed flex items-center justify-center text-primary">
             <span className="material-symbols-outlined text-[20px]">radar</span>
           </div>
           <div>
-            <h2 className="font-headline-sm text-headline-sm">Codex Reset Radar</h2>
+            <h2 className="text-[15px] font-semibold tracking-tight">Codex Reset Radar</h2>
             <p className="text-[11px] text-on-surface-variant mt-[2px]">公开信号 · {accountConnected ? '已连接' : '访客模式'}</p>
           </div>
         </div>
@@ -122,26 +125,36 @@ export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, acc
         </div>
       </header>
 
-      <div className="flex items-center gap-md py-sm">
-        <div className="relative w-[82px] h-[82px] shrink-0 rounded-full bg-primary-fixed/40 flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-[10px] rounded-full border border-primary/25" />
-          <div className="absolute inset-[22px] rounded-full border border-primary/30" />
+      <div className="flex items-center gap-sm rounded-xl bg-surface-container-low p-sm">
+        <div className="relative flex h-[62px] w-[62px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-fixed/40">
+          <div className="absolute inset-[8px] rounded-full border border-primary/25" />
+          <div className="absolute inset-[18px] rounded-full border border-primary/30" />
           <div className="absolute left-1/2 top-0 bottom-0 border-l border-primary/20" />
           <div className="absolute top-1/2 left-0 right-0 border-t border-primary/20" />
-          <span className={`relative w-3 h-3 rounded-full ${toneStyle.dot} shadow-[0_0_0_5px_rgb(var(--color-primary)/0.12)]`} />
+          <span className={`relative h-2.5 w-2.5 rounded-full ${toneStyle.dot} shadow-[0_0_0_4px_rgb(var(--color-primary)/0.12)]`} />
         </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-xs mb-xs">
-            <span className={`w-1.5 h-1.5 rounded-full ${toneStyle.dot}`} />
-            <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${toneStyle.badge}`}>
-              {toneStyle.label}
-            </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-xs">
+            <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${toneStyle.badge}`}>{toneStyle.label}</span>
+            {snapshot.activeSignal && (
+              <span className="rounded-full bg-surface-container-high px-2 py-1 text-[10px] font-semibold text-on-surface-variant">
+                {getResetTypeLabel(snapshot.activeSignal.resetType)}
+              </span>
+            )}
           </div>
-          <p className="font-headline-sm text-headline-sm leading-tight">
-            {loading ? '正在读取公开信号' : signalLabel}
-          </p>
-          <p className="text-[11px] text-on-surface-variant mt-xs leading-relaxed">
-            未来 {snapshot.forecast.windowHours} 小时 · 估算概率 {Math.round(snapshot.forecast.peakProbability * 100)}%
+          <p className="mt-1 truncate text-[15px] font-semibold leading-tight text-on-surface">{loading ? '正在读取信号' : signalResult}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-sm">
+        <div className="rounded-xl border border-outline-variant/25 bg-surface-container-low px-sm py-xs">
+          <p className="text-[10px] text-on-surface-variant">估算概率</p>
+          <p className="mt-0.5 text-[22px] font-bold leading-none text-primary">{Math.round(snapshot.forecast.peakProbability * 100)}%</p>
+        </div>
+        <div className="rounded-xl border border-outline-variant/25 bg-surface-container-low px-sm py-xs">
+          <p className="text-[10px] text-on-surface-variant">估算时间</p>
+          <p className="mt-1 text-[13px] font-semibold leading-tight text-on-surface">
+            {snapshot.forecast.nextWindowAt ? formatDateTime(snapshot.forecast.nextWindowAt) : `未来 ${snapshot.forecast.windowHours} 小时`}
           </p>
         </div>
       </div>
@@ -167,18 +180,16 @@ export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, acc
           )}
         </div>
       ) : accountConnected ? (
-        <p className="pb-sm text-[11px] text-on-surface-variant">{accountSyncError ?? '已连接，等待 ChatGPT 用量数据同步...'}</p>
+        <p className="text-[11px] text-on-surface-variant">{accountSyncError ?? '已连接，等待 ChatGPT 用量数据同步...'}</p>
       ) : null}
 
-      <div className="border-t border-outline-variant/30 pt-sm">
-        <div className="flex items-center justify-between gap-sm mb-sm text-[11px]">
+      <div className="mt-auto border-t border-outline-variant/30 pt-sm">
+        <div className="mb-sm flex items-center justify-between gap-sm text-[11px]">
           <span className="text-on-surface-variant">上次重置</span>
           <span className="font-semibold text-on-surface">{formatDateTime(snapshot.account.lastResetAt)}</span>
         </div>
         <div className="flex items-center justify-between gap-sm text-[11px] text-on-surface-variant">
-          <span className="truncate" title={error ?? snapshot.advice.detail}>
-            {error ?? source?.detail ?? snapshot.advice.title}
-          </span>
+          <span className="truncate" title={error ?? source?.detail}>{error ?? source?.label ?? '公开信号'}</span>
           <span className="shrink-0">{formatTime(snapshot.generatedAt)} 更新</span>
         </div>
         <div className="flex items-center gap-xs mt-sm">

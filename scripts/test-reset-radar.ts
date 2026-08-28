@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createGuestResetRadarSnapshot, getResetRadarTone } from '../src/shared/reset-radar'
-import { buildPublicResetRadarSnapshot, parseOpenAIStatusPayload } from '../src/main/services/reset-radar/public-signal'
+import {
+  buildPublicResetRadarSnapshot,
+  classifyResetType,
+  parseOpenAIStatusPayload,
+  parseXResetAnnouncements,
+} from '../src/main/services/reset-radar/public-signal'
 import { hasChatGPTSessionCookie, waitForChatGPTSession } from '../src/main/services/reset-radar/account-session'
 import { normalizeChatGPTUsage, normalizeResetCredits } from '../src/main/services/reset-radar/account-usage'
 
@@ -45,6 +50,88 @@ test('turns a public service incident into a cautious radar signal', () => {
   assert.equal(snapshot.activeSignal?.confidence, 'medium')
   assert.equal(snapshot.forecast.confidence, 'medium')
   assert.equal(snapshot.sources[0].status, 'warn')
+})
+
+test('extracts official reset announcements from the public X source', () => {
+  const announcements = parseXResetAnnouncements({
+    source: { user_name: 'thsottiaux', source_url: 'https://x.com/thsottiaux' },
+    items: [
+      {
+        external_id: '2093014447833116908',
+        title: 'Never slept better and feeling reseted',
+        content: 'Brand new me and brand new usage for all ChatGPT Work and Codex users.',
+        author: 'thsottiaux',
+        published_at: '2026-08-27T16:35:05',
+        url: 'https://x.com/thsottiaux/status/2093014447833116908',
+      },
+      {
+        external_id: 'unrelated',
+        title: 'A regular product update',
+        content: 'A regular product update without a quota change.',
+        published_at: '2026-08-27T12:00:00Z',
+      },
+    ],
+  })
+
+  assert.equal(announcements.length, 1)
+  assert.equal(announcements[0].externalId, '2093014447833116908')
+  assert.equal(announcements[0].publishedAt, '2026-08-27T16:35:05.000Z')
+  assert.equal(announcements[0].resetType, 'global')
+})
+
+test('makes the latest official X announcement the active public signal', () => {
+  const snapshot = buildPublicResetRadarSnapshot(
+    parseOpenAIStatusPayload({ status: { indicator: 'none', description: 'All Systems Operational' } }),
+    [{
+      externalId: '2093014447833116908',
+      title: 'Never slept better and feeling reseted',
+      detail: 'Brand new me and brand new usage for all ChatGPT Work and Codex users.',
+      author: 'thsottiaux',
+      publishedAt: '2026-08-27T16:35:05.000Z',
+      url: 'https://x.com/thsottiaux/status/2093014447833116908',
+      resetType: 'global',
+    }],
+    'ok',
+  )
+
+  assert.equal(snapshot.activeSignal?.source, 'X / Codex 负责人')
+  assert.equal(snapshot.activeSignal?.url, 'https://x.com/thsottiaux/status/2093014447833116908')
+  assert.equal(snapshot.publicSignals.length, 1)
+  assert.equal(snapshot.forecast.confidence, 'high')
+})
+
+test('deduplicates X announcements and ignores unrelated reset wording', () => {
+  const announcements = parseXResetAnnouncements({
+    items: [
+      {
+        external_id: 'same-id',
+        title: 'Reset usage limits',
+        content: 'Codex usage limits reset for paid users.',
+        published_at: '2026-08-27T10:00:00Z',
+      },
+      {
+        external_id: 'same-id',
+        title: 'Reset usage limits again',
+        content: 'Codex usage limits reset for paid users.',
+        published_at: '2026-08-27T11:00:00Z',
+      },
+      {
+        external_id: 'password',
+        title: 'Password reset',
+        content: 'Reset your password from account settings.',
+        published_at: '2026-08-27T12:00:00Z',
+      },
+    ],
+  })
+
+  assert.equal(announcements.length, 1)
+  assert.equal(announcements[0].externalId, 'same-id')
+})
+
+test('classifies public reset announcements by reset type', () => {
+  assert.equal(classifyResetType('We reset usage limits for all paid users.'), 'global')
+  assert.equal(classifyResetType('We are giving everyone a banked reset credit.'), 'gift')
+  assert.equal(classifyResetType('Usage reset is rolling out.'), 'unknown')
 })
 
 test('recognizes a persisted ChatGPT session without exposing cookie values', () => {

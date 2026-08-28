@@ -585,6 +585,52 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 19,
+    name: '019_reset_radar_public_signal_metadata',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE reset_radar_history ADD COLUMN external_id TEXT;
+        ALTER TABLE reset_radar_history ADD COLUMN source_url TEXT;
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_reset_radar_history_external_id
+        ON reset_radar_history(external_id)
+        WHERE external_id IS NOT NULL;
+      `)
+    },
+  },
+  {
+    version: 20,
+    name: '020_reset_radar_reset_type',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE reset_radar_history ADD COLUMN reset_type TEXT NOT NULL DEFAULT 'unknown'
+          CHECK(reset_type IN ('global', 'gift', 'unknown'));
+      `)
+    },
+  },
+  {
+    version: 21,
+    name: '021_backfill_reset_radar_types',
+    up: (db) => {
+      db.exec(`
+        UPDATE reset_radar_history
+        SET reset_type = 'gift'
+        WHERE reset_type = 'unknown'
+          AND lower(title || ' ' || detail) LIKE '%banked reset%';
+
+        UPDATE reset_radar_history
+        SET reset_type = 'global'
+        WHERE reset_type = 'unknown'
+          AND (
+            lower(title || ' ' || detail) LIKE '%all chatgpt%'
+            OR lower(title || ' ' || detail) LIKE '%all codex%'
+            OR lower(title || ' ' || detail) LIKE '%all paid users%'
+            OR lower(title || ' ' || detail) LIKE '%global reset%'
+          );
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

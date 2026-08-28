@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { ResetRadarHistoryEntry } from '@shared/reset-radar'
+import { getResetTypeLabel, type ResetRadarHistoryEntry } from '@shared/reset-radar'
 
 interface ResetRadarHistoryModalProps {
   onClose: () => void
+  onOpenUrl?: (url: string) => void
 }
 
 function formatDateTime(value: string): string {
@@ -15,7 +16,7 @@ function formatDateTime(value: string): string {
   }).format(new Date(value))
 }
 
-export function ResetRadarHistoryModal({ onClose }: ResetRadarHistoryModalProps) {
+export function ResetRadarHistoryModal({ onClose, onOpenUrl }: ResetRadarHistoryModalProps) {
   const [history, setHistory] = useState<ResetRadarHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,7 +55,7 @@ export function ResetRadarHistoryModal({ onClose }: ResetRadarHistoryModalProps)
               Reset Radar
             </div>
             <h2 id="reset-radar-history-title" className="font-headline-lg text-headline-lg text-on-surface">重置历史时间轴</h2>
-            <p className="mt-1 text-body-sm text-on-surface-variant">仅展示应用在连续用量采样中观测到的重置事件</p>
+            <p className="mt-1 text-body-sm text-on-surface-variant">汇总官方 X 公告与本地账户用量观测</p>
           </div>
           <button type="button" onClick={onClose} aria-label="关闭历史时间轴" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-error/10 hover:text-error">
             <span className="material-symbols-outlined text-[20px]">close</span>
@@ -70,7 +71,7 @@ export function ResetRadarHistoryModal({ onClose }: ResetRadarHistoryModalProps)
             <div className="flex min-h-[240px] flex-col items-center justify-center gap-sm text-center">
               <span className="material-symbols-outlined text-[42px] text-on-surface-variant/50">timeline</span>
               <p className="font-label-lg text-on-surface">暂无已观测的重置事件</p>
-              <p className="max-w-sm text-body-sm text-on-surface-variant">保持 ChatGPT 会话连接并完成至少两次用量同步后，应用才能判断窗口是否发生过重置。</p>
+              <p className="max-w-sm text-body-sm text-on-surface-variant">刷新雷达后会读取官方 X 动态；账户重置则需要保持 ChatGPT 会话并完成连续用量同步。</p>
             </div>
           ) : (
             <div className="relative pl-7">
@@ -81,12 +82,22 @@ export function ResetRadarHistoryModal({ onClose }: ResetRadarHistoryModalProps)
                     <span className="absolute -left-[27px] top-5 flex h-5 w-5 items-center justify-center rounded-full border-4 border-surface-container-low bg-primary">
                       <span className="h-1.5 w-1.5 rounded-full bg-on-primary" />
                     </span>
-                    <div className="flex flex-wrap items-center justify-between gap-xs">
-                      <h3 className="font-label-lg text-on-surface">{entry.title}</h3>
-                      <time className="text-[11px] font-semibold text-primary">{formatDateTime(entry.occurredAt)}</time>
+                    <div className="flex flex-wrap items-start justify-between gap-sm">
+                      <div className="min-w-0">
+                        <span className="mb-1 inline-flex rounded-full bg-primary-fixed px-2 py-1 text-[10px] font-semibold text-on-primary-fixed-variant">{getResetTypeLabel(entry.resetType)}</span>
+                        <h3 className="text-[14px] font-semibold leading-snug text-on-surface">{entry.title}</h3>
+                      </div>
+                      <time className="shrink-0 text-[11px] font-semibold text-primary">{formatDateTime(entry.occurredAt)}</time>
                     </div>
                     <p className="mt-xs text-body-sm leading-relaxed text-on-surface-variant">{entry.detail}</p>
-                    <p className="mt-sm text-[11px] text-on-surface-variant">来源：{entry.source}</p>
+                    <div className="mt-sm flex items-center justify-between gap-sm text-[11px] text-on-surface-variant">
+                      <span>来源：{entry.source}</span>
+                      {entry.url && onOpenUrl && (
+                        <button type="button" onClick={() => onOpenUrl(entry.url as string)} className="shrink-0 font-semibold text-primary hover:underline">
+                          查看原文
+                        </button>
+                      )}
+                    </div>
                   </article>
                 ))}
               </div>

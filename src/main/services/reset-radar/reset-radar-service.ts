@@ -16,6 +16,23 @@ function getHistoryRepository(): ResetRadarRepository {
   return new ResetRadarRepository(getDatabase())
 }
 
+function persistPublicSignals(snapshot: ResetRadarSnapshot): void {
+  const historyRepository = getHistoryRepository()
+  for (const signal of snapshot.publicSignals) {
+    if (historyRepository.hasExternalId(signal.id)) {
+      historyRepository.updateResetType(signal.id, signal.resetType)
+      continue
+    }
+    historyRepository.addReset(
+      signal.observedAt,
+      signal.title,
+      signal.detail,
+      signal.source,
+      { externalId: signal.id, url: signal.url, resetType: signal.resetType },
+    )
+  }
+}
+
 const CHATGPT_SESSION_URLS = [
   'https://chatgpt.com',
   'https://chat.openai.com',
@@ -117,6 +134,7 @@ export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown
       '观测到配额窗口重置',
       'ChatGPT 用量窗口在连续采样中恢复，已记录为一次本地观测事件。',
       'ChatGPT usage',
+      { resetType: 'unknown' },
     )
     lastResetAt = entry.occurredAt
   }
@@ -164,9 +182,7 @@ function createUnavailableSnapshot(message: string): ResetRadarSnapshot {
   return {
     ...snapshot,
     generatedAt: new Date().toISOString(),
-    sources: snapshot.sources.map((source, index) => index === 0
-      ? { ...source, status: 'error', detail: message }
-      : source),
+    sources: snapshot.sources.map((source) => ({ ...source, status: 'error', detail: message })),
   }
 }
 
@@ -180,7 +196,9 @@ export async function getResetRadarSnapshot(forceRefresh = false): Promise<Reset
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
   try {
-    const snapshot = await addAccountStatus(await fetchPublicResetRadarSnapshot(controller.signal), forceRefresh)
+    const publicSnapshot = await fetchPublicResetRadarSnapshot(controller.signal)
+    persistPublicSignals(publicSnapshot)
+    const snapshot = await addAccountStatus(publicSnapshot, forceRefresh)
     cachedSnapshot = snapshot
     cachedAt = Date.now()
     return snapshot

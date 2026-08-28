@@ -1,12 +1,24 @@
 export type ResetRadarAccountStatus = 'signed_out' | 'connected' | 'stale' | 'error'
 export type ResetRadarConfidence = 'low' | 'medium' | 'high'
 export type ResetRadarTone = 'quiet' | 'watch' | 'active'
+export type ResetRadarResetType = 'global' | 'gift' | 'unknown'
 
 export interface ResetRadarSourceHealth {
   id: string
   label: string
   status: 'ok' | 'warn' | 'stale' | 'error'
   detail: string
+}
+
+export interface ResetRadarPublicSignal {
+  id: string
+  title: string
+  detail: string
+  source: string
+  url: string
+  observedAt: string
+  confidence: ResetRadarConfidence
+  resetType: ResetRadarResetType
 }
 
 export interface ResetRadarSnapshot {
@@ -29,13 +41,16 @@ export interface ResetRadarSnapshot {
     nearestExpiry: string | null
   } | null
   activeSignal: {
+    id: string
     title: string
     detail: string
     source: string
     url: string
     observedAt: string
     confidence: ResetRadarConfidence
+    resetType: ResetRadarResetType
   } | null
+  publicSignals: ResetRadarPublicSignal[]
   forecast: {
     windowHours: number
     confidence: ResetRadarConfidence
@@ -58,6 +73,8 @@ export interface ResetRadarHistoryEntry {
   title: string
   detail: string
   source: string
+  url: string | null
+  resetType: ResetRadarResetType
 }
 
 export function createGuestResetRadarSnapshot(generatedAt = new Date().toISOString()): ResetRadarSnapshot {
@@ -73,6 +90,7 @@ export function createGuestResetRadarSnapshot(generatedAt = new Date().toISOStri
     quotaWindows: [],
     resetCredits: null,
     activeSignal: null,
+    publicSignals: [],
     forecast: {
       windowHours: 72,
       confidence: 'low',
@@ -100,6 +118,12 @@ export function createGuestResetRadarSnapshot(generatedAt = new Date().toISOStri
       },
     ],
   }
+}
+
+export function getResetTypeLabel(resetType: ResetRadarResetType): string {
+  if (resetType === 'global') return '全局重置'
+  if (resetType === 'gift') return '赠送重置卡'
+  return '类型待确认'
 }
 
 export function getResetRadarTone(
