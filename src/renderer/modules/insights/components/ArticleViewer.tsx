@@ -7,6 +7,8 @@ interface ArticleViewerProps {
   articleId: number
   articleUrl: string
   articleTitle: string
+  isStarred?: boolean
+  onFavoriteChange?: (isStarred: boolean) => void
   onClose: () => void
 }
 
@@ -18,12 +20,13 @@ interface Highlight {
   created_at: string
 }
 
-export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: ArticleViewerProps) {
+export function ArticleViewer({ articleId, articleUrl, articleTitle, isStarred = false, onFavoriteChange, onClose }: ArticleViewerProps) {
   const [loading, setLoading] = useState(true)
   const [activePanel, setActivePanel] = useState<'highlights' | 'summary' | null>(null)
   const [summary, setSummary] = useState('')
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [selectionBar, setSelectionBar] = useState<{ text: string; x: number; y: number } | null>(null)
+  const [favorite, setFavorite] = useState(isStarred)
   const webviewRef = useRef<HTMLWebViewElement>(null)
   const listenersAttached = useRef(false)
 
@@ -31,6 +34,23 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
   const { data: highlights, refetch: refetchHighlights } = useIpcData<Highlight[]>('highlights:getByArticle', articleId)
   const { mutate: createHighlight } = useIpcMutation<number>('highlights:create')
   const { mutate: deleteHighlight } = useIpcMutation<boolean>('highlights:delete')
+  const { mutate: toggleStar, loading: favoriteLoading } = useIpcMutation<boolean>('rss:toggleStar')
+
+  useEffect(() => {
+    setFavorite(isStarred)
+  }, [isStarred, articleId])
+
+  const handleFavorite = async () => {
+    if (favoriteLoading) return
+    const nextFavorite = !favorite
+    const result = await toggleStar(articleId)
+    if (result !== null) {
+      setFavorite(nextFavorite)
+      onFavoriteChange?.(nextFavorite)
+    } else {
+      toast('收藏状态更新失败')
+    }
+  }
 
   useEffect(() => {
     const wv = webviewRef.current
@@ -240,11 +260,17 @@ export function ArticleViewer({ articleId, articleUrl, articleTitle, onClose }: 
           </div>
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => window.electronAPI.openExternal(articleUrl)}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors"
-              title="Open in browser"
+              type="button"
+              onClick={handleFavorite}
+              disabled={favoriteLoading}
+              className={cn(
+                'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+                favorite ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container',
+              )}
+              title={favorite ? '取消收藏' : '收藏文章'}
+              aria-label={favorite ? '取消收藏' : '收藏文章'}
             >
-              <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+              <span className={cn('material-symbols-outlined text-[18px]', favorite && 'fill')}>{favorite ? 'star' : 'star_border'}</span>
             </button>
             <button
               onClick={() => setActivePanel(activePanel === 'highlights' ? null : 'highlights')}

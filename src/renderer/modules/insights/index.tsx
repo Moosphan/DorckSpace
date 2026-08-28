@@ -9,6 +9,7 @@ interface SelectedArticle {
   id: number
   url: string
   title: string
+  isStarred: boolean
 }
 
 export default function Insights() {
@@ -28,8 +29,8 @@ export default function Insights() {
     setRefreshTrigger((prev) => prev + 1)
   }, [])
 
-  const handleOpenArticle = useCallback((article: { id: number; url: string; title: string }) => {
-    setViewingArticle({ id: article.id, url: article.url, title: article.title })
+  const handleOpenArticle = useCallback((article: { id: number; url: string; title: string; is_starred?: number }) => {
+    setViewingArticle({ id: article.id, url: article.url, title: article.title, isStarred: article.is_starred === 1 })
   }, [])
 
   return (
@@ -80,6 +81,8 @@ export default function Insights() {
           articleId={viewingArticle.id}
           articleUrl={viewingArticle.url}
           articleTitle={viewingArticle.title}
+          isStarred={viewingArticle.isStarred}
+          onFavoriteChange={(isStarred) => setViewingArticle((article) => article ? { ...article, isStarred } : article)}
           onClose={() => setViewingArticle(null)}
         />
       )}
