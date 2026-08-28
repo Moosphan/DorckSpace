@@ -25,6 +25,7 @@ import { registerMoodboardIpcHandlers } from './ipc/moodboard'
 import { registerCalendarIpcHandlers } from './ipc/calendar'
 import { registerPortfolioIpcHandlers } from './ipc/portfolio'
 import { registerMilestoneIpcHandlers } from './ipc/milestones'
+import { registerActivityIpcHandlers } from './ipc/activity'
 import { registerTrendingIpcHandlers, startTrendingRefreshScheduler, stopTrendingRefreshScheduler } from './ipc/trending'
 import { registerTtsHandlers } from './services/tts-service'
 import { registerResetRadarIpcHandlers } from './ipc/reset-radar'
@@ -220,6 +221,7 @@ app.whenReady().then(() => {
   registerCalendarIpcHandlers()
   registerPortfolioIpcHandlers()
   registerMilestoneIpcHandlers()
+  registerActivityIpcHandlers()
   registerTrendingIpcHandlers()
   registerTtsHandlers()
   registerResetRadarIpcHandlers()

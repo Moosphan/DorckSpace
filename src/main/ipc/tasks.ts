@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../database/connection'
 import { TaskRepository } from '../database/repositories/task-repository'
+import { ActivityLogRepository } from '../database/repositories/activity-log-repository'
 
 const TASKS_CHANNELS = {
   GET_ALL: 'tasks:getAll',
@@ -67,7 +68,16 @@ export function registerTaskIpcHandlers(): void {
 
   ipcMain.handle(TASKS_CHANNELS.UPDATE_STATUS, (_event, id: number, status: string) => {
     try {
-      const result = getRepo().updateStatus(id, status as 'pending' | 'in_progress' | 'completed' | 'cancelled')
+      const repo = getRepo()
+      const previous = repo.findById(id)
+      const result = repo.updateStatus(id, status as 'pending' | 'in_progress' | 'completed' | 'cancelled')
+      if (result && previous?.status !== 'completed' && status === 'completed') {
+        new ActivityLogRepository(getDatabase()).record({
+          date: getLocalDate(),
+          activityType: 'task_completed',
+          metadata: { taskId: id },
+        })
+      }
       return { success: true, data: result }
     } catch (err) {
       return { success: false, error: (err as Error).message }
@@ -109,4 +119,11 @@ export function registerTaskIpcHandlers(): void {
       return { success: false, error: (err as Error).message }
     }
   })
+}
+
+function getLocalDate(): string {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return now.getFullYear() + '-' + month + '-' + day
 }

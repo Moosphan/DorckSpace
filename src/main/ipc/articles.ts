@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { getDatabase } from '../database/connection'
 import { ArticleRepository } from '../database/repositories/article-repository'
+import { ActivityLogRepository } from '../database/repositories/activity-log-repository'
 
 const ARTICLES_CHANNELS = {
   GET_ALL: 'articles:getAll',
@@ -79,7 +80,15 @@ export function registerArticleIpcHandlers(): void {
 
   ipcMain.handle(ARTICLES_CHANNELS.UPDATE_CONTENT, (_event, id: number, content: string) => {
     try {
-      return { success: true, data: getRepo().updateContent(id, content) }
+      const result = getRepo().updateContent(id, content)
+      if (result) {
+        new ActivityLogRepository(getDatabase()).record({
+          date: getLocalDate(),
+          activityType: 'article_edited',
+          metadata: { articleId: id },
+        })
+      }
+      return { success: true, data: result }
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }
@@ -100,4 +109,11 @@ export function registerArticleIpcHandlers(): void {
       return { success: false, error: (err as Error).message }
     }
   })
+}
+
+function getLocalDate(): string {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return now.getFullYear() + '-' + month + '-' + day
 }

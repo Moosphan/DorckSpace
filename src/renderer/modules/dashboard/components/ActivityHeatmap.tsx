@@ -1,5 +1,8 @@
+import { useMemo } from 'react'
+import { format, subDays } from 'date-fns'
+import { useIpcData } from '@/hooks/useIpc'
+
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-const WEEKS = 4
 
 function getIntensityClass(level: number): string {
   switch (level) {
@@ -11,15 +14,36 @@ function getIntensityClass(level: number): string {
   }
 }
 
-// Mock data - will be replaced with real activity_log data
-const mockData: number[][] = [
-  [1, 2, 3, 0, 2, 0, 0],
-  [2, 3, 1, 2, 3, 1, 0],
-  [0, 1, 3, 2, 1, 0, 0],
-  [2, 0, 2, 3, 0, 0, 0],
-]
+interface ActivityDay {
+  date: string
+  activityCount: number
+  durationMinutes: number
+  intensity: number
+  activityTypes: string[]
+}
 
 export function ActivityHeatmap() {
+  const { data, loading, error } = useIpcData<ActivityDay[]>('activity:getRecent', 28)
+  const activityByDate = useMemo(
+    () => new Map((data ?? []).map((day) => [day.date, day])),
+    [data],
+  )
+  const dates = useMemo(() => {
+    const today = new Date()
+    return Array.from({ length: 28 }, (_, index) => {
+      const date = subDays(today, 27 - index)
+      const dateString = format(date, 'yyyy-MM-dd')
+      return activityByDate.get(dateString) ?? {
+        date: dateString,
+        activityCount: 0,
+        durationMinutes: 0,
+        intensity: 0,
+        activityTypes: [],
+      }
+    })
+  }, [activityByDate])
+  const hasActivity = dates.some((day) => day.activityCount > 0)
+
   return (
     <div className="bg-surface-container-lowest rounded-lg p-md border border-outline-variant/30 shadow-ambient">
       <h4 className="font-label-md text-label-md text-on-surface-variant mb-md uppercase tracking-wider">
@@ -35,13 +59,21 @@ export function ActivityHeatmap() {
               {day}
             </div>
           ))}
-          {mockData.flat().map((level, i) => (
+          {loading && Array.from({ length: 28 }).map((_, index) => (
+            <div key={index} className="w-full aspect-square rounded-sm bg-surface-container-high animate-pulse" />
+          ))}
+          {!loading && dates.map((day) => (
             <div
-              key={i}
-              className={`w-full aspect-square rounded-sm ${getIntensityClass(level)}`}
+              key={day.date}
+              title={day.date + ': ' + day.activityCount + ' activities'}
+              className={['w-full aspect-square rounded-sm', getIntensityClass(day.intensity)].join(' ')}
             />
           ))}
         </div>
+        {!loading && !error && !hasActivity && (
+          <p className="text-[11px] text-on-surface-variant/70">暂无活动，完成任务或编辑文章后会显示记录</p>
+        )}
+        {error && <p className="text-[11px] text-error">{error}</p>}
         <div className="flex items-center justify-between mt-sm">
           <span className="text-[10px] text-on-surface-variant font-bold">Less</span>
           <div className="flex gap-1">
