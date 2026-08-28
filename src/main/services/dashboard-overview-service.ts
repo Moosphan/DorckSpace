@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3'
 import { ArticleRepository } from '../database/repositories/article-repository'
-import { MilestoneRepository } from '../database/repositories/milestone-repository'
 import { ProjectRepository } from '../database/repositories/project-repository'
+import { getProjectProgressSummary } from './project-progress-service'
 
 export interface DashboardTask {
   id: number
@@ -56,6 +56,7 @@ export function getDashboardTodayOverview(
 ): DashboardTodayOverview {
   const date = formatLocalDate(now)
   const project = new ProjectRepository(db).findFocus()
+  const projectSummary = project ? getProjectProgressSummary(db, project.id) : null
   const taskRows = db.prepare(
     'SELECT t.id, t.title, t.priority, t.status, t.due_date, t.project_id, p.name AS project_name ' +
     'FROM tasks t LEFT JOIN projects p ON p.id = t.project_id ' +
@@ -78,11 +79,9 @@ export function getDashboardTodayOverview(
       description: project.description,
       icon: project.icon,
       color: project.color,
-      progress: project.progress,
-      nextMilestone: getNextMilestone(db, project.id),
-      openBlockerCount: (db.prepare(
-        "SELECT COUNT(*) AS count FROM tasks WHERE project_id = ? AND status NOT IN ('completed', 'cancelled') AND priority = 'high'",
-      ).get(project.id) as { count: number }).count,
+      progress: projectSummary?.progress ?? project.progress,
+      nextMilestone: projectSummary?.nextMilestone ?? null,
+      openBlockerCount: projectSummary?.openBlockerCount ?? 0,
     } : null,
     tasks: taskRows.map((task) => ({
       id: task.id,
@@ -101,24 +100,6 @@ export function getDashboardTodayOverview(
       updatedAt: recentArticle.updated_at,
     } : null,
   }
-}
-
-function getNextMilestone(
-  db: Database.Database,
-  projectId: number,
-): DashboardTodayOverview['focusProject'] extends infer FocusProject
-  ? FocusProject extends null ? never : NonNullable<FocusProject>['nextMilestone']
-  : never {
-  const milestone = new MilestoneRepository(db)
-    .findByProject(projectId)
-    .find((item) => item.status !== 'reached')
-
-  return milestone ? {
-    id: milestone.id,
-    title: milestone.title,
-    dueDate: milestone.due_date,
-    progress: milestone.progress,
-  } : null
 }
 
 function formatLocalDate(date: Date): string {

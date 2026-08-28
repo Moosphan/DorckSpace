@@ -33,7 +33,7 @@ export class MilestoneRepository extends BaseRepository<MilestoneRow> {
 
     return milestones.map(m => {
       const stats = this.db.prepare(
-        'SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed FROM tasks WHERE milestone_id = ?',
+        "SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed FROM tasks WHERE milestone_id = ? AND status != 'cancelled'",
       ).get('completed', m.id) as { total: number; completed: number }
 
       return {
