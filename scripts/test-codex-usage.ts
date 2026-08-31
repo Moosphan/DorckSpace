@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { buildCodexUsageDashboard } from '../src/shared/codex-usage'
+import { buildUsageRhythmBars } from '../src/shared/codex-usage-display'
 
 test('builds Codex usage summary from quota windows and local activity', () => {
   const dashboard = buildCodexUsageDashboard({
@@ -9,6 +10,8 @@ test('builds Codex usage summary from quota windows and local activity', () => {
       status: 'connected',
       fetchedAt: '2026-08-28T07:55:00.000Z',
       plan: 'pro',
+      email: 'dorck@example.com',
+      name: 'Dorck',
       subscriptionExpiresAt: '2026-09-01T00:00:00.000Z',
     },
     quotaWindows: [
@@ -29,6 +32,8 @@ test('builds Codex usage summary from quota windows and local activity', () => {
   })
 
   assert.equal(dashboard.plan, 'pro')
+  assert.equal(dashboard.accountEmail, 'dorck@example.com')
+  assert.equal(dashboard.accountName, 'Dorck')
   assert.equal(dashboard.quotaWindows[0].remainingPercent, 72)
   assert.equal(dashboard.activity.totalTokens, 5100)
   assert.equal(dashboard.activity.peakTokens, 3400)
@@ -50,7 +55,7 @@ test('builds Codex usage summary from quota windows and local activity', () => {
 test('does not invent quota or activity values when data is unavailable', () => {
   const dashboard = buildCodexUsageDashboard({
     generatedAt: '2026-08-28T08:00:00.000Z',
-    account: { status: 'signed_out', fetchedAt: null, plan: null, subscriptionExpiresAt: null },
+    account: { status: 'signed_out', fetchedAt: null, plan: null, email: null, name: null, subscriptionExpiresAt: null },
     quotaWindows: [],
     usageRows: [],
     activityDays: [],
@@ -58,6 +63,8 @@ test('does not invent quota or activity values when data is unavailable', () => 
   })
 
   assert.equal(dashboard.plan, null)
+  assert.equal(dashboard.accountEmail, null)
+  assert.equal(dashboard.accountName, null)
   assert.deepEqual(dashboard.quotaWindows, [])
   assert.deepEqual(dashboard.activity, {
     totalTokens: 0,
@@ -68,4 +75,23 @@ test('does not invent quota or activity values when data is unavailable', () => 
   })
   assert.equal(dashboard.dailyUsage.length, 7)
   assert.ok(dashboard.dailyUsage.every((day) => day.totalTokens === 0))
+})
+
+test('builds visible labels for usage rhythm bars', () => {
+  const bars = buildUsageRhythmBars([
+    { date: '2026-08-25', totalTokens: 0 },
+    { date: '2026-08-26', totalTokens: 1400 },
+    { date: '2026-08-27', totalTokens: 12500 },
+  ])
+
+  assert.deepEqual(bars.map((bar) => ({
+    dateLabel: bar.dateLabel,
+    valueLabel: bar.valueLabel,
+    heightPercent: bar.heightPercent,
+    isEmpty: bar.isEmpty,
+  })), [
+    { dateLabel: '08/25', valueLabel: '0', heightPercent: 10, isEmpty: true },
+    { dateLabel: '08/26', valueLabel: '1.4K', heightPercent: 11, isEmpty: false },
+    { dateLabel: '08/27', valueLabel: '12.5K', heightPercent: 100, isEmpty: false },
+  ])
 })

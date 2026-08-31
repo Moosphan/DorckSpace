@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { SubscriptionsPanel } from './components/SubscriptionsPanel'
 import { TokenUsage } from './components/TokenUsage'
 import { ToolDirectory } from './components/ToolDirectory'
@@ -7,17 +8,25 @@ import { ResetRadarCard } from './components/ResetRadarCard'
 import { ResetRadarHistoryModal } from './components/ResetRadarHistoryModal'
 
 export default function AILab() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [showBrowser, setShowBrowser] = useState(false)
   const [browserUrl, setBrowserUrl] = useState('https://chat.openai.com')
   const [browserPartition, setBrowserPartition] = useState('persist:ai-browser')
   const [accountRefreshKey, setAccountRefreshKey] = useState(0)
-  const [showResetHistory, setShowResetHistory] = useState(false)
+  const [showResetHistory, setShowResetHistory] = useState(searchParams.get('panel') === 'reset-radar')
+
+  useEffect(() => {
+    if (searchParams.get('panel') === 'reset-radar') {
+      setShowResetHistory(true)
+    }
+  }, [searchParams])
 
   const handleAccountSessionActivity = useCallback(() => {
     setAccountRefreshKey((value) => value + 1)
   }, [])
 
-  const handleAccountUsage = useCallback(async (payload: { usage: unknown; credits: unknown | null; subscription: unknown | null }) => {
+  const handleAccountUsage = useCallback(async (payload: { usage: unknown; credits: unknown | null; subscription: unknown | null; session: unknown | null }) => {
     const response = await window.electronAPI.invoke('reset-radar:updateAccountUsage', payload)
     if (response.success) {
       handleAccountSessionActivity()
@@ -74,7 +83,10 @@ export default function AILab() {
       )}
       {showResetHistory && (
         <ResetRadarHistoryModal
-          onClose={() => setShowResetHistory(false)}
+          onClose={() => {
+            setShowResetHistory(false)
+            if (searchParams.get('panel') === 'reset-radar') navigate('/ai-lab', { replace: true })
+          }}
           onOpenUrl={handleOpenTool}
         />
       )}

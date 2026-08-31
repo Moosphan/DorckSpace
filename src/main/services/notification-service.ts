@@ -1,24 +1,50 @@
-import { ipcMain, Notification } from 'electron'
+import { BrowserWindow, ipcMain, Notification } from 'electron'
 import type Database from 'better-sqlite3'
 import { NotificationDeduper } from './provider-health'
+import { createNotificationNavigationPayload, normalizeNotificationRoute, type NotificationNavigationTarget } from '../../shared/notification-navigation'
 
 export interface NotificationOptions {
   title: string
   body: string
   icon?: string
   silent?: boolean
+  route?: string
+  target?: NotificationNavigationTarget
 }
 
 const notificationDeduper = new NotificationDeduper()
+const activeNotifications = new Set<Notification>()
 
 function sendNotification(options: NotificationOptions): void {
   if (!Notification.isSupported()) return
 
+  const route = normalizeNotificationRoute(options.route)
+    ?? createNotificationNavigationPayload(options.target)?.route
+    ?? null
   const notification = new Notification({
     title: options.title,
     body: options.body,
     silent: options.silent ?? false,
   })
+  activeNotifications.add(notification)
+
+  const releaseNotification = () => {
+    activeNotifications.delete(notification)
+  }
+
+  if (route) {
+    notification.on('click', () => {
+      releaseNotification()
+      const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+      if (!window || window.isDestroyed()) return
+      if (window.isMinimized()) window.restore()
+      window.show()
+      window.focus()
+      window.webContents.send('notification:navigate', { route })
+    })
+  }
+  notification.on('close', releaseNotification)
+  notification.on('failed', releaseNotification)
 
   notification.show()
 }
@@ -43,6 +69,7 @@ export function notifyDueTasks(db: Database.Database, now = new Date()): number 
       title: '有待处理的到期任务',
       body: task.title,
       silent: true,
+      target: { type: 'task', taskId: task.id },
     })) sent++
   }
   return sent

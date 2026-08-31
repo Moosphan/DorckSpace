@@ -15,6 +15,7 @@ import { TrendingUrlViewer } from './TrendingUrlViewer'
 
 interface TrendingModalProps {
   onClose: () => void
+  initialPeriod?: TrendingPeriod
 }
 
 interface SelectedTrendingItem {
@@ -22,13 +23,17 @@ interface SelectedTrendingItem {
   title: string
 }
 
-export function TrendingModal({ onClose }: TrendingModalProps) {
-  const [period, setPeriod] = useState<TrendingPeriod>('day')
+export function TrendingModal({ onClose, initialPeriod = 'day' }: TrendingModalProps) {
+  const [period, setPeriod] = useState<TrendingPeriod>(initialPeriod)
   const [dashboard, setDashboard] = useState<TrendingDashboard | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [selectedItem, setSelectedItem] = useState<SelectedTrendingItem | null>(null)
+
+  useEffect(() => {
+    setPeriod(initialPeriod)
+  }, [initialPeriod])
 
   const loadDashboard = useCallback(async (nextPeriod: TrendingPeriod, forceRefresh = false) => {
     setError('')

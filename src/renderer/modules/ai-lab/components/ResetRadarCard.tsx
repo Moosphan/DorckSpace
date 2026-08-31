@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   createGuestResetRadarSnapshot,
+  getResetRadarFooterActions,
   getResetRadarTone,
   getResetTypeLabel,
   type ResetRadarSnapshot,
@@ -85,6 +86,7 @@ export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, ref
     ? snapshot.activeSignal.source.startsWith('X') ? '已发现官方重置公告' : '检测到公开服务信号'
     : '暂无明确重置信号'
   const accountConnected = snapshot.account.status === 'connected'
+  const footerActions = getResetRadarFooterActions(snapshot.account.status)
 
   return (
     <article className="h-full min-h-[232px] flex-1 rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex flex-col gap-sm">
@@ -164,17 +166,19 @@ export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, ref
         <div className="flex items-center gap-xs mt-sm">
           <button
             type="button"
-            onClick={() => onOpenStatus('https://status.openai.com')}
+            onClick={() => footerActions.primaryAction === 'account'
+              ? onOpenAccount()
+              : onOpenStatus('https://status.openai.com')}
             className="flex-1 h-8 rounded-full border border-outline-variant/50 text-on-surface-variant text-[11px] font-bold hover:bg-surface-container transition-colors"
           >
-            查看公开依据
+            {footerActions.primaryLabel}
           </button>
           <button
             type="button"
             onClick={onOpenAccount}
             className="flex-1 h-8 rounded-full bg-primary text-on-primary text-[11px] font-bold hover:brightness-110 active:scale-95 transition-all"
           >
-            {accountConnected ? '打开会话' : '应用内登录'}
+            {footerActions.secondaryLabel}
           </button>
         </div>
       </div>

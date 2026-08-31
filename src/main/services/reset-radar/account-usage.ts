@@ -13,6 +13,8 @@ export interface NormalizedChatGPTWindow {
 export interface NormalizedChatGPTUsage {
   windows: NormalizedChatGPTWindow[]
   plan: string | null
+  email: string | null
+  name: string | null
   subscriptionExpiresAt: string | null
   limitReached: boolean
   fetchedAt: string
@@ -80,6 +82,40 @@ function asIsoDate(value: unknown): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
+function asText(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+function asEmail(value: unknown): string | null {
+  const text = asText(value)
+  return text && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text) ? text : null
+}
+
+function getNestedIdentity(payload: unknown): { email: string | null; name: string | null } {
+  let email: string | null = null
+  let name: string | null = null
+  const visited = new Set<unknown>()
+
+  const visit = (value: unknown, depth: number): void => {
+    if (depth > 4 || !value || typeof value !== 'object' || visited.has(value)) return
+    visited.add(value)
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => visit(item, depth + 1))
+      return
+    }
+
+    const record = value as Record<string, unknown>
+    email ??= asEmail(record.email ?? record.account_email ?? record.accountEmail ?? record.login)
+    name ??= asText(record.name ?? record.display_name ?? record.displayName)
+    if (email && name) return
+    Object.values(record).forEach((child) => visit(child, depth + 1))
+  }
+
+  visit(payload, 0)
+  return { email, name }
+}
+
 function normalizeWindow(rawValue: unknown, observedAt: string): NormalizedChatGPTWindow | null {
   const raw = asRecord(rawValue)
   const usedPercent = asPercent(raw.used_percent ?? raw.usedPercent)
@@ -108,9 +144,20 @@ function normalizeWindow(rawValue: unknown, observedAt: string): NormalizedChatG
   }
 }
 
-export function normalizeChatGPTUsage(payload: unknown, observedAt = new Date().toISOString(), subscriptionPayload?: unknown): NormalizedChatGPTUsage | null {
+export function normalizeChatGPTUsage(
+  payload: unknown,
+  observedAt = new Date().toISOString(),
+  subscriptionPayload?: unknown,
+  sessionPayload?: unknown,
+): NormalizedChatGPTUsage | null {
   const root = asRecord(payload)
   const subscription = asSubscriptionRecord(subscriptionPayload ?? root.subscription ?? root.subscription_info ?? root.account)
+  const account = asRecord(root.account ?? root.user ?? root.profile ?? root.account_info)
+  const subscriptionAccount = asRecord(subscription.account ?? subscription.user ?? subscription.profile)
+  const session = asRecord(sessionPayload)
+  const sessionUser = asRecord(session.user ?? session.account ?? session.profile)
+  const subscriptionIdentity = getNestedIdentity(subscriptionPayload)
+  const sessionIdentity = getNestedIdentity(sessionPayload)
   const billingPeriod = asRecord(
     subscription.billing_period
     ?? subscription.billingPeriod
@@ -136,8 +183,49 @@ export function normalizeChatGPTUsage(payload: unknown, observedAt = new Date().
       : typeof root.planType === 'string'
         ? root.planType
         : typeof subscription.plan_type === 'string'
-          ? subscription.plan_type
-          : typeof subscription.plan === 'string' ? subscription.plan : null,
+        ? subscription.plan_type
+        : typeof subscription.plan === 'string' ? subscription.plan : null,
+    email: asEmail(
+      root.email
+      ?? account.email
+      ?? account.account_email
+      ?? account.accountEmail
+      ?? account.login
+      ?? subscription.email
+      ?? subscription.account_email
+      ?? subscription.accountEmail
+      ?? subscriptionAccount.email
+      ?? subscriptionAccount.account_email
+      ?? subscriptionAccount.accountEmail
+      ?? session.email
+      ?? sessionUser.email
+      ?? sessionUser.account_email
+      ?? sessionUser.accountEmail
+      ?? subscriptionIdentity.email
+      ?? sessionIdentity.email,
+    ),
+    name: asText(
+      root.name
+      ?? root.display_name
+      ?? root.displayName
+      ?? account.name
+      ?? account.display_name
+      ?? account.displayName
+      ?? subscription.name
+      ?? subscription.display_name
+      ?? subscription.displayName
+      ?? subscriptionAccount.name
+      ?? subscriptionAccount.display_name
+      ?? subscriptionAccount.displayName
+      ?? session.name
+      ?? session.display_name
+      ?? session.displayName
+      ?? sessionUser.name
+      ?? sessionUser.display_name
+      ?? sessionUser.displayName
+      ?? subscriptionIdentity.name
+      ?? sessionIdentity.name,
+    ),
     subscriptionExpiresAt: asIsoDate(
       root.subscription_end
       ?? root.subscription_end_date

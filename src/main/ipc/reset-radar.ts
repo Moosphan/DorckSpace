@@ -27,8 +27,17 @@ export function registerResetRadarIpcHandlers(): void {
 
   ipcMain.handle('reset-radar:updateAccountUsage', (_event, payload?: unknown) => {
     try {
-      const data = payload && typeof payload === 'object' ? payload as { usage?: unknown; credits?: unknown; subscription?: unknown } : {}
-      return { success: true, data: ingestChatGPTAccountUsage(data.usage, data.credits, data.subscription) }
+      const data = payload && typeof payload === 'object'
+        ? payload as { usage?: unknown; credits?: unknown; subscription?: unknown; session?: unknown }
+        : {}
+      const snapshot = ingestChatGPTAccountUsage(data.usage, data.credits, data.subscription, data.session)
+      if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+        console.info('[Reset Radar] ChatGPT identity sync', {
+          hasEmail: Boolean(snapshot.account.email),
+          hasName: Boolean(snapshot.account.name),
+        })
+      }
+      return { success: true, data: snapshot }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'ChatGPT usage unavailable' }
     }

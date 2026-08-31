@@ -7,7 +7,7 @@ interface EmbeddedBrowserProps {
   onClose: () => void
   partition?: string
   onSessionActivity?: () => void
-  onAccountUsage?: (payload: { usage: unknown; credits: unknown | null; subscription: unknown | null }) => void
+  onAccountUsage?: (payload: { usage: unknown; credits: unknown | null; subscription: unknown | null; session: unknown | null }) => void
   onAccountUsageError?: (message: string) => void
 }
 
@@ -76,9 +76,11 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
             try {
               const bootstrap = document.getElementById('client-bootstrap')
               let token = null
+              let bootstrapSession = null
               try {
                 const bootstrapData = bootstrap?.textContent ? JSON.parse(bootstrap.textContent) : null
                 token = bootstrapData?.session?.accessToken || bootstrapData?.session?.access_token || null
+                bootstrapSession = bootstrapData?.session || null
               } catch {}
               const request = async (path) => {
                 const headers = { accept: 'application/json', 'oai-language': navigator.language || 'zh-CN' }
@@ -88,22 +90,42 @@ export function EmbeddedBrowser({ initialUrl = 'https://chat.openai.com', onClos
                 return response.json()
               }
               const usage = await request('/backend-api/wham/usage')
+              let authSession = null
+              try { authSession = await request('/api/auth/session') } catch {}
               let credits = null
               try { credits = await request('/backend-api/wham/rate-limit-reset-credits') } catch {}
               let subscription = null
-              for (const path of ['/backend-api/subscriptions', '/backend-api/subscription', '/backend-api/accounts/check', '/backend-api/accounts/check/v4-2023-04-27']) {
+              for (const path of ['/backend-api/subscriptions', '/backend-api/subscription']) {
                 try {
                   subscription = await request(path)
                   if (subscription) break
                 } catch {}
               }
-              return { ok: true, usage, credits, subscription }
+              let accountProfile = null
+              for (const path of ['/backend-api/accounts/check/v4-2023-04-27', '/backend-api/accounts/check']) {
+                try {
+                  accountProfile = await request(path)
+                  if (accountProfile) break
+                } catch {}
+              }
+              return {
+                ok: true,
+                usage,
+                credits,
+                subscription,
+                session: { bootstrap: bootstrapSession, auth: authSession, accountProfile },
+              }
             } catch (error) {
               return { ok: false, error: error instanceof Error ? error.message : String(error) }
             }
           })()`) as unknown as { ok?: boolean; usage?: unknown; credits?: unknown | null; error?: string }
           if (result?.ok && result.usage) {
-          onAccountUsage?.({ usage: result.usage, credits: result.credits ?? null, subscription: result.subscription ?? null })
+          onAccountUsage?.({
+            usage: result.usage,
+            credits: result.credits ?? null,
+            subscription: result.subscription ?? null,
+            session: result.session ?? null,
+          })
             return
           }
           lastError = result?.error || lastError

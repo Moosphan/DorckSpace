@@ -840,6 +840,16 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 30,
+    name: '030_reset_radar_account_identity',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE reset_radar_account_snapshot ADD COLUMN email TEXT;
+        ALTER TABLE reset_radar_account_snapshot ADD COLUMN name TEXT;
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

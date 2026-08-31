@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CodexUsageDashboard } from '@shared/codex-usage'
+import { buildUsageRhythmBars, formatUsageTokens } from '@shared/codex-usage-display'
 
 function formatTokens(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`
-  return value.toLocaleString()
+  return formatUsageTokens(value)
 }
 
 function formatDuration(minutes: number): string {
@@ -34,6 +33,20 @@ function formatPlan(plan: string | null): string {
     enterprise: 'ChatGPT Enterprise',
   }
   return labels[plan.toLowerCase()] ?? plan
+}
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@')
+  if (!local || !domain) return email
+  const visible = local.length <= 2 ? local[0] : local.slice(0, 3)
+  return `${visible}${local.length > visible.length ? '***' : '*'}@${domain}`
+}
+
+function formatAccountIdentity(dashboard: CodexUsageDashboard): string {
+  if (dashboard.accountStatus !== 'connected') return '等待连接'
+  if (dashboard.accountEmail) return maskEmail(dashboard.accountEmail)
+  if (dashboard.accountName) return dashboard.accountName
+  return '已连接'
 }
 
 function getWindow(kind: 'five_hour' | 'weekly', dashboard: CodexUsageDashboard) {
@@ -108,7 +121,7 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
 
   if (loading && !dashboard) {
     return (
-      <div className="h-full min-h-[190px] rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md flex items-center justify-center">
+      <div className="h-full min-h-[190px] w-full flex-1 rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex items-center justify-center">
         <div className="flex items-center gap-xs text-body-sm text-on-surface-variant">
           <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
           正在读取使用统计...
@@ -119,7 +132,7 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
 
   if (!dashboard) {
     return (
-      <div className="h-full min-h-[190px] rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md flex flex-col justify-center">
+      <div className="h-full min-h-[190px] w-full flex-1 rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex flex-col justify-center">
         <p className="text-body-sm text-error">{error ?? '使用统计暂不可用'}</p>
         <button type="button" onClick={() => loadDashboard(true)} className="mt-sm self-start text-body-sm font-semibold text-primary hover:underline">
           重新加载
@@ -131,9 +144,9 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
   const fiveHourWindow = getWindow('five_hour', dashboard)
   const weeklyWindow = getWindow('weekly', dashboard)
   const activity = dashboard.activity
-  const recentUsage = dashboard.dailyUsage.slice(-7)
-  const maxDailyTokens = Math.max(...recentUsage.map((item) => item.totalTokens), 1)
+  const recentUsage = buildUsageRhythmBars(dashboard.dailyUsage.slice(-7))
   const planLabel = formatPlan(dashboard.plan)
+  const accountIdentity = formatAccountIdentity(dashboard)
 
   return (
     <article className="h-full min-h-[190px] flex-1 rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex flex-col gap-sm">
@@ -145,7 +158,7 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
           <div className="min-w-0">
             <h3 className="font-headline-sm text-headline-sm truncate">使用统计</h3>
             <p className="mt-[2px] truncate text-[10px] text-on-surface-variant">
-              {planLabel}{dashboard.subscriptionExpiresAt ? ` · 到期 ${formatDateTime(dashboard.subscriptionExpiresAt)}` : ''} · {dashboard.accountStatus === 'connected' ? '已连接' : '等待连接'}
+              {planLabel} · {accountIdentity}{dashboard.subscriptionExpiresAt ? ` · 到期 ${formatDateTime(dashboard.subscriptionExpiresAt)}` : ''}
             </p>
           </div>
         </div>
@@ -181,13 +194,22 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
           <span className="text-[10px] text-on-surface-variant">本地日志</span>
         </div>
         {recentUsage.length > 0 ? (
-          <div className="mt-xs grid h-14 grid-cols-7 items-end gap-xs">
+          <div className="mt-xs grid min-h-[76px] grid-cols-7 items-end gap-xs">
             {recentUsage.map((day) => {
-              const barHeight = Math.max(8, Math.round((day.totalTokens / maxDailyTokens) * 100))
               return (
-                <div key={day.date} className="flex h-full min-w-0 flex-col items-center justify-end gap-[2px]" title={`${day.date} · ${formatTokens(day.totalTokens)} tokens`}>
-                  <div className="w-full max-w-5 rounded-sm bg-primary transition-[height] duration-500" style={{ height: `${barHeight}%` }} />
-                  <span className="text-[9px] text-on-surface-variant">{day.date.slice(5).replace('-', '/')}</span>
+                <div
+                  key={day.date}
+                  className="flex min-h-[76px] min-w-0 flex-col items-center justify-end gap-[2px]"
+                  title={`${day.date} · ${day.valueLabel} tokens`}
+                >
+                  <span className="max-w-full truncate text-[9px] font-semibold leading-none text-on-surface">
+                    {day.valueLabel}
+                  </span>
+                  <div
+                    className={`w-full max-w-5 rounded-sm transition-[height] duration-500 ${day.isEmpty ? 'bg-outline-variant/70' : 'bg-primary'}`}
+                    style={{ height: `${day.heightPercent}%` }}
+                  />
+                  <span className="text-[9px] leading-none text-on-surface-variant">{day.dateLabel}</span>
                 </div>
               )
             })}

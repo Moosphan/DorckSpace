@@ -10,6 +10,7 @@ async function storeArticles(feedId: number, parsed: Awaited<ReturnType<typeof r
   const db = getDatabase()
   const articleRepo = new RSSArticleRepository(db)
   let count = 0
+  let firstNewArticleId: number | null = null
   for (const item of parsed.items ?? []) {
     if (!item.title || !item.link) continue
     const existing = db.prepare('SELECT 1 FROM rss_articles WHERE url = ? LIMIT 1').get(item.link)
@@ -21,7 +22,10 @@ async function storeArticles(feedId: number, parsed: Awaited<ReturnType<typeof r
       summary: item.contentSnippet || item.content?.substring(0, 300) || undefined,
       published_at: item.isoDate || item.pubDate || undefined,
     })
-    if (result > 0 && !existing) count++
+    if (result > 0 && !existing) {
+      count++
+      firstNewArticleId ??= result
+    }
   }
   const feedRepo = new RSSFeedRepository(db)
   feedRepo.updateLastFetched(feedId)
@@ -30,6 +34,9 @@ async function storeArticles(feedId: number, parsed: Awaited<ReturnType<typeof r
       title: 'RSS 有新文章',
       body: `新增 ${count} 篇文章。`,
       silent: true,
+      ...(firstNewArticleId === null
+        ? { route: '/insights' }
+        : { target: { type: 'rss-article' as const, articleId: firstNewArticleId } }),
     })
   }
   return count

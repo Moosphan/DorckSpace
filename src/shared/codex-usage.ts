@@ -23,6 +23,8 @@ export interface CodexUsageDashboard {
   lastSyncedAt: string | null
   accountStatus: ResetRadarSnapshot['account']['status']
   plan: string | null
+  accountEmail: string | null
+  accountName: string | null
   subscriptionExpiresAt: string | null
   quotaWindows: ResetRadarSnapshot['quotaWindows']
   dailyUsage: Array<{ date: string; totalTokens: number }>
@@ -31,7 +33,7 @@ export interface CodexUsageDashboard {
 
 interface CodexUsageInput {
   generatedAt: string
-  account: Pick<ResetRadarSnapshot['account'], 'status' | 'fetchedAt' | 'plan'>
+  account: Pick<ResetRadarSnapshot['account'], 'status' | 'fetchedAt' | 'plan' | 'email' | 'name' | 'subscriptionExpiresAt'>
   quotaWindows: ResetRadarSnapshot['quotaWindows']
   usageRows: CodexUsageRow[]
   activityDays: CodexActivityDay[]
@@ -98,6 +100,8 @@ export function buildCodexUsageDashboard(input: CodexUsageInput): CodexUsageDash
     lastSyncedAt: input.account.fetchedAt,
     accountStatus: input.account.status,
     plan: input.account.plan,
+    accountEmail: input.account.email,
+    accountName: input.account.name,
     subscriptionExpiresAt: input.account.subscriptionExpiresAt,
     quotaWindows: input.quotaWindows,
     dailyUsage: getDailyUsage(input.usageRows, input.asOf),

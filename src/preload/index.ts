@@ -12,6 +12,11 @@ const electronAPI = {
 
   // Generic IPC invoke
   invoke: (channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args),
+  onNotificationNavigate: (callback: (payload: { route: string }) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: { route: string }) => callback(payload)
+    ipcRenderer.on('notification:navigate', listener)
+    return () => ipcRenderer.removeListener('notification:navigate', listener)
+  },
 
   // Settings
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_ALL),

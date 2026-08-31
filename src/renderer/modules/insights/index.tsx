@@ -45,6 +45,12 @@ export default function Insights() {
     }
   }, [linkedArticle])
 
+  useEffect(() => {
+    if (searchParams.get('panel') === 'trending') {
+      setShowTrending(true)
+    }
+  }, [searchParams])
+
   // Fetch all RSS feeds on page load
   useEffect(() => {
     window.electronAPI.invoke('rss:fetchAll').then(() => {
@@ -100,7 +106,17 @@ export default function Insights() {
       )}
 
       {showTrending && (
-        <TrendingModal onClose={() => setShowTrending(false)} />
+        <TrendingModal
+          initialPeriod={searchParams.get('period') === 'week'
+            ? 'week'
+            : searchParams.get('period') === 'month'
+              ? 'month'
+              : 'day'}
+          onClose={() => {
+            setShowTrending(false)
+            if (searchParams.get('panel') === 'trending') navigate('/insights', { replace: true })
+          }}
+        />
       )}
 
       {viewingArticle && (

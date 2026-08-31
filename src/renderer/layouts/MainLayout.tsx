@@ -5,6 +5,7 @@ import { extensionRegistry } from '@/lib/extension-registry'
 import { SearchPanel } from '@/components/SearchPanel'
 import { ProfileDialog } from '@/components/ProfileDialog'
 import type { ExtensionContribution } from '@shared/types/module'
+import { normalizeNotificationRoute } from '@shared/notification-navigation'
 
 const appLogoUrl = new URL('../../../assets/app-logo.svg', import.meta.url).href
 
@@ -86,6 +87,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [])
+
+  useEffect(() => {
+    return window.electronAPI.onNotificationNavigate((payload) => {
+      const route = normalizeNotificationRoute(payload.route)
+      if (!route) return
+      navigate(route)
+    })
+  }, [navigate])
 
   // Read navigation from extension registry
   const topNavItems = useMemo(

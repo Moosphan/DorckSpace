@@ -27,6 +27,8 @@ export interface ResetRadarSnapshot {
     status: ResetRadarAccountStatus
     fetchedAt: string | null
     plan: string | null
+    email: string | null
+    name: string | null
     subscriptionExpiresAt: string | null
     limitReached: boolean | null
     lastResetAt: string | null
@@ -85,6 +87,8 @@ export function createGuestResetRadarSnapshot(generatedAt = new Date().toISOStri
       status: 'signed_out',
       fetchedAt: null,
       plan: null,
+      email: null,
+      name: null,
       subscriptionExpiresAt: null,
       limitReached: null,
       lastResetAt: null,
@@ -135,4 +139,24 @@ export function getResetRadarTone(
   if (hasActiveSignal && confidence === 'high') return 'active'
   if (hasActiveSignal || confidence === 'medium') return 'watch'
   return 'quiet'
+}
+
+export function getResetRadarFooterActions(accountStatus: ResetRadarAccountStatus): {
+  primaryLabel: string
+  primaryAction: 'status' | 'account'
+  secondaryLabel: string
+} {
+  if (accountStatus === 'connected') {
+    return {
+      primaryLabel: '更换绑定',
+      primaryAction: 'account',
+      secondaryLabel: '打开会话',
+    }
+  }
+
+  return {
+    primaryLabel: '查看公开依据',
+    primaryAction: 'status',
+    secondaryLabel: '应用内登录',
+  }
 }

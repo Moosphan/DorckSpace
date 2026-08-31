@@ -70,6 +70,8 @@ async function addAccountStatus(snapshot: ResetRadarSnapshot, waitForSession = f
       ...snapshot.account,
       ...(keepAccountData && accountData ? {
         plan: accountData.plan,
+        email: accountData.email,
+        name: accountData.name,
         subscriptionExpiresAt: accountData.subscriptionExpiresAt,
         limitReached: accountData.limitReached,
         fetchedAt: accountData.fetchedAt,
@@ -108,9 +110,14 @@ function hasQuotaReset(previous: ResetRadarSnapshot | null, nextWindows: ResetRa
   )))
 }
 
-export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown, rawSubscription?: unknown): ResetRadarSnapshot {
+export function ingestChatGPTAccountUsage(
+  rawUsage: unknown,
+  rawCredits: unknown,
+  rawSubscription?: unknown,
+  rawSession?: unknown,
+): ResetRadarSnapshot {
   const observedAt = new Date().toISOString()
-  const usage = normalizeChatGPTUsage(rawUsage, observedAt, rawSubscription)
+  const usage = normalizeChatGPTUsage(rawUsage, observedAt, rawSubscription, rawSession)
   if (!usage) throw new Error('ChatGPT usage response did not contain rate-limit windows')
 
   const historyRepository = getHistoryRepository()
@@ -122,6 +129,8 @@ export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown
       status: 'connected' as const,
       fetchedAt: persistedAccountSnapshot.fetchedAt,
       plan: persistedAccountSnapshot.plan,
+      email: persistedAccountSnapshot.email,
+      name: persistedAccountSnapshot.name,
       subscriptionExpiresAt: persistedAccountSnapshot.subscriptionExpiresAt,
       limitReached: persistedAccountSnapshot.limitReached,
     },
@@ -150,6 +159,8 @@ export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown
       status: 'connected',
       fetchedAt: usage.fetchedAt,
       plan: usage.plan,
+      email: usage.email ?? previous?.account.email ?? null,
+      name: usage.name ?? previous?.account.name ?? null,
       subscriptionExpiresAt: usage.subscriptionExpiresAt ?? previous?.account.subscriptionExpiresAt ?? null,
       limitReached: usage.limitReached,
       lastResetAt,
@@ -169,6 +180,8 @@ export function ingestChatGPTAccountUsage(rawUsage: unknown, rawCredits: unknown
   cachedAt = Date.now()
   historyRepository.saveAccountSnapshot({
     plan: nextSnapshot.account.plan,
+    email: nextSnapshot.account.email,
+    name: nextSnapshot.account.name,
     subscriptionExpiresAt: nextSnapshot.account.subscriptionExpiresAt,
     limitReached: nextSnapshot.account.limitReached,
     quotaWindows: nextSnapshot.quotaWindows,
@@ -208,6 +221,7 @@ export async function getResetRadarSnapshot(forceRefresh = false): Promise<Reset
         title: 'AI Reset Radar 检测到高置信信号',
         body: publicSnapshot.activeSignal.title,
         silent: true,
+        target: { type: 'reset-radar', signalId: publicSnapshot.activeSignal.id },
       })
     }
     const snapshot = await addAccountStatus(publicSnapshot, forceRefresh)

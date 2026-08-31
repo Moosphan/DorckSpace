@@ -126,6 +126,7 @@ export class SocialTrendingService {
           title: `${platform} 热门内容已更新`,
           body: `新增 ${newItemCount} 条可关注内容。`,
           silent: true,
+          target: { type: 'insights-trending', platform, period },
         })
       }
       return result
@@ -147,6 +148,7 @@ export class SocialTrendingService {
           title: `${platform} 热门内容来源异常`,
           body: result.message,
           silent: true,
+          target: { type: 'insights-trending', platform, period },
         })
       }
       return result

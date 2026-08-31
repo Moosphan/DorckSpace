@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createGuestResetRadarSnapshot, getResetRadarTone } from '../src/shared/reset-radar'
+import { createGuestResetRadarSnapshot, getResetRadarFooterActions, getResetRadarTone } from '../src/shared/reset-radar'
 import {
   buildPublicResetRadarSnapshot,
   classifyResetType,
@@ -24,6 +24,14 @@ test('radar tone follows deterministic confidence and signal state', () => {
   assert.equal(getResetRadarTone('low', false), 'quiet')
   assert.equal(getResetRadarTone('medium', true), 'watch')
   assert.equal(getResetRadarTone('high', true), 'active')
+})
+
+test('bound radar account replaces public status action with account switching', () => {
+  assert.deepEqual(getResetRadarFooterActions('connected'), {
+    primaryLabel: '更换绑定',
+    primaryAction: 'account',
+    secondaryLabel: '打开会话',
+  })
 })
 
 test('parses an operational OpenAI status response without creating a reset signal', () => {
@@ -81,7 +89,10 @@ test('extracts official reset announcements from the public X source', () => {
 
 test('makes the latest official X announcement the active public signal', () => {
   const snapshot = buildPublicResetRadarSnapshot(
-    parseOpenAIStatusPayload({ status: { indicator: 'none', description: 'All Systems Operational' } }),
+    parseOpenAIStatusPayload(
+      { status: { indicator: 'none', description: 'All Systems Operational' } },
+      '2026-08-28T00:00:00.000Z',
+    ),
     [{
       externalId: '2093014447833116908',
       title: 'Never slept better and feeling reseted',
@@ -156,6 +167,10 @@ test('waits for a session cookie that is written just after login', async () => 
 
 test('normalizes ChatGPT usage windows and reset credits', () => {
   const usage = normalizeChatGPTUsage({
+    account: {
+      email: 'dorck@example.com',
+      name: 'Dorck',
+    },
     plan_type: 'pro',
     rate_limit: {
       primary_window: {
@@ -180,6 +195,8 @@ test('normalizes ChatGPT usage windows and reset credits', () => {
   })
 
   assert.equal(usage?.plan, 'pro')
+  assert.equal(usage?.email, 'dorck@example.com')
+  assert.equal(usage?.name, 'Dorck')
   assert.equal(usage?.subscriptionExpiresAt, '2026-09-01T00:00:00.000Z')
   assert.equal(usage?.windows[0].kind, 'five_hour')
   assert.equal(usage?.windows[0].remainingPercent, 28)
@@ -198,4 +215,26 @@ test('normalizes ChatGPT usage windows and reset credits', () => {
     availableCount: 2,
     nearestExpiry: '2026-08-29T00:00:00.000Z',
   })
+})
+
+test('uses the authenticated session profile when usage payload has no identity', () => {
+  const usage = normalizeChatGPTUsage({
+    plan_type: 'plus',
+    rate_limit: {
+      primary_window: {
+        used_percent: 20,
+        limit_window_seconds: 18000,
+      },
+    },
+  }, '2026-08-28T05:00:00.000Z', null, {
+    data: {
+      user: {
+        email: 'account@example.com',
+        name: 'Account Owner',
+      },
+    },
+  })
+
+  assert.equal(usage?.email, 'account@example.com')
+  assert.equal(usage?.name, 'Account Owner')
 })
