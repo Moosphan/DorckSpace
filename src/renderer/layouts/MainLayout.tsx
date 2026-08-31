@@ -1,11 +1,13 @@
-import { type ReactNode, useMemo, useState, useEffect } from 'react'
+import { type ReactNode, useMemo, useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { extensionRegistry } from '@/lib/extension-registry'
 import { SearchPanel } from '@/components/SearchPanel'
 import { ProfileDialog } from '@/components/ProfileDialog'
+import { NotificationCenter } from '@/components/NotificationCenter'
 import type { ExtensionContribution } from '@shared/types/module'
 import { normalizeNotificationRoute } from '@shared/notification-navigation'
+import type { NotificationCenterMessage } from '@shared/notification-center'
 
 const appLogoUrl = new URL('../../../assets/app-logo.svg', import.meta.url).href
 
@@ -49,6 +51,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [profile, setProfile] = useState<{ name: string; avatar_data_url: string | null } | null>(null)
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false)
+  const [unreadMessages, setUnreadMessages] = useState<NotificationCenterMessage[]>([])
+  const notificationCenterLoaded = useRef(false)
 
   // Fetch profile on mount
   useEffect(() => {
@@ -95,6 +100,48 @@ export default function MainLayout({ children }: MainLayoutProps) {
       navigate(route)
     })
   }, [navigate])
+
+  useEffect(() => {
+    if (notificationCenterLoaded.current) return
+    notificationCenterLoaded.current = true
+    window.electronAPI.invoke('notification:center:listUnread').then((response) => {
+      if (response.success && Array.isArray(response.data)) {
+        setUnreadMessages(response.data as NotificationCenterMessage[])
+      }
+    }).catch(() => {})
+
+    const removeNewListener = window.electronAPI.onNotificationCenterEvent('notification:center:new', (payload) => {
+      const message = payload as NotificationCenterMessage
+      if (!Number.isInteger(message.id)) return
+      setUnreadMessages((current) => current.some((item) => item.id === message.id) ? current : [message, ...current])
+    })
+    const removeReadListener = window.electronAPI.onNotificationCenterEvent('notification:center:read', (payload) => {
+      const id = (payload as { id?: unknown }).id
+      if (!Number.isInteger(id)) return
+      setUnreadMessages((current) => current.filter((message) => message.id !== id))
+    })
+    const removeAllReadListener = window.electronAPI.onNotificationCenterEvent('notification:center:allRead', () => {
+      setUnreadMessages([])
+    })
+    return () => {
+      removeNewListener()
+      removeReadListener()
+      removeAllReadListener()
+    }
+  }, [])
+
+  const openNotificationMessage = (message: NotificationCenterMessage) => {
+    setUnreadMessages((current) => current.filter((item) => item.id !== message.id))
+    setNotificationCenterOpen(false)
+    window.electronAPI.invoke('notification:center:markRead', message.id).catch(() => {})
+    const route = normalizeNotificationRoute(message.route)
+    if (route) navigate(route)
+  }
+
+  const markAllNotificationsRead = () => {
+    setUnreadMessages([])
+    window.electronAPI.invoke('notification:center:markAllRead').catch(() => {})
+  }
 
   // Read navigation from extension registry
   const topNavItems = useMemo(
@@ -195,11 +242,26 @@ export default function MainLayout({ children }: MainLayoutProps) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-md">
-            <button className="relative w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors titlebar-no-drag">
+          <div className="relative flex items-center gap-md">
+            <button
+              type="button"
+              onClick={() => setNotificationCenterOpen((current) => !current)}
+              aria-label={`消息中心${unreadMessages.length > 0 ? `，${unreadMessages.length} 条未读` : ''}`}
+              aria-expanded={notificationCenterOpen}
+              className="relative w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors titlebar-no-drag"
+            >
               <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-secondary-container rounded-full border-2 border-surface" />
+              {unreadMessages.length > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-secondary-container rounded-full border-2 border-surface" />
+              )}
             </button>
+            <NotificationCenter
+              open={notificationCenterOpen}
+              messages={unreadMessages}
+              onClose={() => setNotificationCenterOpen(false)}
+              onOpenMessage={openNotificationMessage}
+              onMarkAllRead={markAllNotificationsRead}
+            />
             <div
               className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs cursor-pointer titlebar-no-drag overflow-hidden"
               onClick={() => setProfileOpen(true)}

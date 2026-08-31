@@ -33,6 +33,7 @@
     "test:focus-sessions": "electron scripts/run-focus-sessions-test.cjs",
     "test:ai-action-planner": "electron scripts/run-ai-action-planner-test.cjs",
     "test:notification-navigation": "electron scripts/run-notification-navigation-test.cjs",
+    "test:notification-center": "electron scripts/run-notification-center-test.cjs",
     "test:project-progress": "electron scripts/run-project-progress-test.cjs",
     "test:codex-usage": "electron scripts/run-codex-usage-test.cjs",
     "test:reset-radar": "tsx scripts/test-reset-radar.ts",

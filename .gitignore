@@ -7,6 +7,12 @@ docs/
 docs/*
 !docs/screenshots/
 !docs/screenshots/*.png
+!docs/notification-center.zh-CN.md
+!docs/backlogs/
+!docs/backlogs/notification-center.zh-CN.md
+!docs/superpowers/
+!docs/superpowers/plans/
+!docs/superpowers/plans/2026-08-31-notification-center.md
 data/db/*.db
 data/cache/
 *.db

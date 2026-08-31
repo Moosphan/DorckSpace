@@ -850,6 +850,26 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 31,
+    name: '031_notification_center_messages',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS notification_center_messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          notification_key TEXT NOT NULL UNIQUE,
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          route TEXT,
+          created_at DATETIME NOT NULL,
+          read_at DATETIME
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_notification_center_unread
+        ON notification_center_messages(read_at, created_at DESC);
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

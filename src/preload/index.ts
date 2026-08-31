@@ -17,6 +17,11 @@ const electronAPI = {
     ipcRenderer.on('notification:navigate', listener)
     return () => ipcRenderer.removeListener('notification:navigate', listener)
   },
+  onNotificationCenterEvent: (channel: 'notification:center:new' | 'notification:center:read' | 'notification:center:allRead', callback: (payload: unknown) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: unknown) => callback(payload)
+    ipcRenderer.on(channel, listener)
+    return () => ipcRenderer.removeListener(channel, listener)
+  },
 
   // Settings
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_ALL),

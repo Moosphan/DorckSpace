@@ -1,7 +1,10 @@
 import { BrowserWindow, ipcMain, Notification } from 'electron'
+import { randomUUID } from 'crypto'
 import type Database from 'better-sqlite3'
-import { NotificationDeduper } from './provider-health'
 import { createNotificationNavigationPayload, normalizeNotificationRoute, type NotificationNavigationTarget } from '../../shared/notification-navigation'
+import { getDatabase } from '../database/connection'
+import { NotificationCenterRepository } from '../database/repositories/notification-center-repository'
+import type { NotificationCenterMessage } from '../../shared/notification-center'
 
 export interface NotificationOptions {
   title: string
@@ -10,20 +13,39 @@ export interface NotificationOptions {
   silent?: boolean
   route?: string
   target?: NotificationNavigationTarget
+  key?: string
 }
 
-const notificationDeduper = new NotificationDeduper()
 const activeNotifications = new Set<Notification>()
 
-function sendNotification(options: NotificationOptions): void {
-  if (!Notification.isSupported()) return
+function getRepository(): NotificationCenterRepository {
+  return new NotificationCenterRepository(getDatabase())
+}
 
-  const route = normalizeNotificationRoute(options.route)
+function resolveRoute(options: NotificationOptions): string | null {
+  return normalizeNotificationRoute(options.route)
     ?? createNotificationNavigationPayload(options.target)?.route
     ?? null
+}
+
+function broadcast(channel: string, payload: unknown): void {
+  BrowserWindow.getAllWindows()
+    .filter((window) => !window.isDestroyed())
+    .forEach((window) => window.webContents.send(channel, payload))
+}
+
+function markMessageRead(id: number): boolean {
+  const changed = getRepository().markRead(id)
+  if (changed) broadcast('notification:center:read', { id })
+  return changed
+}
+
+function showSystemNotification(message: NotificationCenterMessage, options: NotificationOptions): void {
+  if (!Notification.isSupported()) return
+
   const notification = new Notification({
-    title: options.title,
-    body: options.body,
+    title: message.title,
+    body: message.body,
     silent: options.silent ?? false,
   })
   activeNotifications.add(notification)
@@ -32,15 +54,16 @@ function sendNotification(options: NotificationOptions): void {
     activeNotifications.delete(notification)
   }
 
-  if (route) {
+  if (message.route) {
     notification.on('click', () => {
       releaseNotification()
+      markMessageRead(message.id)
       const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
       if (!window || window.isDestroyed()) return
       if (window.isMinimized()) window.restore()
       window.show()
       window.focus()
-      window.webContents.send('notification:navigate', { route })
+      window.webContents.send('notification:navigate', { route: message.route })
     })
   }
   notification.on('close', releaseNotification)
@@ -50,9 +73,22 @@ function sendNotification(options: NotificationOptions): void {
 }
 
 export function sendDedupedNotification(key: string, options: NotificationOptions): boolean {
-  if (!notificationDeduper.shouldNotify(key)) return false
-  sendNotification(options)
+  const message = getRepository().create({
+    key,
+    title: options.title,
+    body: options.body,
+    route: resolveRoute(options),
+    createdAt: new Date().toISOString(),
+  })
+  if (!message) return false
+
+  broadcast('notification:center:new', message)
+  showSystemNotification(message, options)
   return true
+}
+
+function sendNotification(options: NotificationOptions): boolean {
+  return sendDedupedNotification(options.key ?? `manual:${randomUUID()}`, options)
 }
 
 export function notifyDueTasks(db: Database.Database, now = new Date()): number {
@@ -92,8 +128,7 @@ export function stopTaskReminderScheduler(): void {
 export function registerNotificationIpcHandlers(): void {
   ipcMain.handle('notification:send', (_event, options: NotificationOptions) => {
     try {
-      sendNotification(options)
-      return { success: true }
+      return { success: true, data: { created: sendNotification(options) } }
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }
@@ -101,6 +136,35 @@ export function registerNotificationIpcHandlers(): void {
 
   ipcMain.handle('notification:check', () => {
     return { success: true, data: Notification.isSupported() }
+  })
+
+  ipcMain.handle('notification:center:listUnread', () => {
+    try {
+      return { success: true, data: getRepository().listUnread() }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Notification center unavailable' }
+    }
+  })
+
+  ipcMain.handle('notification:center:markRead', (_event, id?: unknown) => {
+    if (!Number.isInteger(id) || (id as number) <= 0) {
+      return { success: false, error: 'Invalid notification id' }
+    }
+    try {
+      return { success: true, data: markMessageRead(id as number) }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Notification center unavailable' }
+    }
+  })
+
+  ipcMain.handle('notification:center:markAllRead', () => {
+    try {
+      const count = getRepository().markAllRead()
+      if (count > 0) broadcast('notification:center:allRead', {})
+      return { success: true, data: count }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Notification center unavailable' }
+    }
   })
 }
 
