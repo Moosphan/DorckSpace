@@ -41,6 +41,37 @@ export interface PublishReceipt {
   publishedAt: string | null
 }
 
+export interface PublishMetricInput {
+  receiptId: number
+  views: number
+  likes: number
+  comments: number
+  shares: number
+  favorites: number
+  snapshotDate: string
+}
+
+export interface PublishMetricSnapshot {
+  snapshotDate: string
+  views: number
+  likes: number
+  comments: number
+  shares: number
+  favorites: number
+  engagement: number
+}
+
+export interface PublishedContentReview {
+  receiptId: number
+  platform: string
+  destinationUrl: string
+  publishedAt: string | null
+  latest: PublishMetricSnapshot | null
+  previous: PublishMetricSnapshot | null
+  engagementDelta: number | null
+  viewsDelta: number | null
+}
+
 export class ContentVariantRepository extends BaseRepository<Record<string, unknown>> {
   constructor(db: Database.Database) {
     super(db, 'article_content_variants')
@@ -120,6 +151,74 @@ export class ContentVariantRepository extends BaseRepository<Record<string, unkn
     )
     return result.changes > 0 ? this.findReceiptById(id) : undefined
   }
+
+  upsertMetrics(input: PublishMetricInput): void {
+    const receipt = this.get<Pick<PublishReceiptRow, 'status' | 'destination_url'>>(
+      'SELECT status, destination_url FROM article_publish_receipts WHERE id = ?',
+      input.receiptId,
+    )
+    if (!receipt) throw new Error('Publish receipt not found')
+    if (receipt.status !== 'published' || !receipt.destination_url) throw new Error('Publish receipt must be published before recording metrics')
+    assertSnapshotDate(input.snapshotDate)
+    const values = [input.views, input.likes, input.comments, input.shares, input.favorites]
+    if (values.some((value) => !Number.isInteger(value) || value < 0)) throw new Error('Metrics must be non-negative integers')
+
+    this.run(
+      `INSERT INTO article_publish_metric_snapshots
+        (receipt_id, views, likes, comments, shares, favorites, snapshot_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(receipt_id, snapshot_date) DO UPDATE SET
+         views = excluded.views,
+         likes = excluded.likes,
+         comments = excluded.comments,
+         shares = excluded.shares,
+         favorites = excluded.favorites,
+         updated_at = CURRENT_TIMESTAMP`,
+      input.receiptId,
+      ...values,
+      input.snapshotDate,
+    )
+  }
+
+  getArticleReview(articleId: number): PublishedContentReview[] {
+    const receipts = this.all<PublishReceiptRow>(
+      `SELECT * FROM article_publish_receipts
+       WHERE article_id = ? AND status = 'published' AND destination_url IS NOT NULL
+       ORDER BY published_at DESC, id DESC`,
+      articleId,
+    )
+    const snapshots = this.db.prepare(
+      `SELECT views, likes, comments, shares, favorites, snapshot_date
+       FROM article_publish_metric_snapshots
+       WHERE receipt_id = ?
+       ORDER BY snapshot_date DESC, id DESC
+       LIMIT 2`,
+    )
+    return receipts.map((receipt) => {
+      const [latestRow, previousRow] = snapshots.all(receipt.id) as MetricSnapshotRow[]
+      const latest = latestRow ? toMetricSnapshot(latestRow) : null
+      const previous = previousRow ? toMetricSnapshot(previousRow) : null
+      return {
+        receiptId: receipt.id,
+        platform: receipt.platform,
+        destinationUrl: receipt.destination_url!,
+        publishedAt: receipt.published_at,
+        latest,
+        previous,
+        engagementDelta: latest && previous ? latest.engagement - previous.engagement : null,
+        viewsDelta: latest && previous ? latest.views - previous.views : null,
+      }
+    })
+  }
+}
+
+interface MetricSnapshotRow {
+  views: number
+  likes: number
+  comments: number
+  shares: number
+  favorites: number
+  snapshot_date: string
 }
 
 function assertArticleExists(db: Database.Database, articleId: number): void {
@@ -159,5 +258,23 @@ function toReceipt(row: PublishReceiptRow): PublishReceipt {
     note: row.note,
     preparedAt: row.prepared_at,
     publishedAt: row.published_at,
+  }
+}
+
+function toMetricSnapshot(row: MetricSnapshotRow): PublishMetricSnapshot {
+  return {
+    snapshotDate: row.snapshot_date,
+    views: row.views,
+    likes: row.likes,
+    comments: row.comments,
+    shares: row.shares,
+    favorites: row.favorites,
+    engagement: row.likes + row.comments + row.shares + row.favorites,
+  }
+}
+
+function assertSnapshotDate(value: string): void {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(new Date(`${value}T00:00:00Z`).getTime())) {
+    throw new Error('Snapshot date must use YYYY-MM-DD')
   }
 }

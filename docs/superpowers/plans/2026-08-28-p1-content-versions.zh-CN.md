@@ -44,3 +44,21 @@
 2. 结果区域明确显示“已复制，待发布”，而不是“已发布”。
 3. 用户可输入发布链接并确认，状态才更新为“已发布”。
 4. 关闭再打开时能看到已保存的平台版本与最近回执。
+
+### P1-03-03 内容级指标快照与复盘
+
+**文件**
+
+- 修改：`src/main/database/migrations/index.ts`
+- 修改：`src/main/database/repositories/content-variant-repository.ts`
+- 修改：`src/main/ipc/content-variants.ts`
+- 新增：`src/renderer/modules/writing/components/ContentReviewModal.tsx`
+- 修改：`src/renderer/modules/writing/components/PublishPanel.tsx`
+- 测试：`scripts/test-content-variants.ts`
+
+**验收**
+
+1. 只允许为已确认发布、带真实链接的回执录入内容指标。
+2. 同一回执同一天的快照幂等更新，支持浏览、点赞、评论、转发和收藏。
+3. 复盘界面显示各平台最近快照、前次快照、互动总量与变化，不将账号总量混入单篇内容表现。
+4. 未录入快照的已发布内容显示“等待首个快照”，不显示伪造数据。

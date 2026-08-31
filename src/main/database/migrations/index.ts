@@ -729,6 +729,30 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 26,
+    name: '026_article_publish_metric_snapshots',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS article_publish_metric_snapshots (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          receipt_id INTEGER NOT NULL REFERENCES article_publish_receipts(id) ON DELETE CASCADE,
+          views INTEGER NOT NULL DEFAULT 0 CHECK(views >= 0),
+          likes INTEGER NOT NULL DEFAULT 0 CHECK(likes >= 0),
+          comments INTEGER NOT NULL DEFAULT 0 CHECK(comments >= 0),
+          shares INTEGER NOT NULL DEFAULT 0 CHECK(shares >= 0),
+          favorites INTEGER NOT NULL DEFAULT 0 CHECK(favorites >= 0),
+          snapshot_date DATE NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(receipt_id, snapshot_date)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_article_publish_metric_snapshots_receipt
+        ON article_publish_metric_snapshots(receipt_id, snapshot_date DESC);
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

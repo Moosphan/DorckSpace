@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useIpcData, useIpcMutation } from '@/hooks/useIpc'
+import { ContentReviewModal } from './ContentReviewModal'
 
 interface PublishPanelProps {
   articleId: number
@@ -113,6 +114,7 @@ export function PublishPanel({ articleId, articleTitle, content, onClose }: Publ
   const [publishUrls, setPublishUrls] = useState<Record<string, string>>({})
   const [status, setStatus] = useState<PublishStatus>('idle')
   const [results, setResults] = useState<Record<string, PublishResult>>({})
+  const [showReview, setShowReview] = useState(false)
   const { data: savedVariants, refetch: refetchVariants } = useIpcData<ContentVariant[]>(
     'content-variants:getByArticle',
     articleId,
@@ -229,13 +231,22 @@ export function PublishPanel({ articleId, articleTitle, content, onClose }: Publ
             <h3 className="font-headline-sm text-headline-sm">Prepare Platform Versions</h3>
             <p className="mt-xs text-body-sm text-on-surface-variant">{articleTitle}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
-            aria-label="Close publish panel"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
+          <div className="flex items-center gap-xs">
+            <button
+              onClick={() => setShowReview(true)}
+              className="flex h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-bold text-primary hover:bg-primary/10"
+            >
+              <span className="material-symbols-outlined text-[16px]">query_stats</span>
+              Review
+            </button>
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container"
+              aria-label="Close publish panel"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 space-y-lg overflow-y-auto p-lg">
@@ -426,6 +437,13 @@ export function PublishPanel({ articleId, articleTitle, content, onClose }: Publ
             </button>
           )}
         </footer>
+        {showReview && (
+          <ContentReviewModal
+            articleId={articleId}
+            articleTitle={articleTitle}
+            onClose={() => setShowReview(false)}
+          />
+        )}
       </div>
     </div>
   )

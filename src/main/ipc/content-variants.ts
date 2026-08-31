@@ -46,4 +46,21 @@ export function registerContentVariantIpcHandlers(): void {
       return { success: false, error: (err as Error).message }
     }
   })
+
+  ipcMain.handle('publish-metrics:getArticleReview', (_event, articleId: number) => {
+    try {
+      return { success: true, data: getRepository().getArticleReview(articleId) }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle('publish-metrics:upsert', (_event, input) => {
+    try {
+      getRepository().upsertMetrics(input)
+      return { success: true, data: true }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
 }

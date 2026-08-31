@@ -49,3 +49,34 @@ test('records copied content as prepared and publishes only after a real URL is 
     db.close()
   }
 })
+
+test('stores daily metrics only for published receipts and calculates review deltas from content snapshots', () => {
+  const db = new Database(':memory:')
+  runMigrations(db)
+  try {
+    const articleId = Number(db.prepare("INSERT INTO articles (title) VALUES ('Launch notes')").run().lastInsertRowid)
+    const repository = new ContentVariantRepository(db)
+    const variantId = repository.upsertVariant({ articleId, platform: 'juejin', title: 'Launch notes', content: 'Version' })
+    const receiptId = repository.createPreparedReceipt({ articleId, platform: 'juejin', variantId })
+
+    assert.throws(() => repository.upsertMetrics({ receiptId, views: 100, likes: 10, comments: 2, shares: 1, favorites: 3, snapshotDate: '2026-08-28' }), /must be published/)
+
+    repository.markReceiptPublished(receiptId, 'https://juejin.cn/post/example')
+    repository.upsertMetrics({ receiptId, views: 100, likes: 10, comments: 2, shares: 1, favorites: 3, snapshotDate: '2026-08-28' })
+    repository.upsertMetrics({ receiptId, views: 160, likes: 16, comments: 4, shares: 2, favorites: 5, snapshotDate: '2026-08-29' })
+    repository.upsertMetrics({ receiptId, views: 170, likes: 17, comments: 4, shares: 2, favorites: 5, snapshotDate: '2026-08-29' })
+
+    assert.deepEqual(repository.getArticleReview(articleId), [{
+      receiptId,
+      platform: 'juejin',
+      destinationUrl: 'https://juejin.cn/post/example',
+      publishedAt: repository.findReceiptById(receiptId)?.publishedAt ?? null,
+      latest: { snapshotDate: '2026-08-29', views: 170, likes: 17, comments: 4, shares: 2, favorites: 5, engagement: 28 },
+      previous: { snapshotDate: '2026-08-28', views: 100, likes: 10, comments: 2, shares: 1, favorites: 3, engagement: 16 },
+      engagementDelta: 12,
+      viewsDelta: 70,
+    }])
+  } finally {
+    db.close()
+  }
+})
