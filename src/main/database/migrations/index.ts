@@ -776,6 +776,70 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 28,
+    name: '028_ai_action_plans',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS ai_action_plans (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          objective TEXT NOT NULL,
+          summary TEXT NOT NULL,
+          provider TEXT,
+          model TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS ai_action_proposals (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          plan_id INTEGER NOT NULL REFERENCES ai_action_plans(id) ON DELETE CASCADE,
+          action_type TEXT NOT NULL CHECK(action_type = 'create_task'),
+          title TEXT NOT NULL,
+          description TEXT,
+          priority TEXT NOT NULL CHECK(priority IN ('high', 'medium', 'low')),
+          due_date DATE,
+          tags TEXT NOT NULL DEFAULT '[]',
+          status TEXT NOT NULL DEFAULT 'proposed' CHECK(status IN ('proposed', 'applied', 'dismissed')),
+          task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+          resolved_at DATETIME
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_ai_action_plans_project_id
+        ON ai_action_plans(project_id, created_at DESC);
+
+        CREATE INDEX IF NOT EXISTS idx_ai_action_proposals_plan_id
+        ON ai_action_proposals(plan_id, id);
+      `)
+    },
+  },
+  {
+    version: 29,
+    name: '029_focus_session_planned_duration',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE focus_sessions ADD COLUMN planned_duration_minutes INTEGER
+          CHECK(planned_duration_minutes IS NULL OR planned_duration_minutes > 0);
+
+        UPDATE focus_sessions
+        SET planned_duration_minutes = (
+          SELECT CAST(ROUND(tasks.estimated_hours * 60) AS INTEGER)
+          FROM tasks
+          WHERE tasks.id = focus_sessions.task_id
+        )
+        WHERE ended_at IS NULL
+          AND planned_duration_minutes IS NULL
+          AND task_id IS NOT NULL
+          AND EXISTS (
+            SELECT 1
+            FROM tasks
+            WHERE tasks.id = focus_sessions.task_id
+              AND tasks.estimated_hours IS NOT NULL
+              AND tasks.estimated_hours > 0
+          );
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

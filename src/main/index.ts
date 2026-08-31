@@ -35,6 +35,7 @@ import { registerResearchMaterialIpcHandlers } from './ipc/research-materials'
 import { registerResearchAssistantIpcHandlers } from './ipc/research-assistant'
 import { registerContentVariantIpcHandlers } from './ipc/content-variants'
 import { registerFocusSessionIpcHandlers } from './ipc/focus-sessions'
+import { registerAIActionIpcHandlers } from './ipc/ai-actions'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
@@ -236,6 +237,7 @@ app.whenReady().then(() => {
   registerResearchAssistantIpcHandlers()
   registerContentVariantIpcHandlers()
   registerFocusSessionIpcHandlers()
+  registerAIActionIpcHandlers()
   registerBackupIpcHandlers()
 
   // Load plugins

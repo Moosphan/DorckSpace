@@ -11,6 +11,7 @@ import { CreateIdeaDialog } from './components/CreateIdeaDialog'
 import { ManageIdeasDialog } from './components/ManageIdeasDialog'
 import { ProjectManagerDialog } from './components/ProjectManagerDialog'
 import { ArticleDetailDialog } from './components/ArticleDetailDialog'
+import { AIActionPlannerDialog } from './components/AIActionPlannerDialog'
 import { useIpcData } from '@/hooks/useIpc'
 
 interface TaskContext {
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const [showProjectManager, setShowProjectManager] = useState(false)
   const [projectDetailId, setProjectDetailId] = useState<number | null>(null)
   const [articleDetailId, setArticleDetailId] = useState<number | null>(null)
+  const [showAIPlanner, setShowAIPlanner] = useState(false)
   const [projectRevision, setProjectRevision] = useState(0)
   const [focusRevision, setFocusRevision] = useState(0)
   const ideaCardRef = useRef<IdeaCardHandle>(null)
@@ -58,6 +60,7 @@ export default function Dashboard() {
             setProjectDetailId(null)
             setShowProjectManager(true)
           }}
+          onOpenAIPlanner={() => setShowAIPlanner(true)}
           onOpenProject={(projectId) => {
             setProjectDetailId(projectId)
             setShowProjectManager(true)
@@ -103,6 +106,11 @@ export default function Dashboard() {
       {articleDetailId !== null && (
         <ArticleDetailDialog articleId={articleDetailId} onClose={() => setArticleDetailId(null)} />
       )}
+      <AIActionPlannerDialog
+        open={showAIPlanner}
+        onClose={() => setShowAIPlanner(false)}
+        onApplied={() => setProjectRevision((value) => value + 1)}
+      />
     </div>
   )
 }

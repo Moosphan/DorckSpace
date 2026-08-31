@@ -42,11 +42,12 @@ interface TodayOverviewData {
 interface TodayOverviewProps {
   refreshKey?: number
   onOpenManager?: () => void
+  onOpenAIPlanner?: () => void
   onOpenProject?: (projectId: number) => void
   onOpenArticle?: (articleId: number) => void
 }
 
-export function TodayOverview({ refreshKey = 0, onOpenManager, onOpenProject, onOpenArticle }: TodayOverviewProps) {
+export function TodayOverview({ refreshKey = 0, onOpenManager, onOpenAIPlanner, onOpenProject, onOpenArticle }: TodayOverviewProps) {
   const { data, loading, error, refetch } = useIpcData<TodayOverviewData>('dashboard:getTodayOverview')
 
   useEffect(() => {
@@ -75,14 +76,24 @@ export function TodayOverview({ refreshKey = 0, onOpenManager, onOpenProject, on
           <p className="font-label-sm text-[13px] font-bold tracking-[0.12em] text-primary uppercase">Today at a glance</p>
           <h2 className="font-headline-sm text-on-surface mt-1">{data.date}</h2>
         </div>
-        {onOpenManager && (
-          <button
-            onClick={onOpenManager}
-            className="shrink-0 rounded-full px-sm py-1 text-[11px] font-bold text-primary hover:bg-primary/10 transition-colors"
-          >
-            Manage projects
-          </button>
-        )}
+        <div className="flex shrink-0 items-center gap-xs">
+          {onOpenAIPlanner && (
+            <button
+              onClick={onOpenAIPlanner}
+              className="rounded-full px-sm py-1 text-[11px] font-bold text-primary hover:bg-primary/10 transition-colors"
+            >
+              Plan tasks
+            </button>
+          )}
+          {onOpenManager && (
+            <button
+              onClick={onOpenManager}
+              className="rounded-full px-sm py-1 text-[11px] font-bold text-primary hover:bg-primary/10 transition-colors"
+            >
+              Manage projects
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[1.15fr_1fr] gap-sm mt-md">

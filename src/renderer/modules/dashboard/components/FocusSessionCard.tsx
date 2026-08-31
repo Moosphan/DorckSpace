@@ -17,6 +17,7 @@ interface FocusSession {
   startedAt: string
   endedAt: string | null
   durationMinutes: number
+  plannedDurationMinutes: number | null
 }
 
 interface FocusSessionCardProps {
@@ -27,8 +28,14 @@ function parseTimestamp(value: string): Date {
   return new Date(value.replace(' ', 'T'))
 }
 
-function formatElapsed(startedAt: string, now: number): string {
-  const elapsedSeconds = Math.max(0, Math.floor((now - parseTimestamp(startedAt).getTime()) / 1000))
+function getElapsedSeconds(startedAt: string, now: number): number {
+  return Math.max(0, Math.floor((now - parseTimestamp(startedAt).getTime()) / 1000))
+}
+
+function formatElapsed(startedAt: string, now: number, plannedDurationMinutes: number | null = null): string {
+  const elapsedSeconds = plannedDurationMinutes
+    ? Math.min(getElapsedSeconds(startedAt, now), plannedDurationMinutes * 60)
+    : getElapsedSeconds(startedAt, now)
   const hours = Math.floor(elapsedSeconds / 3600)
   const minutes = Math.floor((elapsedSeconds % 3600) / 60)
   const seconds = elapsedSeconds % 60
@@ -57,6 +64,7 @@ export function FocusSessionCard({ onStopped }: FocusSessionCardProps) {
   const [selectedTaskId, setSelectedTaskId] = useState('')
   const [estimate, setEstimate] = useState('')
   const [now, setNow] = useState(Date.now())
+  const [autoStopping, setAutoStopping] = useState(false)
 
   useEffect(() => {
     if (!activeSession) return
@@ -79,7 +87,12 @@ export function FocusSessionCard({ onStopped }: FocusSessionCardProps) {
     if (normalizedEstimate !== null && normalizedEstimate !== selectedTask.estimated_hours) {
       await updateTask(selectedTask.id, { estimated_hours: normalizedEstimate })
     }
-    const sessionId = await startSession(selectedTask.id)
+    const plannedDurationMinutes = normalizedEstimate !== null
+      ? Math.round(normalizedEstimate * 60)
+      : selectedTask.estimated_hours
+        ? Math.round(selectedTask.estimated_hours * 60)
+        : 25
+    const sessionId = await startSession({ taskId: selectedTask.id, plannedDurationMinutes })
     if (!sessionId) {
       toast({ title: 'Could not start focus session', variant: 'error' })
       return
@@ -106,6 +119,21 @@ export function FocusSessionCard({ onStopped }: FocusSessionCardProps) {
       variant: 'success',
     })
   }
+
+  useEffect(() => {
+    if (!activeSession?.plannedDurationMinutes || autoStopping || stopping) return
+    if (getElapsedSeconds(activeSession.startedAt, now) < activeSession.plannedDurationMinutes * 60) return
+    setAutoStopping(true)
+    void stopSession(activeSession.id).then(async (completed) => {
+      if (!completed) {
+        toast({ title: 'Could not stop focus session', variant: 'error' })
+        return
+      }
+      await Promise.all([refetchActive(), refetchTask()])
+      onStopped()
+      toast({ title: `${completed.durationMinutes} minutes logged`, variant: 'success' })
+    }).finally(() => setAutoStopping(false))
+  }, [activeSession, autoStopping, now, onStopped, refetchActive, refetchTask, stopSession, stopping, toast])
 
   return (
     <section className="overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container-lowest shadow-ambient">
@@ -134,7 +162,7 @@ export function FocusSessionCard({ onStopped }: FocusSessionCardProps) {
             <div className="mt-md flex items-end justify-between">
               <div>
                 <p className="font-headline-xl text-headline-xl tabular-nums text-primary">
-                  {formatElapsed(activeSession.startedAt, now)}
+                  {formatElapsed(activeSession.startedAt, now, activeSession.plannedDurationMinutes)}
                 </p>
                 <p className="mt-1 text-[11px] text-on-surface-variant">
                   {activeTask.estimated_hours ? `${activeTask.estimated_hours}h estimated · ` : ''}
@@ -146,7 +174,7 @@ export function FocusSessionCard({ onStopped }: FocusSessionCardProps) {
                 disabled={stopping}
                 className="h-9 rounded-lg bg-primary px-3 text-label-sm font-bold text-on-primary disabled:opacity-50"
               >
-                {stopping ? 'Stopping...' : 'Stop'}
+                {stopping || autoStopping ? 'Stopping...' : 'Stop'}
               </button>
             </div>
           </div>
@@ -186,7 +214,7 @@ export function FocusSessionCard({ onStopped }: FocusSessionCardProps) {
               />
             </label>
             <div className="flex items-center justify-between pt-1">
-              <p className="text-[11px] text-on-surface-variant">Start a 25 min focus block</p>
+              <p className="text-[11px] text-on-surface-variant">Start a timed focus block</p>
               <button
                 onClick={handleStart}
                 disabled={!selectedTask || starting}

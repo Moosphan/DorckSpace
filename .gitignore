@@ -1,6 +1,7 @@
 node_modules/
 out/
 dist/
+.dev-logs/
 docs/
 data/db/*.db
 data/cache/

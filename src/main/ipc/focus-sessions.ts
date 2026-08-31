@@ -16,9 +16,11 @@ export function registerFocusSessionIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('focus-sessions:start', (_event, taskId: number) => {
+  ipcMain.handle('focus-sessions:start', (_event, input: number | { taskId: number; plannedDurationMinutes?: number | null }) => {
     try {
-      return { success: true, data: getRepository().start(taskId) }
+      const taskId = typeof input === 'number' ? input : input.taskId
+      const plannedDurationMinutes = typeof input === 'number' ? null : input.plannedDurationMinutes ?? null
+      return { success: true, data: getRepository().start(taskId, undefined, plannedDurationMinutes) }
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }
