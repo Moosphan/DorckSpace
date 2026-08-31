@@ -30,6 +30,7 @@
     "test:research-materials": "electron scripts/run-research-materials-test.cjs",
     "test:research-assistant": "electron scripts/run-research-assistant-test.cjs",
     "test:content-variants": "electron scripts/run-content-variants-test.cjs",
+    "test:focus-sessions": "electron scripts/run-focus-sessions-test.cjs",
     "test:project-progress": "electron scripts/run-project-progress-test.cjs",
     "test:codex-usage": "electron scripts/run-codex-usage-test.cjs",
     "test:reset-radar": "tsx scripts/test-reset-radar.ts",

@@ -4,6 +4,7 @@ import { TodayOverview } from './components/TodayOverview'
 import { PriorityTaskList } from './components/PriorityTaskList'
 import { WeatherClockWidget } from './components/WeatherClockWidget'
 import { ActivityHeatmap } from './components/ActivityHeatmap'
+import { FocusSessionCard } from './components/FocusSessionCard'
 // import { CalendarWidget } from './components/CalendarWidget'
 import { IdeaCard, type IdeaCardHandle } from './components/IdeaCard'
 import { CreateIdeaDialog } from './components/CreateIdeaDialog'
@@ -20,13 +21,17 @@ export default function Dashboard() {
   const [searchParams] = useSearchParams()
   const taskId = Number(searchParams.get('taskId'))
   const hasTaskId = Number.isInteger(taskId) && taskId > 0
-  const { data: linkedTask } = useIpcData<TaskContext | null>(hasTaskId ? 'tasks:getById' : '', taskId)
+  const { data: linkedTask } = useIpcData<TaskContext | null>(
+    hasTaskId ? 'tasks:getById' : '',
+    taskId,
+  )
   const [showCreate, setShowCreate] = useState(false)
   const [showManage, setShowManage] = useState(false)
   const [showProjectManager, setShowProjectManager] = useState(false)
   const [projectDetailId, setProjectDetailId] = useState<number | null>(null)
   const [articleDetailId, setArticleDetailId] = useState<number | null>(null)
   const [projectRevision, setProjectRevision] = useState(0)
+  const [focusRevision, setFocusRevision] = useState(0)
   const ideaCardRef = useRef<IdeaCardHandle>(null)
 
   useEffect(() => {
@@ -66,7 +71,8 @@ export default function Dashboard() {
       {/* Right Sidebar: Weather + Activity + Ideas */}
       <aside className="w-full lg:w-[320px] flex flex-col gap-lg shrink-0 overflow-y-auto">
         <WeatherClockWidget />
-        <ActivityHeatmap />
+        <FocusSessionCard onStopped={() => setFocusRevision((value) => value + 1)} />
+        <ActivityHeatmap key={focusRevision} />
         <IdeaCard
           ref={ideaCardRef}
           onCreateNew={() => setShowCreate(true)}
@@ -92,13 +98,10 @@ export default function Dashboard() {
           setShowProjectManager(false)
           setProjectDetailId(null)
         }}
-        onChanged={() => setProjectRevision(value => value + 1)}
+        onChanged={() => setProjectRevision((value) => value + 1)}
       />
       {articleDetailId !== null && (
-        <ArticleDetailDialog
-          articleId={articleDetailId}
-          onClose={() => setArticleDetailId(null)}
-        />
+        <ArticleDetailDialog articleId={articleDetailId} onClose={() => setArticleDetailId(null)} />
       )}
     </div>
   )
