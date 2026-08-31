@@ -3,6 +3,10 @@ out/
 dist/
 .dev-logs/
 docs/
+!docs/
+docs/*
+!docs/screenshots/
+!docs/screenshots/*.png
 data/db/*.db
 data/cache/
 *.db

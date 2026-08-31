@@ -32,6 +32,35 @@ storage, so you can work without cloud accounts or external sync as a baseline.
 It is currently evolving from the author's own day-to-day workspace, which
 means the product direction is shaped by real personal workflows first.
 
+## Product Screenshots
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./docs/screenshots/dashboard-macos.png" alt="MyDashboard dashboard on macOS" width="100%" />
+      <br />
+      <sub>Dashboard</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./docs/screenshots/writing-macos.png" alt="MyDashboard Writing Studio on macOS" width="100%" />
+      <br />
+      <sub>Writing Studio</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./docs/screenshots/insights-macos.png" alt="MyDashboard Insights on macOS" width="100%" />
+      <br />
+      <sub>Insights</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./docs/screenshots/ai-lab-macos.png" alt="MyDashboard AI Lab on macOS" width="100%" />
+      <br />
+      <sub>AI Lab</sub>
+    </td>
+  </tr>
+</table>
+
 ## Why This Project Exists
 
 Many personal workflows are split across separate apps for task tracking,
