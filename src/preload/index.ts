@@ -22,6 +22,16 @@ const electronAPI = {
     ipcRenderer.on(channel, listener)
     return () => ipcRenderer.removeListener(channel, listener)
   },
+  onCodexUsageUpdated: (callback: () => void) => {
+    const listener = () => callback()
+    ipcRenderer.on('ai:codexUsageUpdated', listener)
+    return () => ipcRenderer.removeListener('ai:codexUsageUpdated', listener)
+  },
+  onResetRadarUpdated: (callback: () => void) => {
+    const listener = () => callback()
+    ipcRenderer.on('reset-radar:updated', listener)
+    return () => ipcRenderer.removeListener('reset-radar:updated', listener)
+  },
 
   // Settings
   getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET_ALL),

@@ -6,6 +6,7 @@ import { getDatabase } from '../../database/connection'
 import { ResetRadarRepository, type ResetRadarAccountSnapshotData } from '../../database/repositories/reset-radar-repository'
 import { fetchPublicResetRadarSnapshot } from './public-signal'
 import { sendDedupedNotification } from '../notification-service'
+import { fetchChatGPTAccountUsage } from './chatgpt-usage-refresh'
 
 const CACHE_DURATION_MS = 10 * 60 * 1000
 const REQUEST_TIMEOUT_MS = 10_000
@@ -77,7 +78,8 @@ async function addAccountStatus(snapshot: ResetRadarSnapshot, waitForSession = f
         fetchedAt: accountData.fetchedAt,
       } : {}),
       status,
-      fetchedAt: status === 'connected' ? new Date().toISOString() : snapshot.account.fetchedAt,
+      // Keep the actual quota observation time. Checking that cookies still exist is not a usage refresh.
+      fetchedAt: status === 'connected' && accountData ? accountData.fetchedAt : snapshot.account.fetchedAt,
       lastResetAt: snapshot.account.lastResetAt ?? getHistoryRepository().getRecent(1)[0]?.occurredAt ?? null,
     },
     quotaWindows: keepAccountData && snapshot.quotaWindows.length === 0 && accountData
@@ -188,7 +190,20 @@ export function ingestChatGPTAccountUsage(
     resetCredits: nextSnapshot.resetCredits,
     fetchedAt: nextSnapshot.account.fetchedAt ?? observedAt,
   } satisfies ResetRadarAccountSnapshotData)
+  historyRepository.addUsageSample({
+    observedAt,
+    quotaWindows: nextSnapshot.quotaWindows,
+  })
   return nextSnapshot
+}
+
+export async function refreshChatGPTAccountUsage(accessToken?: string): Promise<ResetRadarSnapshot> {
+  const status = await getChatGPTAccountStatus()
+  if (status !== 'connected') throw new Error('当前没有可用的 ChatGPT 登录会话')
+
+  const chatGPTSession = session.fromPartition(CHATGPT_SESSION_PARTITION)
+  const payload = await fetchChatGPTAccountUsage(chatGPTSession, accessToken)
+  return ingestChatGPTAccountUsage(payload.usage, payload.credits, payload.subscription, payload.session)
 }
 
 export function getResetRadarHistory(limit = 20): ResetRadarHistoryEntry[] {

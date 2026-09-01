@@ -25,6 +25,11 @@ export interface ResetRadarAccountSnapshotData {
   fetchedAt: string
 }
 
+export interface ResetRadarUsageSampleData {
+  observedAt: string
+  quotaWindows: ResetRadarSnapshot['quotaWindows']
+}
+
 export class ResetRadarRepository {
   private db: Database.Database
 
@@ -146,5 +151,29 @@ export class ResetRadarRepository {
       snapshot.resetCredits ? JSON.stringify(snapshot.resetCredits) : null,
       snapshot.fetchedAt,
     )
+  }
+
+  addUsageSample(sample: ResetRadarUsageSampleData): void {
+    this.db.prepare(
+      `INSERT INTO reset_radar_usage_samples (observed_at, quota_windows)
+       VALUES (?, ?)`,
+    ).run(sample.observedAt, JSON.stringify(sample.quotaWindows))
+  }
+
+  getUsageSamplesSince(since: string): ResetRadarUsageSampleData[] {
+    const rows = this.db.prepare(
+      `SELECT observed_at, quota_windows
+       FROM reset_radar_usage_samples
+       WHERE observed_at >= ?
+       ORDER BY observed_at ASC`,
+    ).all(since) as Array<{ observed_at: string; quota_windows: string }>
+
+    return rows.flatMap((row) => {
+      try {
+        return [{ observedAt: row.observed_at, quotaWindows: JSON.parse(row.quota_windows) as ResetRadarSnapshot['quotaWindows'] }]
+      } catch {
+        return []
+      }
+    })
   }
 }

@@ -36,6 +36,7 @@ import { registerResearchAssistantIpcHandlers } from './ipc/research-assistant'
 import { registerContentVariantIpcHandlers } from './ipc/content-variants'
 import { registerFocusSessionIpcHandlers } from './ipc/focus-sessions'
 import { registerAIActionIpcHandlers } from './ipc/ai-actions'
+import { startChatGPTUsageRefreshScheduler, stopChatGPTUsageRefreshScheduler } from './services/reset-radar/usage-refresh-scheduler'
 import { loadPlugins, getLoadedPlugins, unloadPlugin } from './services/plugin-loader'
 import { getDatabase, closeDatabase } from './database/connection'
 import { runMigrations } from './database/migrations'
@@ -258,6 +259,7 @@ app.whenReady().then(() => {
   seedSocialData(db)
   startTaskReminderScheduler(db)
   startTrendingRefreshScheduler()
+  startChatGPTUsageRefreshScheduler()
 
   createWindow()
 
@@ -277,6 +279,7 @@ app.on('before-quit', () => {
   logLifecycle('app:before-quit')
   stopTrendingRefreshScheduler()
   stopTaskReminderScheduler()
+  stopChatGPTUsageRefreshScheduler()
   closeDatabase()
 })
 

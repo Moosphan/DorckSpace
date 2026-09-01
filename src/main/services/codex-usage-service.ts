@@ -1,16 +1,7 @@
 import { getDatabase } from '../database/connection'
 import { getResetRadarSnapshot } from './reset-radar/reset-radar-service'
-import { buildCodexUsageDashboard, type CodexActivityDay, type CodexUsageRow, type CodexUsageDashboard } from '../../shared/codex-usage'
-
-interface UsageAggregateRow {
-  total_tokens: number | null
-  peak_tokens: number | null
-}
-
-interface ActivityDayRow {
-  date: string
-  duration_minutes: number
-}
+import { ResetRadarRepository } from '../database/repositories/reset-radar-repository'
+import { buildCodexUsageDashboard, type CodexUsageDashboard } from '../../shared/codex-usage'
 
 function formatLocalDate(date: Date): string {
   const year = date.getFullYear()
@@ -21,32 +12,16 @@ function formatLocalDate(date: Date): string {
 
 export async function getCodexUsageDashboard(forceRefresh = false): Promise<CodexUsageDashboard> {
   const snapshot = await getResetRadarSnapshot(forceRefresh)
-  const db = getDatabase()
-  const usageRows = db.prepare(
-    'SELECT total_tokens, created_at FROM ai_usage_logs ORDER BY created_at DESC',
-  ).all() as CodexUsageRow[]
-  const activityDays = db.prepare(
-    'SELECT date, SUM(duration_minutes) AS duration_minutes FROM activity_log GROUP BY date ORDER BY date DESC',
-  ).all() as ActivityDayRow[]
-  const aggregate = db.prepare(
-    'SELECT COALESCE(SUM(total_tokens), 0) AS total_tokens, COALESCE(MAX(total_tokens), 0) AS peak_tokens FROM ai_usage_logs',
-  ).get() as UsageAggregateRow
+  const usageSamples = new ResetRadarRepository(getDatabase()).getUsageSamplesSince(
+    new Date(Date.now() - 6 * 86_400_000).toISOString(),
+  )
 
   const dashboard = buildCodexUsageDashboard({
     generatedAt: snapshot.generatedAt,
     account: snapshot.account,
     quotaWindows: snapshot.quotaWindows,
-    usageRows,
-    activityDays: activityDays as CodexActivityDay[],
+    usageSamples,
     asOf: formatLocalDate(new Date()),
   })
-
-  return {
-    ...dashboard,
-    activity: {
-      ...dashboard.activity,
-      totalTokens: Number(aggregate.total_tokens ?? dashboard.activity.totalTokens),
-      peakTokens: Number(aggregate.peak_tokens ?? dashboard.activity.peakTokens),
-    },
-  }
+  return dashboard
 }

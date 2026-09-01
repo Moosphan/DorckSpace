@@ -870,6 +870,22 @@ const migrations: Migration[] = [
       `)
     },
   },
+  {
+    version: 32,
+    name: '032_reset_radar_usage_samples',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS reset_radar_usage_samples (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          observed_at DATETIME NOT NULL,
+          quota_windows TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_reset_radar_usage_samples_observed_at
+        ON reset_radar_usage_samples(observed_at ASC);
+      `)
+    },
+  },
 ]
 
 export function runMigrations(db: Database.Database): void {

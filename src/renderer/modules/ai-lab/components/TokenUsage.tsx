@@ -1,17 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CodexUsageDashboard } from '@shared/codex-usage'
-import { buildUsageRhythmBars, formatUsageTokens } from '@shared/codex-usage-display'
-
-function formatTokens(value: number): string {
-  return formatUsageTokens(value)
-}
-
-function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} 分钟`
-  const hours = Math.floor(minutes / 60)
-  const remainingMinutes = minutes % 60
-  return remainingMinutes > 0 ? `${hours} 小时 ${remainingMinutes} 分钟` : `${hours} 小时`
-}
+import { buildUsageRhythmPercentBars } from '@shared/codex-usage-display'
 
 function formatDateTime(value: string | null): string {
   if (!value) return '暂无记录'
@@ -115,9 +104,30 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
     }
   }, [])
 
+  const refreshQuota = useCallback(async () => {
+    setError(null)
+    setRefreshing(true)
+    try {
+      const response = await window.electronAPI.invoke('ai:refreshCodexUsageDashboard')
+      if (response.success && response.data) {
+        setDashboard(response.data as CodexUsageDashboard)
+      } else {
+        setError(response.error ?? '实时额度同步失败')
+      }
+    } catch (refreshError) {
+      setError(refreshError instanceof Error ? refreshError.message : '实时额度同步失败')
+    } finally {
+      setRefreshing(false)
+    }
+  }, [])
+
   useEffect(() => {
-    loadDashboard(refreshKey > 0).catch(() => {})
+    loadDashboard().catch(() => {})
   }, [loadDashboard, refreshKey])
+
+  useEffect(() => window.electronAPI.onCodexUsageUpdated(() => {
+    loadDashboard().catch(() => {})
+  }), [loadDashboard])
 
   if (loading && !dashboard) {
     return (
@@ -134,7 +144,7 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
     return (
       <div className="h-full min-h-[190px] w-full flex-1 rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-md shadow-ambient flex flex-col justify-center">
         <p className="text-body-sm text-error">{error ?? '使用统计暂不可用'}</p>
-        <button type="button" onClick={() => loadDashboard(true)} className="mt-sm self-start text-body-sm font-semibold text-primary hover:underline">
+        <button type="button" onClick={() => refreshQuota()} className="mt-sm self-start text-body-sm font-semibold text-primary hover:underline">
           重新加载
         </button>
       </div>
@@ -144,7 +154,7 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
   const fiveHourWindow = getWindow('five_hour', dashboard)
   const weeklyWindow = getWindow('weekly', dashboard)
   const activity = dashboard.activity
-  const recentUsage = buildUsageRhythmBars(dashboard.dailyUsage.slice(-7))
+  const recentUsage = buildUsageRhythmPercentBars(dashboard.dailyUsage.slice(-7))
   const planLabel = formatPlan(dashboard.plan)
   const accountIdentity = formatAccountIdentity(dashboard)
 
@@ -164,9 +174,9 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
         </div>
         <button
           type="button"
-          onClick={() => loadDashboard(true)}
+          onClick={() => refreshQuota()}
           disabled={refreshing}
-          aria-label="刷新使用统计"
+          aria-label="实时同步使用统计"
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container hover:text-primary disabled:opacity-50"
         >
           <span className={`material-symbols-outlined text-[18px] ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
@@ -175,8 +185,8 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
 
       <div className="flex items-center justify-between gap-sm border-b border-outline-variant/20 pb-sm text-[10px]">
         <div className="min-w-0">
-          <span className="text-on-surface-variant">套餐时间</span>
-          <p className="truncate font-semibold text-on-surface">按 5 小时 / 每周窗口计算</p>
+          <span className="text-on-surface-variant">实时额度</span>
+          <p className="truncate font-semibold text-on-surface">每 2 分钟从已绑定会话同步</p>
         </div>
         <span className="shrink-0 text-on-surface-variant" title={dashboard.lastSyncedAt ?? undefined}>
           {dashboard.lastSyncedAt ? `同步 ${formatDateTime(dashboard.lastSyncedAt)}` : '等待同步'}
@@ -190,8 +200,8 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
 
       <div className="rounded-md border border-outline-variant/20 bg-surface-container-low px-sm py-xs">
         <div className="flex items-center justify-between gap-sm">
-          <span className="text-[10px] font-semibold text-on-surface-variant">近 7 天使用节奏</span>
-          <span className="text-[10px] text-on-surface-variant">本地日志</span>
+          <span className="text-[10px] font-semibold text-on-surface-variant">近 7 天额度消耗节奏</span>
+          <span className="text-[10px] text-on-surface-variant">账户采样</span>
         </div>
         {recentUsage.length > 0 ? (
           <div className="mt-xs grid min-h-[76px] grid-cols-7 items-end gap-xs">
@@ -200,7 +210,7 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
                 <div
                   key={day.date}
                   className="flex min-h-[76px] min-w-0 flex-col items-center justify-end gap-[2px]"
-                  title={`${day.date} · ${day.valueLabel} tokens`}
+                  title={`${day.date} · ${day.valueLabel} 已观测额度消耗`}
                 >
                   <span className="max-w-full truncate text-[9px] font-semibold leading-none text-on-surface">
                     {day.valueLabel}
@@ -215,21 +225,21 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
             })}
           </div>
         ) : (
-          <p className="mt-xs text-[10px] text-on-surface-variant">暂无近 7 天用量日志</p>
+          <p className="mt-xs text-[10px] text-on-surface-variant">等待下一次账户采样</p>
         )}
       </div>
 
       <div className="mt-auto">
         <div className="mb-xs flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant">活跃度</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant">账户活跃度</span>
           {error && <span className="truncate text-[10px] text-error" title={error}>同步异常</span>}
         </div>
         <div className="grid grid-cols-2 gap-xs sm:grid-cols-5">
-          <ActivityMetric label="累计 Token" value={formatTokens(activity.totalTokens)} />
-          <ActivityMetric label="峰值 Token" value={formatTokens(activity.peakTokens)} />
-          <ActivityMetric label="累计工作时长" value={formatDuration(activity.totalDurationMinutes)} />
+          <ActivityMetric label="5 小时已用" value={activity.fiveHourUsedPercent === null ? '--' : `${activity.fiveHourUsedPercent}%`} />
+          <ActivityMetric label="每周已用" value={activity.weeklyUsedPercent === null ? '--' : `${activity.weeklyUsedPercent}%`} />
+          <ActivityMetric label="已观测活跃" value={`${activity.observedActiveDays} 天`} />
           <ActivityMetric label="连续活跃" value={`${activity.currentStreakDays} 天`} />
-          <ActivityMetric label="最长连续" value={`${activity.longestStreakDays} 天`} />
+          <ActivityMetric label="采样次数" value={`${activity.sampleCount} 次`} />
         </div>
       </div>
     </article>

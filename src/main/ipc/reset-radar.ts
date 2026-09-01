@@ -1,15 +1,26 @@
-import { ipcMain } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
 import {
   getChatGPTAccountStatus,
   getResetRadarHistory,
   getResetRadarSnapshot,
   ingestChatGPTAccountUsage,
+  refreshChatGPTAccountUsage,
 } from '../services/reset-radar/reset-radar-service'
 
 export function registerResetRadarIpcHandlers(): void {
   ipcMain.handle('reset-radar:getSnapshot', async (_event, options?: unknown) => {
     const forceRefresh = Boolean(options && typeof options === 'object' && (options as { forceRefresh?: unknown }).forceRefresh === true)
     try {
+      if (forceRefresh) {
+        try {
+          await refreshChatGPTAccountUsage()
+          for (const window of BrowserWindow.getAllWindows()) {
+            if (!window.isDestroyed()) window.webContents.send('ai:codexUsageUpdated')
+          }
+        } catch {
+          // Public radar refresh remains available when the account session is unavailable.
+        }
+      }
       return { success: true, data: await getResetRadarSnapshot(forceRefresh) }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Reset radar unavailable' }

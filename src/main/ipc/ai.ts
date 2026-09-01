@@ -1,7 +1,8 @@
-import { ipcMain } from 'electron'
+import { BrowserWindow, ipcMain } from 'electron'
 import { getDatabase } from '../database/connection'
 import { AISubscriptionRepository, AIToolRepository } from '../database/repositories/ai-repository'
 import { getCodexUsageDashboard } from '../services/codex-usage-service'
+import { getResetRadarSnapshot, refreshChatGPTAccountUsage } from '../services/reset-radar/reset-radar-service'
 
 const AI_CHANNELS = {
   GET_SUBSCRIPTIONS: 'ai:getSubscriptions',
@@ -28,6 +29,19 @@ export function registerAiIpcHandlers(): void {
     try {
       const forceRefresh = Boolean(options && typeof options === 'object' && (options as { forceRefresh?: unknown }).forceRefresh === true)
       return { success: true, data: await getCodexUsageDashboard(forceRefresh) }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle('ai:refreshCodexUsageDashboard', async () => {
+    try {
+      await refreshChatGPTAccountUsage()
+      await getResetRadarSnapshot(true)
+      for (const window of BrowserWindow.getAllWindows()) {
+        if (!window.isDestroyed()) window.webContents.send('reset-radar:updated')
+      }
+      return { success: true, data: await getCodexUsageDashboard() }
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }

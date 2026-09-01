@@ -81,6 +81,10 @@ export function ResetRadarCard({ onOpenStatus, onOpenAccount, onOpenHistory, ref
     loadSnapshot(refreshKey > 0).catch(() => {})
   }, [refreshKey])
 
+  useEffect(() => window.electronAPI.onResetRadarUpdated(() => {
+    loadSnapshot().catch(() => {})
+  }), [])
+
   const source = snapshot.sources.find((item) => item.label === snapshot.activeSignal?.source) ?? snapshot.sources[0]
   const signalResult = snapshot.activeSignal
     ? snapshot.activeSignal.source.startsWith('X') ? '已发现官方重置公告' : '检测到公开服务信号'

@@ -36,6 +36,7 @@
     "test:notification-center": "electron scripts/run-notification-center-test.cjs",
     "test:project-progress": "electron scripts/run-project-progress-test.cjs",
     "test:codex-usage": "electron scripts/run-codex-usage-test.cjs",
+    "test:chatgpt-usage-refresh": "node scripts/run-chatgpt-usage-refresh-test.cjs",
     "test:reset-radar": "tsx scripts/test-reset-radar.ts",
     "postinstall": "electron-builder install-app-deps"
   },
