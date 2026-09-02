@@ -198,7 +198,7 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
         <QuotaWindow label="每周额度" remainingPercent={weeklyWindow?.remainingPercent ?? null} resetAt={weeklyWindow?.resetAt ?? null} />
       </div>
 
-      <div className="rounded-md border border-outline-variant/20 bg-surface-container-low px-sm py-xs">
+      <div className="rounded-lg border border-outline-variant/20 bg-surface-container-low px-sm py-xs">
         <div className="flex items-center justify-between gap-sm">
           <span className="text-[10px] font-semibold text-on-surface-variant">近 7 天 Token 消耗节奏</span>
           <span className="text-[10px] text-on-surface-variant" title="从本机 Codex 会话日志汇总，可能受会话分叉或日志缺失影响">会话日志估算</span>
