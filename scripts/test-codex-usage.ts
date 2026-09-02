@@ -1,85 +1,66 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { buildCodexUsageDashboard } from '../src/shared/codex-usage'
-import { buildUsageRhythmBars, buildUsageRhythmPercentBars } from '../src/shared/codex-usage-display'
+import { buildUsageRhythmBars } from '../src/shared/codex-usage-display'
 
-test('builds Codex usage summary from quota windows and local activity', () => {
+test('builds Codex usage statistics from session token totals', () => {
   const dashboard = buildCodexUsageDashboard({
-    generatedAt: '2026-08-28T08:00:00.000Z',
+    generatedAt: '2026-09-02T08:00:00.000Z',
     account: {
       status: 'connected',
-      fetchedAt: '2026-08-28T07:55:00.000Z',
+      fetchedAt: '2026-09-02T07:55:00.000Z',
       plan: 'pro',
       email: 'dorck@example.com',
       name: 'Dorck',
-      subscriptionExpiresAt: '2026-09-01T00:00:00.000Z',
+      subscriptionExpiresAt: '2026-09-08T00:00:00.000Z',
     },
-    quotaWindows: [
-      { kind: 'five_hour', remainingPercent: 72, resetAt: '2026-08-28T10:00:00.000Z', durationSeconds: 18000 },
-      { kind: 'weekly', remainingPercent: 93, resetAt: '2026-08-30T10:00:00.000Z', durationSeconds: 604800 },
-    ],
-    usageSamples: [
-      { observedAt: '2026-08-22T08:00:00.000Z', quotaWindows: [{ kind: 'weekly', remainingPercent: 100, resetAt: '2026-08-30T10:00:00.000Z', durationSeconds: 604800 }] },
-      { observedAt: '2026-08-23T08:00:00.000Z', quotaWindows: [{ kind: 'weekly', remainingPercent: 99, resetAt: '2026-08-30T10:00:00.000Z', durationSeconds: 604800 }] },
-      { observedAt: '2026-08-24T08:00:00.000Z', quotaWindows: [{ kind: 'weekly', remainingPercent: 98, resetAt: '2026-08-30T10:00:00.000Z', durationSeconds: 604800 }] },
-      { observedAt: '2026-08-25T08:00:00.000Z', quotaWindows: [{ kind: 'weekly', remainingPercent: 98, resetAt: '2026-08-30T10:00:00.000Z', durationSeconds: 604800 }] },
-      { observedAt: '2026-08-26T08:00:00.000Z', quotaWindows: [{ kind: 'weekly', remainingPercent: 96, resetAt: '2026-08-30T10:00:00.000Z', durationSeconds: 604800 }] },
-      { observedAt: '2026-08-27T08:00:00.000Z', quotaWindows: [{ kind: 'weekly', remainingPercent: 94, resetAt: '2026-08-30T10:00:00.000Z', durationSeconds: 604800 }] },
-      { observedAt: '2026-08-28T08:00:00.000Z', quotaWindows: [{ kind: 'weekly', remainingPercent: 93, resetAt: '2026-08-30T10:00:00.000Z', durationSeconds: 604800 }] },
-    ],
-    asOf: '2026-08-28',
+    quotaWindows: [{ kind: 'five_hour', remainingPercent: 72, resetAt: '2026-09-02T10:00:00.000Z', durationSeconds: 18000 }],
+    sessionUsage: {
+      dailyUsage: [
+        { date: '2026-08-27', inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+        { date: '2026-08-28', inputTokens: 100, outputTokens: 20, totalTokens: 120 },
+        { date: '2026-08-29', inputTokens: 200, outputTokens: 40, totalTokens: 240 },
+        { date: '2026-08-30', inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+        { date: '2026-08-31', inputTokens: 500, outputTokens: 100, totalTokens: 600 },
+        { date: '2026-09-01', inputTokens: 300, outputTokens: 60, totalTokens: 360 },
+        { date: '2026-09-02', inputTokens: 250, outputTokens: 50, totalTokens: 300 },
+      ],
+      inputTokens: 1350,
+      outputTokens: 270,
+      totalTokens: 1620,
+    },
   })
 
-  assert.equal(dashboard.plan, 'pro')
   assert.equal(dashboard.accountEmail, 'dorck@example.com')
-  assert.equal(dashboard.accountName, 'Dorck')
-  assert.equal(dashboard.quotaWindows[0].remainingPercent, 72)
+  assert.equal(dashboard.dailyUsage.at(-1)?.totalTokens, 300)
   assert.deepEqual(dashboard.activity, {
-    fiveHourUsedPercent: 28,
-    weeklyUsedPercent: 7,
-    observedActiveDays: 5,
+    totalTokens: 1620,
+    todayTokens: 300,
+    peakDayTokens: 600,
     currentStreakDays: 3,
     longestStreakDays: 3,
-    sampleCount: 7,
   })
-  assert.equal(dashboard.lastSyncedAt, '2026-08-28T07:55:00.000Z')
-  assert.deepEqual(dashboard.dailyUsage, [
-    { date: '2026-08-22', consumedPercent: 0 },
-    { date: '2026-08-23', consumedPercent: 1 },
-    { date: '2026-08-24', consumedPercent: 1 },
-    { date: '2026-08-25', consumedPercent: 0 },
-    { date: '2026-08-26', consumedPercent: 2 },
-    { date: '2026-08-27', consumedPercent: 2 },
-    { date: '2026-08-28', consumedPercent: 1 },
-  ])
 })
 
-test('does not invent quota or activity values when data is unavailable', () => {
+test('does not invent session token totals when logs are unavailable', () => {
   const dashboard = buildCodexUsageDashboard({
-    generatedAt: '2026-08-28T08:00:00.000Z',
+    generatedAt: '2026-09-02T08:00:00.000Z',
     account: { status: 'signed_out', fetchedAt: null, plan: null, email: null, name: null, subscriptionExpiresAt: null },
     quotaWindows: [],
-    usageSamples: [],
-    asOf: '2026-08-28',
+    sessionUsage: {
+      dailyUsage: Array.from({ length: 7 }, (_, index) => ({ date: `2026-08-${String(27 + index).padStart(2, '0')}`, inputTokens: 0, outputTokens: 0, totalTokens: 0 })),
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+    },
   })
 
-  assert.equal(dashboard.plan, null)
-  assert.equal(dashboard.accountEmail, null)
-  assert.equal(dashboard.accountName, null)
-  assert.deepEqual(dashboard.quotaWindows, [])
-  assert.deepEqual(dashboard.activity, {
-    fiveHourUsedPercent: null,
-    weeklyUsedPercent: null,
-    observedActiveDays: 0,
-    currentStreakDays: 0,
-    longestStreakDays: 0,
-    sampleCount: 0,
-  })
-  assert.equal(dashboard.dailyUsage.length, 7)
-  assert.ok(dashboard.dailyUsage.every((day) => day.consumedPercent === 0))
+  assert.equal(dashboard.activity.totalTokens, 0)
+  assert.equal(dashboard.activity.peakDayTokens, 0)
+  assert.equal(dashboard.activity.currentStreakDays, 0)
 })
 
-test('builds visible labels for usage rhythm bars', () => {
+test('builds visible labels for token rhythm bars', () => {
   const bars = buildUsageRhythmBars([
     { date: '2026-08-25', totalTokens: 0 },
     { date: '2026-08-26', totalTokens: 1400 },
@@ -95,21 +76,5 @@ test('builds visible labels for usage rhythm bars', () => {
     { dateLabel: '08/25', valueLabel: '0', heightPercent: 10, isEmpty: true },
     { dateLabel: '08/26', valueLabel: '1.4K', heightPercent: 11, isEmpty: false },
     { dateLabel: '08/27', valueLabel: '12.5K', heightPercent: 100, isEmpty: false },
-  ])
-})
-
-test('builds visible labels for observed account consumption bars', () => {
-  const bars = buildUsageRhythmPercentBars([
-    { date: '2026-08-27', consumedPercent: 0 },
-    { date: '2026-08-28', consumedPercent: 3 },
-  ])
-
-  assert.deepEqual(bars.map((bar) => ({
-    valueLabel: bar.valueLabel,
-    heightPercent: bar.heightPercent,
-    isEmpty: bar.isEmpty,
-  })), [
-    { valueLabel: '0%', heightPercent: 10, isEmpty: true },
-    { valueLabel: '3%', heightPercent: 100, isEmpty: false },
   ])
 })

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CodexUsageDashboard } from '@shared/codex-usage'
-import { buildUsageRhythmPercentBars } from '@shared/codex-usage-display'
+import { buildUsageRhythmBars, formatUsageTokens } from '@shared/codex-usage-display'
 
 function formatDateTime(value: string | null): string {
   if (!value) return '暂无记录'
@@ -74,7 +74,7 @@ function ActivityMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-lg border border-outline-variant/20 bg-surface-container-low px-sm py-xs">
       <p className="truncate text-[10px] text-on-surface-variant">{label}</p>
-      <p className="mt-0.5 truncate text-[14px] font-bold leading-tight text-on-surface">{value}</p>
+      <p className="mt-0.5 whitespace-nowrap text-[13px] font-bold leading-tight text-on-surface">{value}</p>
     </div>
   )
 }
@@ -154,7 +154,7 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
   const fiveHourWindow = getWindow('five_hour', dashboard)
   const weeklyWindow = getWindow('weekly', dashboard)
   const activity = dashboard.activity
-  const recentUsage = buildUsageRhythmPercentBars(dashboard.dailyUsage.slice(-7))
+  const recentUsage = buildUsageRhythmBars(dashboard.dailyUsage.slice(-7))
   const planLabel = formatPlan(dashboard.plan)
   const accountIdentity = formatAccountIdentity(dashboard)
 
@@ -200,32 +200,34 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
 
       <div className="rounded-md border border-outline-variant/20 bg-surface-container-low px-sm py-xs">
         <div className="flex items-center justify-between gap-sm">
-          <span className="text-[10px] font-semibold text-on-surface-variant">近 7 天额度消耗节奏</span>
-          <span className="text-[10px] text-on-surface-variant">账户采样</span>
+          <span className="text-[10px] font-semibold text-on-surface-variant">近 7 天 Token 消耗节奏</span>
+          <span className="text-[10px] text-on-surface-variant" title="从本机 Codex 会话日志汇总，可能受会话分叉或日志缺失影响">会话日志估算</span>
         </div>
         {recentUsage.length > 0 ? (
-          <div className="mt-xs grid min-h-[76px] grid-cols-7 items-end gap-xs">
+          <div className="mt-xs grid h-[88px] grid-cols-7 items-end gap-xs">
             {recentUsage.map((day) => {
               return (
                 <div
                   key={day.date}
-                  className="flex min-h-[76px] min-w-0 flex-col items-center justify-end gap-[2px]"
-                  title={`${day.date} · ${day.valueLabel} 已观测额度消耗`}
+                  className="flex h-[88px] min-w-0 flex-col items-center"
+                  title={`${day.date} · 约 ${day.valueLabel} tokens`}
                 >
-                  <span className="max-w-full truncate text-[9px] font-semibold leading-none text-on-surface">
+                  <span className="max-w-full shrink-0 truncate text-[9px] font-semibold leading-none text-on-surface">
                     {day.valueLabel}
                   </span>
-                  <div
-                    className={`w-full max-w-5 rounded-sm transition-[height] duration-500 ${day.isEmpty ? 'bg-outline-variant/70' : 'bg-primary'}`}
-                    style={{ height: `${day.heightPercent}%` }}
-                  />
-                  <span className="text-[9px] leading-none text-on-surface-variant">{day.dateLabel}</span>
+                  <div className="mt-[3px] flex h-[58px] w-full items-end justify-center">
+                    <div
+                      className={`w-full max-w-5 shrink-0 rounded-sm transition-[height] duration-500 ${day.isEmpty ? 'h-[2px] bg-outline-variant/70' : 'min-h-[4px] bg-primary'}`}
+                      style={day.isEmpty ? undefined : { height: `${day.heightPercent}%` }}
+                    />
+                  </div>
+                  <span className="mt-[3px] shrink-0 text-[9px] leading-none text-on-surface-variant">{day.dateLabel}</span>
                 </div>
               )
             })}
           </div>
         ) : (
-          <p className="mt-xs text-[10px] text-on-surface-variant">等待下一次账户采样</p>
+          <p className="mt-xs text-[10px] text-on-surface-variant">暂无可用的 Codex 会话日志</p>
         )}
       </div>
 
@@ -235,11 +237,11 @@ export function TokenUsage({ refreshKey = 0 }: { refreshKey?: number }) {
           {error && <span className="truncate text-[10px] text-error" title={error}>同步异常</span>}
         </div>
         <div className="grid grid-cols-2 gap-xs sm:grid-cols-5">
-          <ActivityMetric label="5 小时已用" value={activity.fiveHourUsedPercent === null ? '--' : `${activity.fiveHourUsedPercent}%`} />
-          <ActivityMetric label="每周已用" value={activity.weeklyUsedPercent === null ? '--' : `${activity.weeklyUsedPercent}%`} />
-          <ActivityMetric label="已观测活跃" value={`${activity.observedActiveDays} 天`} />
+          <ActivityMetric label="近 7 天 Token" value={`约 ${formatUsageTokens(activity.totalTokens)}`} />
+          <ActivityMetric label="今日 Token" value={`约 ${formatUsageTokens(activity.todayTokens)}`} />
+          <ActivityMetric label="单日峰值" value={`约 ${formatUsageTokens(activity.peakDayTokens)}`} />
           <ActivityMetric label="连续活跃" value={`${activity.currentStreakDays} 天`} />
-          <ActivityMetric label="采样次数" value={`${activity.sampleCount} 次`} />
+          <ActivityMetric label="最长连续" value={`${activity.longestStreakDays} 天`} />
         </div>
       </div>
     </article>

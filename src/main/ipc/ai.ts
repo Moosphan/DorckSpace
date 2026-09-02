@@ -41,7 +41,7 @@ export function registerAiIpcHandlers(): void {
       for (const window of BrowserWindow.getAllWindows()) {
         if (!window.isDestroyed()) window.webContents.send('reset-radar:updated')
       }
-      return { success: true, data: await getCodexUsageDashboard() }
+      return { success: true, data: await getCodexUsageDashboard(true) }
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }
